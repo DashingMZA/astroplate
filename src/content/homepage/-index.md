@@ -9,7 +9,7 @@ banner:
   button:
     enable: true
     label: Fork Deploy and Edit Online 🚀
-    link: https://app.sitepins.com/new/clone?name=Astroplate&repository=https://github.com/zeon-studio/astroplate?aff=astroplate
+    link: https://app.csofts.tech/new/clone?name=AstroPlate&repository=https://github.com/DashingMZA/astroplate&aff=astroplate
 
 # Features
 features:
