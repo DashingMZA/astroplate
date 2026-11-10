@@ -35,8 +35,8 @@
 
   "navigation_button": {
     "enable": true,
-    "label": "Github",
-    "link": "https://github.com/DashingMZA/astroplate"
+    "label": "Edit with cSofts",
+    "link": "https://app.csofts.tech/new/clone?name=AstroPlate&repository=https://github.com/DashingMZA/astroplate&aff=astroplate"
   },
 
   "google_tag_manager": {
@@ -46,12 +46,12 @@
 
   "disqus": {
     "enable": true,
-    "shortname": "themefisher-template",
+    "shortname": "csofts-template",
     "settings": {}
   },
 
   "metadata": {
-    "meta_author": "Zaheer Ahmad",
+    "meta_author": "cSofts",
     "meta_image": "/images/og-image.png",
     "meta_description": "Astro and Tailwind boilerplate"
   },
