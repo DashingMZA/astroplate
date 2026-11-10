@@ -1,7 +1,7 @@
 {
   "site": {
     "title": "Astroplate",
-    "base_url": "https://astroplate.netlify.app",
+    "base_url": "https://astroplate.csofts.tech",
     "base_path": "/",
     "trailing_slash": false,
     "favicon": "/images/favicon.png",
@@ -24,19 +24,19 @@
 
   "announcement": {
     "enable": true,
-    "content": "<span class='text-center block'>♥️ Loving Astroplate? <a class='underline' href='https://github.com/zeon-studio/astroplate' target='_blank' rel='noopener'>Please ⭐️ on Github</a></span>",
+    "content": "<span class='text-center block'>♥️ Loving Astroplate? <a class='underline' href='https://github.com/DashingMZA/astroplate' target='_blank' rel='noopener'>Please ⭐️ on Github</a></span>",
     "expire_days": 7
   },
 
   "params": {
     "contact_form_action": "#",
-    "copyright": "Designed And Developed by [Zeon Studio](https://zeon.studio)"
+    "copyright": "Designed And Developed by [cSofts](https://csofts.com)"
   },
 
   "navigation_button": {
     "enable": true,
     "label": "Github",
-    "link": "https://github.com/zeon-studio/astroplate"
+    "link": "https://github.com/DashingMZA/astroplate"
   },
 
   "google_tag_manager": {
@@ -51,9 +51,9 @@
   },
 
   "metadata": {
-    "meta_author": "zeon.studio",
+    "meta_author": "Zaheer Ahmad",
     "meta_image": "/images/og-image.png",
-    "meta_description": "astro and tailwind boilerplate"
+    "meta_description": "Astro and Tailwind boilerplate"
   },
 
   "llms": {
