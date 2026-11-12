@@ -2,7 +2,8 @@
 # Banner
 banner:
   title: The Ultimate Starter Template You Need To Start Your Astro Project
-  content: Astroplate is a free starter template built with Astro and TailwindCSS,
+  content:
+    Astroplate is a free starter template built with Astro and TailwindCSS,
     providing everything you need to jumpstart your Astro project and save
     valuable time.
   image: /images/banner.png
@@ -15,7 +16,8 @@ banner:
 features:
   - title: What's Included in Astroplate
     image: /images/service-1.png
-    content: Astroplate is a comprehensive starter template that includes everything
+    content:
+      Astroplate is a comprehensive starter template that includes everything
       you need to get started with your Astro project. What's Included in
       Astroplate
     bulletpoints:
@@ -45,7 +47,8 @@ features:
       link: https://github.com/dashingmza/astroplate
   - title: The Top Reasons to Choose Astro for Your Next Project
     image: /images/service-3.png
-    content: With Astro, you can build modern and content-focused websites without
+    content:
+      With Astro, you can build modern and content-focused websites without
       sacrificing performance or ease of use.
     bulletpoints:
       - Instantly load static sites for better user experience and SEO.
