@@ -1,0 +1,47 @@
+name: CI
+
+# CI checks for every push to main and every pull request.
+# Policy: push runs CI + CodeQL; deployment is manual
+# (workflow_dispatch on the Pages deploy workflow) only.
+# See CONTRIBUTING.md for the commands run here.
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Check and build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11
+          run_install: false
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck (astro check)
+        run: pnpm run check
+      - name: Format check
+        run: npx prettier --check ./src
+      - name: Production build
+        run: pnpm run build
