@@ -1,0 +1,32 @@
+# Labels applied by the Labeler workflow (.github/workflows/label.yml)
+# based on which files a pull request touches.
+
+content:
+  - src/content/**
+
+config:
+  - src/config/**
+  - .sitepins/**
+
+docs:
+  - "*.md"
+  - docs/**
+
+workflows:
+  - .github/**
+
+seo:
+  - src/layouts/components/JsonLd.astro
+  - src/lib/utils/seo.ts
+  - src/pages/rss.xml.ts
+  - public/robots.txt
+  - src/content.config.ts
+
+images:
+  - src/layouts/components/ImageMod.astro
+  - public/images/**
+
+theme:
+  - src/styles/**
+  - src/config/theme.json
+  - tailwind.config.*
