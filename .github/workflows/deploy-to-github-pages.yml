@@ -50,7 +50,7 @@ jobs:
         run: pnpm run build
         working-directory: ${{ env.BUILD_PATH }}
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ env.BUILD_PATH }}/dist
 
