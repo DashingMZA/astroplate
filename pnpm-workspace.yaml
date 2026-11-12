@@ -6,8 +6,22 @@ allowBuilds:
   sharp: true
   workerd: true
 
+# pnpm-native overrides (pnpm 12 ignores the npm-style top-level
+# "overrides" field in package.json, and deprecates "$pkg" references).
+# Pins one version of each across the whole tree, including transitive deps.
+overrides:
+  typescript: 6.0.3
+  astro: 7.4.11
+
 minimumReleaseAgeExclude:
-  - '@astrojs/check@0.9.10'
-  - '@astrojs/mdx@7.0.4'
-  - '@types/node@26.1.2'
-  - astro@7.1.4
+  - '@astrojs/check@0.9.12'
+  - '@astrojs/mdx@8.1.5'
+  - '@types/node@26.6.6'
+  - astro@7.4.11
+  - glob@14.0.6
+  - miniflare@5.20261110.2-beta
+  - prettier@3.10.1
+  - wrangler@4.161.0
+  - framer-motion@14.13.0
+  - motion-dom@14.13.0
+  - motion@14.13.0
