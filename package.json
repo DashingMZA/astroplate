@@ -22,7 +22,7 @@
     "@astrojs/check": "0.9.10",
     "@astrojs/markdown-remark": "^7.3.7",
     "@astrojs/mdx": "7.0.4",
-    "@astrojs/react": "6.0.1",
+    "@astrojs/react": "7.1.5",
     "@astrojs/rss": "^4.0.0",
     "@astrojs/sitemap": "3.7.4",
     "@digi4care/astro-google-tagmanager": "^2.1.0",
