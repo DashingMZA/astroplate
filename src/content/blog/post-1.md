@@ -1,7 +1,7 @@
 ---
-title: "How to build an Application with modern Technology"
-meta_title: ""
-description: "this is meta description"
+title: "How to Build a Modern Application with Next.js and Tailwind CSS"
+meta_title: "How to Build a Modern Application with Next.js and Tailwind CSS"
+description: "A practical guide to building a modern web application with Next.js and Tailwind CSS, from project setup to a polished, responsive interface."
 date: 2022-04-04T05:00:00Z
 image: "/images/image-placeholder.png"
 categories: ["Application", "Data"]

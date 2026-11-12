@@ -1,10 +1,13 @@
+// NaN-safe date value: undated (or invalid-dated) posts sort last
+// instead of producing NaN comparisons with unstable ordering.
+const timeOf = (item: any): number => {
+  const time = new Date(item.data.date).valueOf();
+  return Number.isNaN(time) ? -Infinity : time;
+};
+
 // sort by date
 export const sortByDate = (array: any[]) => {
-  const sortedArray = array.sort(
-    (a: any, b: any) =>
-      new Date(b.data.date && b.data.date).valueOf() -
-      new Date(a.data.date && a.data.date).valueOf(),
-  );
+  const sortedArray = array.sort((a: any, b: any) => timeOf(b) - timeOf(a));
   return sortedArray;
 };
 

@@ -19,9 +19,25 @@ const blogCollection = defineCollection({
     title: z.string(),
     meta_title: z.string().optional(),
     description: z.string().optional(),
+    // Short summary for cards/search; falls back to description/body at render.
+    excerpt: z.string().optional(),
+    // Custom URL slug (overrides the filename-derived id when routing supports it).
+    slug: z.string().optional(),
     date: z.coerce.date().optional(),
+    // Last-updated date; `lastmod` is the sitemap alias for the same value.
+    updated: z.coerce.date().optional(),
+    lastmod: z.coerce.date().optional(),
     image: z.string().optional(),
+    // Social-share image; falls back to `image` when unset.
+    og_image: z.string().optional(),
+    og_title: z.string().optional(),
+    og_description: z.string().optional(),
     author: z.string().default("Admin"),
+    // Multi-author support; `author` above stays as the single-author fallback.
+    authors: z.array(z.string()).optional(),
+    featured: z.boolean().optional(),
+    canonical: z.url().optional(),
+    noindex: z.boolean().optional(),
     // Use factory functions for mutable array defaults (Zod 4 best practice)
     categories: z.array(z.string()).default(() => ["others"]),
     tags: z.array(z.string()).default(() => ["others"]),
@@ -34,6 +50,9 @@ const authorsCollection = defineCollection({
   loader: glob({ pattern: "**/*.{md,mdx}", base: "src/content/authors" }),
   schema: z.object({
     ...commonFields,
+    // Present in author files and the Sitepins authors schema; was silently
+    // dropped by validation because it was missing here.
+    email: z.string().optional(),
     social: z
       .array(
         z

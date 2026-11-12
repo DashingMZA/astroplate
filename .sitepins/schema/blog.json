@@ -24,8 +24,34 @@
       "value": ""
     },
     {
+      "name": "excerpt",
+      "label": "Excerpt",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "name": "slug",
+      "label": "Custom Slug",
+      "type": "string",
+      "value": ""
+    },
+    {
       "name": "date",
       "label": "Date",
+      "type": "Date",
+      "value": "",
+      "alwaysUseCurrentDate": false
+    },
+    {
+      "name": "updated",
+      "label": "Updated Date",
+      "type": "Date",
+      "value": "",
+      "alwaysUseCurrentDate": false
+    },
+    {
+      "name": "lastmod",
+      "label": "Last Modified Date",
       "type": "Date",
       "value": "",
       "alwaysUseCurrentDate": false
@@ -37,10 +63,41 @@
       "value": ""
     },
     {
+      "name": "og_image",
+      "label": "Social Share Image (OG Image)",
+      "type": "media",
+      "value": ""
+    },
+    {
+      "name": "og_title",
+      "label": "Social Share Title (OG Title)",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "name": "og_description",
+      "label": "Social Share Description (OG Description)",
+      "type": "string",
+      "value": ""
+    },
+    {
       "name": "author",
       "label": "Author",
       "type": "string",
       "value": "Admin",
+      "isDropdown": true,
+      "referenceType": "folder",
+      "referencePath": "src/content/authors",
+      "referenceInclude": "*.md",
+      "referenceExclude": "_*.md",
+      "referenceField": "title"
+    },
+    {
+      "name": "authors",
+      "label": "Authors",
+      "type": "Array",
+      "subType": "string",
+      "value": [],
       "isDropdown": true,
       "referenceType": "folder",
       "referencePath": "src/content/authors",
@@ -61,6 +118,24 @@
       "type": "Array",
       "subType": "string",
       "value": []
+    },
+    {
+      "name": "featured",
+      "label": "Featured",
+      "type": "boolean",
+      "value": false
+    },
+    {
+      "name": "canonical",
+      "label": "Canonical URL",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "name": "noindex",
+      "label": "Noindex",
+      "type": "boolean",
+      "value": false
     },
     {
       "name": "draft",

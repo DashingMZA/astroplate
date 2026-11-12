@@ -1,7 +1,7 @@
 ---
-title: "How to build an Application with modern Technology"
-meta_title: ""
-description: "this is meta description"
+title: "Building Better Software with Modern Tools and Tailwind CSS"
+meta_title: "Building Better Software with Modern Tools and Tailwind CSS"
+description: "How modern tooling and utility-first CSS with Tailwind help small teams ship better software faster, with less maintenance overhead."
 date: 2022-04-04T05:00:00Z
 image: "/images/image-placeholder.png"
 categories: ["Software"]

@@ -1,7 +1,7 @@
 ---
-title: "How to build an Application with modern Technology"
-meta_title: ""
-description: "this is meta description"
+title: "Designing Modern Application Architecture, from Silicon to Software"
+meta_title: "Designing Modern Application Architecture, from Silicon to Software"
+description: "A look at the architecture decisions behind modern applications, from hardware foundations to the software patterns that keep systems scalable."
 date: 2022-04-04T05:00:00Z
 image: "/images/image-placeholder.png"
 categories: ["Architecture"]

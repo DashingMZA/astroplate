@@ -1,7 +1,9 @@
 ---
+import config from "@/config/config.json";
 import Base from "@/layouts/Base.astro";
 import PostSingle from "@/layouts/PostSingle.astro";
 import { getSinglePage } from "@/lib/contentParser.astro";
+import { absoluteUrl } from "@/lib/utils/seo";
 
 export async function getStaticPaths() {
   const BLOG_FOLDER = "blog";
@@ -17,14 +19,76 @@ export async function getStaticPaths() {
 }
 
 const { post } = Astro.props;
-const { title, meta_title, description, image } = post.data;
+const {
+  title,
+  meta_title,
+  og_title,
+  description,
+  image,
+  og_image,
+  date,
+  updated,
+  lastmod,
+  author,
+  authors,
+  categories,
+  tags,
+  canonical,
+  noindex,
+} = post.data;
+
+// Multi-author support: `authors` array when present, else the `author` field.
+const displayAuthors: string[] =
+  authors && authors.length > 0 ? authors : [author];
+
+// Social-share image: per-post og_image wins, else the hero image.
+const seoImage = og_image ?? image;
+const modifiedDate = updated ?? lastmod ?? date;
+
+// Article structured data, emitted once via Base's `jsonLd` prop.
+const articleJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  headline: title,
+  description: description,
+  image: seoImage ? [absoluteUrl(seoImage)] : undefined,
+  datePublished: date ? new Date(date).toISOString() : undefined,
+  dateModified: modifiedDate ? new Date(modifiedDate).toISOString() : undefined,
+  author: displayAuthors.map((name: string) => ({
+    "@type": "Person",
+    name,
+  })),
+  publisher: {
+    "@type": config.publisher?.type ?? "Organization",
+    name: config.publisher?.name ?? config.site.title,
+    ...(config.publisher?.logo
+      ? {
+          logo: {
+            "@type": "ImageObject",
+            url: absoluteUrl(config.publisher.logo),
+          },
+        }
+      : {}),
+  },
+};
 ---
 
 <Base
   title={title}
-  meta_title={meta_title}
+  meta_title={meta_title || og_title}
   description={description}
-  image={image}
+  image={seoImage}
+  ogType="article"
+  article={{
+    publishedTime: date,
+    modifiedTime: modifiedDate,
+    author: displayAuthors,
+    section: categories[0],
+    tags,
+  }}
+  canonical={canonical}
+  noindex={noindex}
+  jsonLd={articleJsonLd}
 >
   <PostSingle post={post} />
 </Base>

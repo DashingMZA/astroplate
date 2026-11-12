@@ -24,6 +24,12 @@
       "value": ""
     },
     {
+      "name": "image",
+      "label": "Image",
+      "type": "media",
+      "value": ""
+    },
+    {
       "name": "draft",
       "label": "Draft",
       "type": "boolean",
