@@ -27,9 +27,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
       - name: Setup pnpm
+        # No `version:` input here: package.json already pins the pnpm
+        # version via `packageManager`, and pnpm/action-setup v6 errors
+        # out when both are set ("Multiple versions of pnpm specified").
         uses: pnpm/action-setup@v6
         with:
-          version: 11
           run_install: false
       - name: Setup Node
         uses: actions/setup-node@v7
