@@ -14,10 +14,12 @@ interface Props {
   fit?: "cover" | "contain" | "fill" | "none" | "scale-down";
   class?: string;
   style?: any;
+  fetchpriority?: "high" | "low" | "auto";
+  sizes?: string;
 }
 
 // Destructuring Astro.props to get the component's props
-let {
+const {
   src,
   alt,
   width,
@@ -28,17 +30,49 @@ let {
   format,
   style,
   fit,
+  fetchpriority,
+  sizes,
 } = Astro.props;
 
-src = `/public${src}`;
+// Remote (absolute) URLs — including protocol-relative and data: URIs —
+// are rendered verbatim as a plain <img>. They must never be prefixed
+// with /public and never go through the local-image glob, otherwise an
+// R2/S3/CDN URL such as https://… becomes /publichttps://… and renders
+// nothing.
+const isRemote =
+  src.startsWith("http://") ||
+  src.startsWith("https://") ||
+  src.startsWith("//") ||
+  src.startsWith("data:");
 
-// Glob pattern to load images from the /public/images folder
-const images = import.meta.glob("/public/images/**/*.{jpeg,jpg,png,gif,svg}");
+// Glob pattern to load images from the /public/images folder.
+// Includes webp/avif sources (call sites request format="webp" and CMS
+// uploads may already be webp/avif) as well as the legacy formats.
+const images = import.meta.glob(
+  "/public/images/**/*.{jpeg,jpg,png,gif,svg,webp,avif}",
+);
 
-// Check if the source path is valid
-const isValidPath = images[src] ? true : false;
+// Resolve a local src to a glob key. Call sites pass paths with or
+// without a leading /images/ prefix (and occasionally without a leading
+// slash), so try each candidate form and use the first one that exists.
+let localKey: string | undefined;
+if (!isRemote) {
+  const cleanSrc = src.split(/[?#]/)[0];
+  const stripped = cleanSrc.replace(/^\//, "");
+  const candidates = [
+    // Already a /public/… key, or a path rooted elsewhere under /public.
+    cleanSrc.startsWith("/public/") ? cleanSrc : `/public${cleanSrc}`,
+    // /images/foo.png, images/foo.png, or foo.png → /public/images/foo.png
+    `/public/images/${stripped.replace(/^images\//, "")}`,
+    // Bare path under /public as a last resort.
+    `/public/${stripped}`,
+  ];
+  localKey = candidates.find((candidate) => images[candidate]);
+}
 
-// Log a warning message in red if the image is not found
+// Log a warning message in red if a local image is not found.
+// (Remote images are never looked up, so they never hit this branch.)
+const isValidPath = isRemote || Boolean(localKey);
 !isValidPath &&
   console.error(
     `\x1b[31mImage not found - ${src}.\x1b[0m Make sure the image is in the /public/images folder.`,
@@ -46,18 +80,35 @@ const isValidPath = images[src] ? true : false;
 ---
 
 {
-  isValidPath && (
-    <Image
-      src={images[src]() as Promise<{ default: ImageMetadata }>}
+  isRemote ? (
+    <img
+      src={src}
       alt={alt}
       width={width}
       height={height}
       loading={loading}
-      fit={fit ? fit : "contain"}
       decoding={decoding}
+      fetchpriority={fetchpriority}
+      sizes={sizes}
       class={className}
-      format={format}
       style={style}
     />
+  ) : (
+    isValidPath && (
+      <Image
+        src={images[localKey!]() as Promise<{ default: ImageMetadata }>}
+        alt={alt}
+        width={width}
+        height={height}
+        loading={loading}
+        fit={fit ? fit : "contain"}
+        decoding={decoding}
+        fetchpriority={fetchpriority}
+        sizes={sizes}
+        class={className}
+        format={format}
+        style={style}
+      />
+    )
   )
 }

@@ -33,6 +33,8 @@ const { theme_switcher }: { theme_switcher: boolean } = config.settings;
           width={logo_width.replace("px", "") * 2}
           height={logo_height.replace("px", "") * 2}
           alt={title}
+          loading="eager"
+          fetchpriority="high"
           style={{
             height: logo_height.replace("px", "") + "px",
             width: logo_width.replace("px", "") + "px",
@@ -46,6 +48,8 @@ const { theme_switcher }: { theme_switcher: boolean } = config.settings;
             width={logo_width.replace("px", "") * 2}
             height={logo_height.replace("px", "") * 2}
             alt={title}
+            loading="eager"
+            fetchpriority="high"
             style={{
               height: logo_height.replace("px", "") + "px",
               width: logo_width.replace("px", "") + "px",

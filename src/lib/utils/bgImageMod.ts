@@ -1,3 +1,4 @@
+// NOTE: unused — no imports of bgImageMod exist anywhere in src/ (checked 2026-11-12); kept for reference only.
 import { getImage } from "astro:assets";
 
 const bgImageMod = async (
