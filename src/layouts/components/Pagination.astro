@@ -82,12 +82,11 @@ for (let i = 1; i <= totalPages; i++) {
                 ? `${section ? "/" + section : "/"}`
                 : `${section ? "/" + section : ""}/page/${pagination}`
             }
-            aria-current="page"
             class="rounded px-4 py-2 text-text-dark hover:bg-light dark:text-darkmode-text-dark dark:hover:bg-darkmode-light"
           >
             {pagination}
           </a>
-        )
+        ),
       )}
 
       {/* next page */}

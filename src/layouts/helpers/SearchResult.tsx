@@ -1,3 +1,4 @@
+import { escapeRegExp } from "@/lib/utils/seo";
 import { plainify, titleify } from "@/lib/utils/textConverter";
 import React from "react";
 
@@ -73,7 +74,10 @@ const SearchResult = ({
 
   // match marker
   const matchMarker = (text: string, substring: string) => {
-    const parts = text.split(new RegExp(`(${substring})`, "gi"));
+    if (!substring) {
+      return text;
+    }
+    const parts = text.split(new RegExp(`(${escapeRegExp(substring)})`, "gi"));
     return parts.map((part, index) =>
       part.toLowerCase() === substring.toLowerCase() ? (
         <mark key={index}>{part}</mark>
@@ -85,7 +89,10 @@ const SearchResult = ({
 
   // match underline
   const matchUnderline = (text: string, substring: string) => {
-    const parts = text?.split(new RegExp(`(${substring})`, "gi"));
+    if (!substring) {
+      return text;
+    }
+    const parts = text?.split(new RegExp(`(${escapeRegExp(substring)})`, "gi"));
     return parts?.map((part, index) =>
       part.toLowerCase() === substring.toLowerCase() ? (
         <span key={index} className="underline">

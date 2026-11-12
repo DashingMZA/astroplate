@@ -1,5 +1,6 @@
 ---
 import config from "@/config/config.json";
+import { absoluteUrl } from "@/lib/utils/seo";
 import {
   IoLogoFacebook,
   IoLogoLinkedin,
@@ -12,16 +13,34 @@ const {
   title,
   description,
   slug,
+  url,
+  image,
   className,
-}: { title?: string; description?: string; slug?: string; className?: string } =
-  Astro.props;
+}: {
+  title?: string;
+  description?: string;
+  slug?: string;
+  url?: string;
+  image?: string;
+  className?: string;
+} = Astro.props;
+
+// Preferred: full absolute canonical URL passed by the caller.
+// Fallback: a bare slug (e.g. post id "post-1") resolves to /blog/<slug>.
+const cleanSlug = slug ? slug.replace(/^\/+/, "").replace(/^blog\//, "") : "";
+const shareUrl = url
+  ? url
+  : cleanSlug
+    ? `${base_url}/blog/${cleanSlug}`
+    : base_url;
+const shareImage = image ? absoluteUrl(image) : "";
 ---
 
 <ul class={`${className}`}>
   <li class="inline-block">
     <a
       aria-label="facebook share button"
-      href={`https://facebook.com/sharer/sharer.php?u=${base_url}/${slug}`}
+      href={`https://facebook.com/sharer/sharer.php?u=${shareUrl}`}
       target="_blank"
       rel="noreferrer noopener"
     >
@@ -31,7 +50,7 @@ const {
   <li class="inline-block">
     <a
       aria-label="twitter share button"
-      href={`https://twitter.com/intent/tweet/?text=${title}&amp;url=${base_url}/${slug}`}
+      href={`https://twitter.com/intent/tweet/?text=${title}&amp;url=${shareUrl}`}
       target="_blank"
       rel="noreferrer noopener"
     >
@@ -41,7 +60,7 @@ const {
   <li class="inline-block">
     <a
       aria-label="linkedin share button"
-      href={`https://www.linkedin.com/shareArticle?mini=true&url=${base_url}/${slug}&title=${title}&summary=${description}&source=${base_url}`}
+      href={`https://www.linkedin.com/shareArticle?mini=true&url=${shareUrl}&title=${title}&summary=${description}&source=${base_url}`}
       target="_blank"
       rel="noreferrer noopener"
     >
@@ -51,7 +70,7 @@ const {
   <li class="inline-block">
     <a
       aria-label="pinterest share button"
-      href={`https://pinterest.com/pin/create/button/?url=${base_url}/${slug}&media=&description=${description}`}
+      href={`https://pinterest.com/pin/create/button/?url=${shareUrl}&media=${shareImage}&description=${description}`}
       target="_blank"
       rel="noreferrer noopener"
     >

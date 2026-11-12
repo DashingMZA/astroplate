@@ -59,7 +59,19 @@ export default defineConfig({
 
   integrations: [
     react(),
-    sitemap(),
+    sitemap({
+      // Exclude error/draft/preview/private pages from the sitemap.
+      filter: (page) => {
+        const { pathname } = new URL(page);
+        if (pathname === "/404") {
+          return false;
+        }
+        const segments = pathname.split("/").filter(Boolean);
+        return !segments.some((segment) =>
+          ["draft", "drafts", "preview", "private"].includes(segment),
+        );
+      },
+    }),
     AutoImport({
       imports: [
         "@/shortcodes/Button",

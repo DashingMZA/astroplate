@@ -1,7 +1,14 @@
 ---
+import JsonLd from "@/components/JsonLd.astro";
 import TwSizeIndicator from "@/components/TwSizeIndicator.astro";
 import config from "@/config/config.json";
 import theme from "@/config/theme.json";
+import {
+  absoluteUrl,
+  canonicalFor,
+  isAbsoluteUrl,
+  resolveImage,
+} from "@/lib/utils/seo";
 import { plainify } from "@/lib/utils/textConverter";
 import Footer from "@/partials/Footer.astro";
 import Header from "@/partials/Header.astro";
@@ -20,6 +27,15 @@ const fontEntries = Object.entries(theme.fonts.font_family).filter(
   ([key]) => !key.includes("_type"),
 );
 
+// Article metadata for og:type="article" pages (blog posts).
+export interface ArticleMeta {
+  publishedTime?: string | Date;
+  modifiedTime?: string | Date;
+  author?: string | string[];
+  section?: string;
+  tags?: string[];
+}
+
 // types for frontmatters
 export interface Props {
   title?: string;
@@ -28,15 +44,72 @@ export interface Props {
   image?: string;
   noindex?: boolean;
   canonical?: string;
+  ogType?: "website" | "article";
+  article?: ArticleMeta;
+  jsonLd?: unknown;
 }
 
 // destructure frontmatter
-const { title, meta_title, description, image, noindex, canonical } =
-  Astro.props;
+const {
+  title,
+  meta_title,
+  description,
+  image,
+  noindex,
+  canonical,
+  ogType,
+  article,
+  jsonLd,
+} = Astro.props;
+
+const pageTitle = plainify(
+  meta_title ? meta_title : title ? title : config.site.title,
+);
+const pageDescription = plainify(
+  description ? description : config.metadata.meta_description,
+);
+
+// Canonical: always emitted. Defaults to this page's own URL (Astro.url
+// pathname + base_url, honouring base_path / trailing_slash); an explicit
+// `canonical` prop overrides it (absolute URL used as-is, path resolved).
+const canonicalUrl = canonical
+  ? isAbsoluteUrl(canonical)
+    ? canonical
+    : canonicalFor(canonical)
+  : canonicalFor(Astro.url.pathname);
+
+// og:url is the canonical URL.
+const ogUrl = canonicalUrl;
+
+// og:type: "article" when article metadata is passed (or explicitly set),
+// "website" otherwise.
+const resolvedOgType = ogType ?? (article ? "article" : "website");
+
+// OG / Twitter image: absolute URLs (e.g. R2/CDN) are never prefixed with
+// base_url; relative paths fall back to the default OG image.
+const rawImage = image ? image : config.metadata.meta_image;
+const ogImage = resolveImage(rawImage);
+// Only the default OG image or a local image gets declared dimensions —
+// never invent width/height for a remote image.
+const isLocalImage = !isAbsoluteUrl(rawImage);
+const twitterCard = ogImage ? "summary_large_image" : "summary";
+const ogImageAlt = (config.metadata as { meta_image_alt?: string })
+  .meta_image_alt;
+
+const toIsoDate = (value?: string | Date) => {
+  if (!value) return undefined;
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.valueOf()) ? undefined : date.toISOString();
+};
+const articleAuthors = article?.author
+  ? Array.isArray(article.author)
+    ? article.author
+    : [article.author]
+  : [];
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={config.site.language ?? "en"}>
   <head>
     <!-- google tag manager -->
     {
@@ -77,84 +150,94 @@ const { title, meta_title, description, image, noindex, canonical } =
     />
 
     <!-- title -->
-    <title>
-      {plainify(meta_title ? meta_title : title ? title : config.site.title)}
-    </title>
+    <title>{pageTitle}</title>
 
-    <!-- canonical url -->
-    {canonical && <link rel="canonical" href={canonical} item-prop="url" />}
+    <!-- canonical url (always emitted; defaults to this page's own URL) -->
+    <link rel="canonical" href={canonicalUrl} />
 
-    <!-- noindex robots -->
+    <!-- rss feed -->
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title={config.site.title}
+      href={absoluteUrl("/rss.xml")}
+    />
+
+    <!-- noindex robots (only emitted when a page opts out; the default is index,follow) -->
     {noindex && <meta name="robots" content="noindex,nofollow" />}
 
     <!-- meta-description -->
-    <meta
-      name="description"
-      content={plainify(
-        description ? description : config.metadata.meta_description,
-      )}
-    />
+    <meta name="description" content={pageDescription} />
 
     <ClientRouter />
 
     <!-- author from config.json -->
     <meta name="author" content={config.metadata.meta_author} />
 
-    <!-- og-title -->
-    <meta
-      property="og:title"
-      content={plainify(
-        meta_title ? meta_title : title ? title : config.site.title,
-      )}
-    />
-
-    <!-- og-description -->
-    <meta
-      property="og:description"
-      content={plainify(
-        description ? description : config.metadata.meta_description,
-      )}
-    />
-    <meta property="og:type" content="website" />
-    <meta
-      property="og:url"
-      content={`${config.site.base_url}/${Astro.url.pathname.replace("/", "")}`}
-    />
-
-    <!-- twitter-title -->
-    <meta
-      name="twitter:title"
-      content={plainify(
-        meta_title ? meta_title : title ? title : config.site.title,
-      )}
-    />
-
-    <!-- twitter-description -->
-    <meta
-      name="twitter:description"
-      content={plainify(
-        description ? description : config.metadata.meta_description,
-      )}
-    />
+    <!-- open graph -->
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDescription} />
+    <meta property="og:type" content={resolvedOgType} />
+    <meta property="og:url" content={ogUrl} />
+    <meta property="og:site_name" content={config.site.title} />
+    <meta property="og:locale" content={config.site.locale ?? "en_US"} />
+    {
+      resolvedOgType === "article" && article && (
+        <>
+          {toIsoDate(article.publishedTime) && (
+            <meta
+              property="article:published_time"
+              content={toIsoDate(article.publishedTime)}
+            />
+          )}
+          {toIsoDate(article.modifiedTime) && (
+            <meta
+              property="article:modified_time"
+              content={toIsoDate(article.modifiedTime)}
+            />
+          )}
+          {articleAuthors.map((author: string) => (
+            <meta property="article:author" content={author} />
+          ))}
+          {article.section && (
+            <meta property="article:section" content={article.section} />
+          )}
+          {article.tags?.map((tag: string) => (
+            <meta property="article:tag" content={tag} />
+          ))}
+        </>
+      )
+    }
 
     <!-- og-image -->
-    <meta
-      property="og:image"
-      content={`${config.site.base_url}${
-        image ? image : config.metadata.meta_image
-      }`}
-    />
+    <meta property="og:image" content={ogImage} />
+    {
+      isLocalImage && (
+        <>
+          <meta property="og:image:width" content="1200" />
+          <meta property="og:image:height" content="630" />
+        </>
+      )
+    }
+    {ogImageAlt && <meta property="og:image:alt" content={ogImageAlt} />}
 
-    <!-- twitter-image -->
-    <meta
-      name="twitter:image"
-      content={`${config.site.base_url}${
-        image ? image : config.metadata.meta_image
-      }`}
-    />
-    <meta name="twitter:card" content="summary_large_image" />
+    <!-- twitter -->
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={pageDescription} />
+    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:card" content={twitterCard} />
+    {ogImageAlt && <meta name="twitter:image:alt" content={ogImageAlt} />}
+
+    <!-- structured data -->
+    {jsonLd && <JsonLd data={jsonLd} />}
   </head>
   <body class="flex flex-col min-h-screen">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded focus:bg-white focus:px-4 focus:py-2 focus:text-black"
+    >
+      Skip to content
+    </a>
     {/* google tag manager noscript */}
     {
       config.google_tag_manager.enable && (

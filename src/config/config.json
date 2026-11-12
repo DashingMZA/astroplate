@@ -4,12 +4,21 @@
     "base_url": "https://astroplate.csofts.tech",
     "base_path": "/",
     "trailing_slash": false,
+    "language": "en",
+    "locale": "en_US",
     "favicon": "/images/favicon.png",
     "logo": "/images/logo.png",
     "logo_darkmode": "/images/logo-darkmode.png",
     "logo_width": "150",
     "logo_height": "30",
     "logo_text": "Astroplate"
+  },
+
+  "publisher": {
+    "name": "Astroplate",
+    "type": "Organization",
+    "logo": "/images/logo.png",
+    "url": "https://astroplate.csofts.tech"
   },
 
   "settings": {
@@ -45,7 +54,7 @@
   },
 
   "disqus": {
-    "enable": true,
+    "enable": false,
     "shortname": "csofts-template",
     "settings": {}
   },
@@ -53,6 +62,7 @@
   "metadata": {
     "meta_author": "cSofts",
     "meta_image": "/images/og-image.png",
+    "meta_image_alt": "Astroplate",
     "meta_description": "Astro and Tailwind boilerplate"
   },
 

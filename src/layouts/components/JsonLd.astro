@@ -1,0 +1,13 @@
+---
+interface Props {
+  data: unknown;
+}
+
+const { data } = Astro.props;
+
+// `</` is escaped so a `</script>` sequence inside the data can never
+// break out of this script element. `<\/` is a valid JSON escape for `/`.
+const json = JSON.stringify(data).replaceAll("</", "<\\/");
+---
+
+<script is:inline type="application/ld+json" set:html={json} />
