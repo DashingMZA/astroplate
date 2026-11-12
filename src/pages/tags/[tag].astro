@@ -32,13 +32,11 @@ const sortedPosts = sortByDate(filterByTags);
   <div class="section-sm pb-0">
     <div class="container">
       <div class="row">
-        {
-          sortedPosts.map((post) => (
-            <div class="mb-14 md:col-6 lg:col-4">
-              <BlogCard data={post} />
-            </div>
-          ))
-        }
+        {sortedPosts.map((post) => (
+          <div class="mb-14 md:col-6 lg:col-4">
+            <BlogCard data={post} />
+          </div>
+        ))}
       </div>
     </div>
   </div>

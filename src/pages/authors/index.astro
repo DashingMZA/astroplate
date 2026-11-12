@@ -19,13 +19,11 @@ const authors = await getSinglePage("authors");
   <section class="section-sm pb-0">
     <div class="container">
       <div class="row justify-center">
-        {
-          authors.map((author) => (
-            <div class="mb-14 md:col-6 lg:col-4">
-              <AuthorCard data={author} />
-            </div>
-          ))
-        }
+        {authors.map((author) => (
+          <div class="mb-14 md:col-6 lg:col-4">
+            <AuthorCard data={author} />
+          </div>
+        ))}
       </div>
     </div>
   </section>

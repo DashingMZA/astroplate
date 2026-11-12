@@ -35,26 +35,24 @@ for (const heading of tocHeadings) {
 }
 ---
 
-{
-  toc.length > 0 && (
-    <nav aria-label="Table of contents" class="toc mb-10">
-      <h2 class="h5 mb-4">Table of contents</h2>
-      <ul>
-        {toc.map((item) => (
-          <li>
-            <a href={`#${item.slug}`}>{item.text}</a>
-            {item.children.length > 0 && (
-              <ul>
-                {item.children.map((child) => (
-                  <li>
-                    <a href={`#${child.slug}`}>{child.text}</a>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </li>
-        ))}
-      </ul>
-    </nav>
-  )
-}
+{toc.length > 0 && (
+  <nav aria-label="Table of contents" class="toc mb-10">
+    <h2 class="h5 mb-4">Table of contents</h2>
+    <ul>
+      {toc.map((item) => (
+        <li>
+          <a href={`#${item.slug}`}>{item.text}</a>
+          {item.children.length > 0 && (
+            <ul>
+              {item.children.map((child) => (
+                <li>
+                  <a href={`#${child.slug}`}>{child.text}</a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </li>
+      ))}
+    </ul>
+  </nav>
+)}

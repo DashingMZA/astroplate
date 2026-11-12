@@ -36,47 +36,41 @@ const displayAuthors: string[] =
   <div class="container">
     <div class="row justify-center">
       <article class="lg:col-10">
-        {
-          image && (
-            <div class="mb-10">
-              <ImageMod
-                src={image}
-                height={500}
-                width={1200}
-                alt={title}
-                loading="eager"
-                fetchpriority="high"
-                class="w-full rounded"
-                format="webp"
-              />
-            </div>
-          )
-        }
+        {image && (
+          <div class="mb-10">
+            <ImageMod
+              src={image}
+              height={500}
+              width={1200}
+              alt={title}
+              loading="eager"
+              fetchpriority="high"
+              class="w-full rounded"
+              format="webp"
+            />
+          </div>
+        )}
         <h1 set:html={markdownify(title)} class="h2 mb-4" />
         <ul class="mb-4">
           <li class="mr-4 inline-block">
-            {
-              displayAuthors.map((name: string, index: number) => (
-                <>
-                  <a href={`/authors/${slugify(name)}`}>
-                    <FaRegUserCircle className={"mr-2 -mt-1 inline-block"} />
-                    {humanize(name)}
-                  </a>
-                  {index !== displayAuthors.length - 1 && ", "}
-                </>
-              ))
-            }
+            {displayAuthors.map((name: string, index: number) => (
+              <>
+                <a href={`/authors/${slugify(name)}`}>
+                  <FaRegUserCircle className={"mr-2 -mt-1 inline-block"} />
+                  {humanize(name)}
+                </a>
+                {index !== displayAuthors.length - 1 && ", "}
+              </>
+            ))}
           </li>
           <li class="mr-4 inline-block">
             <FaRegFolder className={"mr-2 -mt-1 inline-block"} />
-            {
-              categories.map((category: string, index: number) => (
-                <a href={`/categories/${slugify(category)}`}>
-                  {humanize(category)}
-                  {index !== categories.length - 1 && ","}
-                </a>
-              ))
-            }
+            {categories.map((category: string, index: number) => (
+              <a href={`/categories/${slugify(category)}`}>
+                {humanize(category)}
+                {index !== categories.length - 1 && ","}
+              </a>
+            ))}
           </li>
           <li class="mr-4 inline-block">
             <FaRegClock className={"mr-2 -mt-1 inline-block"} />
@@ -92,18 +86,16 @@ const displayAuthors: string[] =
           <div class="mb-10 flex items-center lg:col-5 lg:mb-0">
             <span class="h5 mr-3">Tags :</span>
             <ul>
-              {
-                tags.map((tag: string) => (
-                  <li class="inline-block">
-                    <a
-                      class="m-1 block rounded bg-light px-3 py-1 hover:bg-primary hover:text-white dark:bg-darkmode-light dark:hover:bg-darkmode-primary dark:hover:text-text-dark"
-                      href={`/tags/${slugify(tag)}`}
-                    >
-                      {humanize(tag)}
-                    </a>
-                  </li>
-                ))
-              }
+              {tags.map((tag: string) => (
+                <li class="inline-block">
+                  <a
+                    class="m-1 block rounded bg-light px-3 py-1 hover:bg-primary hover:text-white dark:bg-darkmode-light dark:hover:bg-darkmode-primary dark:hover:text-text-dark"
+                    href={`/tags/${slugify(tag)}`}
+                  >
+                    {humanize(tag)}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
           <div class="flex items-center lg:col-4">
@@ -126,13 +118,11 @@ const displayAuthors: string[] =
     <div class="section pb-0">
       <h2 class="h3 mb-12 text-center">Related Posts</h2>
       <div class="row justify-center">
-        {
-          similarPosts.map((post) => (
-            <div class="lg:col-4 md:col-6 mb-14">
-              <BlogCard data={post} />
-            </div>
-          ))
-        }
+        {similarPosts.map((post) => (
+          <div class="lg:col-4 md:col-6 mb-14">
+            <BlogCard data={post} />
+          </div>
+        ))}
       </div>
     </div>
   </div>

@@ -14,24 +14,20 @@ const { title, image, date, author, categories } = data.data;
 ---
 
 <div class="bg-body dark:bg-darkmode-body">
-  {
-    image && (
-      <ImageMod
-        class="mb-6 w-full rounded"
-        src={image}
-        alt={title}
-        width={445}
-        height={230}
-        format="webp"
-        loading="lazy"
-        decoding="async"
-      />
-    )
-  }
+  {image && (
+    <ImageMod
+      class="mb-6 w-full rounded"
+      src={image}
+      alt={title}
+      width={445}
+      height={230}
+      format="webp"
+      loading="lazy"
+      decoding="async"
+    />
+  )}
   <h4 class="mb-3">
-    <a href={`/${blog_folder}/${data.id}`}>
-      {title}
-    </a>
+    <a href={`/${blog_folder}/${data.id}`}>{title}</a>
   </h4>
   <ul class="mb-4">
     <li class="mr-4 inline-block">
@@ -42,14 +38,12 @@ const { title, image, date, author, categories } = data.data;
     </li>
     <li class="mr-4 inline-block">
       <FaRegFolder className={"mr-2 -mt-1 inline-block"} />
-      {
-        categories.map((category: string, index: number) => (
-          <a href={`/categories/${slugify(category)}`}>
-            {humanize(category)}
-            {index !== categories.length - 1 && ","}
-          </a>
-        ))
-      }
+      {categories.map((category: string, index: number) => (
+        <a href={`/categories/${slugify(category)}`}>
+          {humanize(category)}
+          {index !== categories.length - 1 && ","}
+        </a>
+      ))}
     </li>
     {date && <li class="inline-block">{dateFormat(date)}</li>}
   </ul>
