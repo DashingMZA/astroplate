@@ -31,6 +31,17 @@ const repoRoot = path.resolve(
   "..",
 );
 
+// Site base URL + default description come from the REAL config, not a
+// hardcoded domain: multilingual serves from
+// astroplate-multilang.netlify.app, main from astroplate.jadoo.bond.
+// (The JSON-LD fixtures below keep jadoo.bond as INPUT data — those
+// strings are arguments, not config-derived expectations.)
+const siteConfig = JSON.parse(
+  fs.readFileSync(path.join(repoRoot, "src/config/config.json"), "utf8"),
+);
+const SITE = siteConfig.site.base_url;
+const DEFAULT_DESC = siteConfig.metadata.meta_description;
+
 // seo.ts / authors.ts import `@/` aliases and JSON — the loader hooks
 // (./json-hooks.mjs) resolve those for plain Node, as in astro-config.test.js.
 register("./json-hooks.mjs", import.meta.url);
@@ -131,16 +142,16 @@ test("checkDuplicateSlugs: throws listing every conflicting file", () => {
 test("canonicalFor: live domain, no trailing slash (trailing_slash: false)", () => {
   assert.equal(
     seo.canonicalFor("/blog/post-1"),
-    "https://astroplate.jadoo.bond/blog/post-1",
+    `${SITE}/blog/post-1`,
   );
   assert.equal(
     seo.canonicalFor("/blog/post-1/"),
-    "https://astroplate.jadoo.bond/blog/post-1",
+    `${SITE}/blog/post-1`,
   );
-  assert.equal(seo.canonicalFor("/"), "https://astroplate.jadoo.bond/");
+  assert.equal(seo.canonicalFor("/"), `${SITE}/`);
   assert.equal(
     seo.canonicalFor("/blog/café-guide"),
-    "https://astroplate.jadoo.bond/blog/café-guide",
+    `${SITE}/blog/café-guide`,
   );
 });
 
@@ -151,11 +162,11 @@ test("buildCanonical: explicit absolute canonical is trailing-slash normalised",
   );
   assert.equal(
     seo.buildCanonical("/blog/custom", "/blog/x"),
-    "https://astroplate.jadoo.bond/blog/custom",
+    `${SITE}/blog/custom`,
   );
   assert.equal(
     seo.buildCanonical(undefined, "/blog/x"),
-    "https://astroplate.jadoo.bond/blog/x",
+    `${SITE}/blog/x`,
   );
 });
 
@@ -189,7 +200,7 @@ test("OG description priority: og_description > description > excerpt > default"
     "D",
   );
   assert.equal(seo.resolveOgDescription({ excerpt: "E" }), "E");
-  assert.equal(seo.resolveOgDescription({}), "Astro and Tailwind boilerplate");
+  assert.equal(seo.resolveOgDescription({}), DEFAULT_DESC);
   assert.equal(seo.resolvePageDescription({ excerpt: "E" }), "E");
 });
 
@@ -202,12 +213,12 @@ test("resolveOgImage: R2 https URLs pass through unchanged; local paths get the 
   const local = seo.resolveOgImage({ image: "/images/image-placeholder.png" });
   assert.equal(
     local.url,
-    "https://astroplate.jadoo.bond/images/image-placeholder.png",
+    `${SITE}/images/image-placeholder.png`,
   );
   const fallback = seo.resolveOgImage({});
   assert.equal(
     fallback.url,
-    "https://astroplate.jadoo.bond/images/og-image.jpg",
+    `${SITE}/images/og-image.jpg`,
   );
   assert.equal(fallback.isPageImage, false);
 });
@@ -430,25 +441,35 @@ test("jsonGenerator: emits public-slug links, drops noindex/future/draft posts",
   try {
     writeMd(
       tmp,
-      "src/content/blog/with-slug.md",
+      "src/content/blog/english/with-slug.md",
       'title: With Slug\ndate: 2022-04-04T05:00:00Z\nslug: "My Guide!"',
     );
     writeMd(
       tmp,
-      "src/content/blog/plain.md",
+      "src/content/blog/english/plain.md",
       "title: Plain\ndate: 2022-04-04T05:00:00Z",
     );
     writeMd(
       tmp,
-      "src/content/blog/hidden.md",
+      "src/content/blog/english/hidden.md",
       "title: Hidden\ndate: 2022-04-04T05:00:00Z\nnoindex: true",
     );
     writeMd(
       tmp,
-      "src/content/blog/future.md",
+      "src/content/blog/english/future.md",
       "title: Future\ndate: 2999-01-01T00:00:00Z",
     );
-    writeMd(tmp, "src/content/blog/draft.md", "title: Draft\ndraft: true");
+    writeMd(
+      tmp,
+      "src/content/blog/english/draft.md",
+      "title: Draft\ndraft: true",
+    );
+    // The generator reads EVERY language dir from language.json
+    // (english + french), so the fixture needs the french dir too
+    // (empty here — no french posts in this case).
+    fs.mkdirSync(path.join(tmp, "src/content/blog/french"), {
+      recursive: true,
+    });
 
     const run = spawnSync(
       process.execPath,
@@ -472,14 +493,18 @@ test("jsonGenerator: duplicate public slugs fail the run", () => {
   try {
     writeMd(
       tmp,
-      "src/content/blog/a.md",
+      "src/content/blog/english/a.md",
       'title: A\ndate: 2022-04-04T05:00:00Z\nslug: "same"',
     );
     writeMd(
       tmp,
-      "src/content/blog/same.md",
+      "src/content/blog/english/same.md",
       "title: Same\ndate: 2022-04-04T05:00:00Z",
     );
+    // See above: the generator also reads the french dir.
+    fs.mkdirSync(path.join(tmp, "src/content/blog/french"), {
+      recursive: true,
+    });
     const run = spawnSync(
       process.execPath,
       [path.join(repoRoot, "scripts/jsonGenerator.js")],

@@ -22,7 +22,12 @@ const { absoluteUrl, isAbsoluteUrl, resolveImage, resolveOgImage } =
   await import("../src/lib/utils/seo.ts");
 
 const R2_IMAGE = "https://media.csofts.tech/images/r2-example.jpg";
-const SITE = "https://astroplate.jadoo.bond";
+// Site base URL comes from the REAL config, not a hardcoded domain:
+// multilingual serves from astroplate-multilang.netlify.app, main from
+// astroplate.jadoo.bond. The helpers under test read the same config.
+const SITE = JSON.parse(
+  fs.readFileSync(path.join(repoRoot, "src/config/config.json"), "utf8"),
+).site.base_url;
 
 test("absolute R2/CDN URLs are preserved verbatim", () => {
   assert.equal(absoluteUrl(R2_IMAGE), R2_IMAGE);

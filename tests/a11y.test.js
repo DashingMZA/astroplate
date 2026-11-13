@@ -18,7 +18,7 @@ function read(rel) {
   return fs.readFileSync(path.join(repoRoot, rel), "utf8");
 }
 
-test("nav toggle is a real button with dynamic aria-expanded", () => {
+test("nav toggle is a real button with dynamic aria-expanded; Pages submenu is a checkbox+label (tap-safe)", () => {
   const header = read("src/layouts/partials/Header.astro");
   assert.ok(header.includes('id="nav-toggle"'));
   assert.ok(header.includes('aria-controls="nav-menu"'));
@@ -27,19 +27,23 @@ test("nav toggle is a real button with dynamic aria-expanded", () => {
   assert.ok(header.includes("Close menu"));
   // aria-expanded is updated in JS on every toggle, not static.
   assert.ok(header.includes('setAttribute("aria-expanded"'));
-  // Submenu toggles are keyboard-reachable buttons, not hover-only.
-  assert.ok(header.includes('aria-haspopup="true"'));
-  // aria-controls is a template expression: submenu-${slugify(name)}.
-  assert.ok(header.includes("aria-controls={`submenu-"));
-  // The submenu list keeps lg:invisible in its class list, but the
-  // unlayered [data-open="true"] rule in safe.css beats the layered
-  // Tailwind utility whenever the submenu is open (click / focus),
-  // so open-submenu links stay in the tab order.
-  const safe = read("src/styles/safe.css");
-  assert.ok(safe.includes('[data-open="true"]'));
-  assert.ok(safe.includes("visibility: visible"));
-  // Escape closes the menu and returns focus to the toggle.
+  // Submenu toggle is the upstream checkbox+label mechanism (restored
+  // after the real-button + JS toggle never fired on mobile taps):
+  // a sr-only focusable checkbox + label, opened by peer-checked:block
+  // with no JavaScript at all. No button toggle, no data-open rule.
+  assert.ok(header.includes("data-submenu-checkbox"));
+  assert.ok(header.includes('class="peer sr-only"'));
+  assert.ok(header.includes("peer-checked:block"));
+  assert.ok(header.includes("for={`submenu-"));
+  assert.ok(!header.includes("data-submenu-toggle"));
+  assert.ok(!header.includes('[data-open="true"]'));
+  // The checkbox is sr-only but focusable, so its focus ring lands on
+  // the visible label via the navigation.css rule.
+  const navCss = read("src/styles/navigation.css");
+  assert.ok(navCss.includes(".nav-dropdown input:focus-visible + label"));
+  // Escape unchecks the open submenu checkbox and returns focus to it.
   assert.ok(header.includes('"Escape"'));
+  assert.ok(header.includes("openSubmenu.checked = false"));
 });
 
 test("search modal is a labelled dialog with a focus trap, not a motion island", () => {
@@ -93,7 +97,7 @@ test("global focus-visible and reduced-motion rules exist", () => {
 });
 
 test("contact form is labelled and announces its states", () => {
-  const contact = read("src/pages/contact.astro");
+  const contact = read("src/pages/[...lang]/contact.astro");
   assert.ok(contact.includes('aria-describedby'));
   assert.ok(contact.includes('aria-invalid'));
   assert.ok(contact.includes('role="status"'));
