@@ -13,22 +13,25 @@ URL helpers live in `src/lib/utils/seo.ts`.
 | Tag | Value / rule |
 | --- | --- |
 | `<title>` | `meta_title`, else `title`, else site title (plain-text, HTML stripped) |
-| `<link rel="canonical">` | Always emitted. Defaults to the page's own URL (`base_url` + `base_path` + pathname, honouring `trailing_slash`); an explicit `canonical` prop overrides it |
-| `<meta name="description">` | Post/page `description`, else site `metadata.meta_description` |
+| `<link rel="canonical">` | Always emitted. Defaults to the page's own URL (`base_url` + `base_path` + pathname, honouring `trailing_slash`); an explicit `canonical` prop overrides it (absolute URL or site-relative path) |
+| `<meta name="description">` | Post/page `description`, else `excerpt`, else site `metadata.meta_description` |
 | `<meta name="author">` | Site `metadata.meta_author` |
-| `og:title` / `og:description` | Same title/description as above |
+| `og:title` | `og_title`, else `meta_title`, else `title`, else site title |
+| `og:description` | `og_description`, else `description`, else `excerpt`, else site default |
 | `og:type` | `"website"`, except `"article"` on blog posts |
 | `og:url` | The canonical URL |
 | `og:site_name` | Site title |
 | `og:locale` | Site `locale` (default `"en_US"`) |
 | `og:image` / `twitter:image` | Post `og_image`, else post `image`, else site `metadata.meta_image` — resolved to an absolute URL. Absolute URLs are never prefixed with the site domain |
-| `og:image:width` / `og:image:height` | `1200` / `630`, emitted only for local images — never invented for a remote image |
-| `og:image:alt` / `twitter:image:alt` | Site `metadata.meta_image_alt` |
+| `og:image:width` / `og:image:height` | **Not emitted.** Dimensions are not known at render time and the old hardcoded 1200×630 was wrong for most images; no dimensions is better than invented ones |
+| `og:image:alt` / `twitter:image:alt` | Page-specific image: `og_image_alt` / `image_alt` / page title; site-default image: `metadata.meta_image_alt` |
 | `twitter:card` | `summary_large_image` when an image exists, else `summary` |
-| `twitter:title` / `twitter:description` | Same title/description as above |
+| `twitter:title` / `twitter:description` | Same as `og:title` / `og:description` above |
+| `twitter:site` / `twitter:creator` | From `config.social` (`twitter_site` / `twitter_creator`); omitted when unconfigured — never invented |
 | RSS autodiscovery | `<link rel="alternate" type="application/rss+xml" href="<base_url>/rss.xml">` |
 | `<html lang>` | Site `language` (default `"en"`) |
 | Skip link | “Skip to content” link to `#main-content` (first focusable element) |
+| `<meta name="robots">` | Only when a page sets `noindex: true`: `noindex,follow`. The page is also excluded from the sitemap, RSS, search index, and LLM docs |
 
 ### Blog posts only (via `src/pages/blog/[single].astro` + `Base.astro`)
 
@@ -44,36 +47,52 @@ URL helpers live in `src/lib/utils/seo.ts`.
 
 ### JSON-LD
 
-Blog posts emit exactly one JSON-LD block, `@type: "Article"`,
-built in `src/pages/blog/[single].astro` and rendered by
-`src/layouts/components/JsonLd.astro` (which escapes `</` inside the
-JSON so a `</script>` sequence in content can never break out of the
-script element):
+Every page emits exactly one JSON-LD block — a single `@graph`
+containing the site-wide `WebSite` + `Organization` blocks (from
+`config.site` / `config.publisher`) plus any page-specific blocks,
+rendered by `src/layouts/components/JsonLd.astro` (which escapes `</`
+inside the JSON so a `</script>` sequence in content can never break
+out of the script element). Blog posts add a `BlogPosting` block, and
+pages that render breadcrumbs add a `BreadcrumbList`; author pages
+add a `Person` block. There is no `SearchAction`: search is a
+client-side modal, not a search-results page, so a query URL would
+be fabricated.
+
+Blog post `BlogPosting` (built in `src/pages/blog/[single].astro`,
+authors resolved via `src/lib/utils/authors.ts`):
 
 ```json
 {
   "@context": "https://schema.org",
-  "@type": "Article",
-  "headline": "<post title>",
-  "description": "<post description>",
-  "image": ["<absolute image URL>"],
-  "datePublished": "<ISO date>",
-  "dateModified": "<ISO date>",
-  "author": [{ "@type": "Person", "name": "<author>" }],
-  "publisher": {
-    "@type": "<publisher.type, e.g. Organization>",
-    "name": "<publisher.name>",
-    "logo": { "@type": "ImageObject", "url": "<absolute logo URL>" }
-  }
+  "@graph": [
+    { "@type": "WebSite", "url": "<site base_url>", "name": "<site title>" },
+    { "@type": "Organization", "name": "<publisher.name>", "logo": { "@type": "ImageObject", "url": "<absolute logo URL>" }, "url": "<publisher.url>" },
+    {
+      "@type": "BlogPosting",
+      "headline": "<post title>",
+      "description": "<post description>",
+      "image": ["<absolute image URL>"],
+      "url": "<canonical post URL>",
+      "mainEntityOfPage": "<canonical post URL>",
+      "datePublished": "<ISO date>",
+      "dateModified": "<ISO date>",
+      "author": [{ "@type": "Person", "name": "<author>", "url": "<author page URL>" }],
+      "publisher": { "@type": "<publisher.type>", "name": "<publisher.name>" }
+    }
+  ]
 }
 ```
 
 - `image` uses `og_image` if set, else `image`, resolved to an
   absolute URL; omitted when the post has no image.
-- `author` lists every entry of `authors`, or the single `author`.
+- `author` lists every entry of `authors`, or the single `author`,
+  as `Person` objects with the author-page URL when the author file
+  exists; an unresolvable name renders as a bare name with no URL.
 - `publisher` comes from `config.json` (`publisher.name`,
   `publisher.type`, `publisher.logo`, `publisher.url`).
-- Non-post pages emit no JSON-LD.
+- `url` / `mainEntityOfPage` are the canonical post URL (custom slug
+  included — see [CONTENT_SCHEMA.md](CONTENT_SCHEMA.md)).
+
 
 ### Sitemap
 
@@ -83,6 +102,13 @@ Generated by `@astrojs/sitemap` (`astro.config.mjs`):
   current build).
 - `/404` is excluded, as are any URL segments `draft`, `drafts`,
   `preview`, or `private`.
+- `noindex: true` pages are excluded: the sitemap filter reads a
+  frontmatter manifest built at config load
+  (`scripts/seoManifest.js`), since the sitemap filter itself only
+  sees URLs. Duplicate public URLs (two posts, same slug) fail the
+  build instead of publishing a colliding sitemap.
+- Entries carry `lastmod` from `updated ?? lastmod ?? date` when a
+  date exists.
 - Draft and future-dated posts never reach the sitemap because they
   are excluded from the build itself (see below).
 
@@ -94,7 +120,7 @@ Generated by `@astrojs/sitemap` (`astro.config.mjs`):
 User-agent: *
 Allow: /
 
-Sitemap: https://astroplate.csofts.tech/sitemap-index.xml
+Sitemap: https://astroplate.jadoo.bond/sitemap-index.xml
 ```
 
 The `Sitemap:` line uses `base_url` — update `site.base_url` in
@@ -108,8 +134,11 @@ build):
 
 - Title = site title; description = site `meta_description`;
   link = site `base_url`.
-- Items: title, description, link `/blog/<filename>`, `pubDate`,
-  author, categories.
+- Items: title, description, link `/blog/<slug>` (custom slug when
+  set, else filename — the same canonical URL as the post page, no
+  trailing slash), `pubDate`, author, categories.
+- `noindex: true` posts are excluded, like drafts and future-dated
+  posts.
 - Sorted newest first; undated posts sort last.
 
 ## Setting per-post SEO
@@ -123,7 +152,7 @@ meta_title: "Build a Modern App with Next.js and Tailwind CSS"
 og_title: "Build a Modern App with Next.js + Tailwind"
 description: "A practical guide to building a modern web application with Next.js and Tailwind CSS."
 image: "/images/image-placeholder.png"
-og_image: "/images/og-image.png"
+og_image: "/images/og-image.jpg"
 date: 2022-04-04T05:00:00Z
 updated: 2022-04-10T05:00:00Z
 author: "John Doe"
@@ -138,29 +167,32 @@ noindex: false
 Rules:
 
 - **`meta_title`** sets the browser `<title>`. Without it, `title`
-  is used; `og_title` is only a fallback for `meta_title`
-  (`meta_title || og_title`), not a separate OG title — the OG title
-  is always the same as the page `<title>`.
-- **`description`** is the single source for the meta description,
-  OG description, Twitter description, RSS description, and JSON-LD
-  description. Keep it under ~160 characters.
-- **`og_description`** is accepted by the schema but **not yet
-  consumed**: there is currently no way to set a social description
-  distinct from `description`. Do not rely on it.
+  is used. `og_title` does **not** fall back into `<title>` — it is
+  the social title only (see below).
+- **`og_title`** sets `og:title` / `twitter:title`. Priority:
+  `og_title` > `meta_title` > `title` > site title.
+- **`description`** is the source for the meta description, RSS
+  description, and JSON-LD description. Keep it under ~160 characters.
+- **`og_description`** sets `og:description` /
+  `twitter:description`. Priority: `og_description` > `description` >
+  `excerpt` > site default. Use it when the social description should
+  differ from the on-page description.
 - **`image` vs `og_image`**: `image` is the on-page hero image;
   `og_image` is what social shares show and wins for OG/Twitter and
   JSON-LD. Set `og_image` when the share image should differ from
   the hero (e.g. a 1200×630 card vs a tall hero). Either may be a
   local path or an absolute URL — see [IMAGE_STORAGE.md](IMAGE_STORAGE.md).
-- **`canonical`** must be an absolute URL (`https://…`). Use it when
-  the same content exists elsewhere (e.g. cross-posted) and the other
-  URL should get the ranking credit. Relative values fail build
-  validation.
+- **`canonical`** accepts an absolute URL (`https://…`) or a
+  site-relative path (`/blog/x`), resolved against `base_url` at
+  render time. Use it when the same content exists elsewhere (e.g.
+  cross-posted) and the other URL should get the ranking credit.
 - **`noindex: true`** emits
-  `<meta name="robots" content="noindex,nofollow">`. The page is
-  still built and still linked from the site — `noindex` only asks
-  search engines not to index it. (It is not excluded from the
-  sitemap by this flag alone.)
+  `<meta name="robots" content="noindex,follow">` (link-following is
+  preserved) and excludes the page from the sitemap, RSS, search
+  index, and LLM docs. The page is still built and still linked from
+  the site — `noindex` only asks search engines not to index it.
+  `noindex` exists on blog posts and on the page-like collections
+  (`pages`, `about`, `contact`).
 - **`updated` / `lastmod`** set the modified date for
   `article:modified_time` and JSON-LD `dateModified`. `updated`
   wins when both are set.
@@ -187,7 +219,7 @@ npx astro build --buildFuture
 ```
 
 Note the flags are read from `process.argv` by
-`src/lib/contentParser.astro`; they are not config options.
+`src/lib/contentParser.ts`; they are not config options.
 
 ## Verifying the built output
 
@@ -201,8 +233,8 @@ grep -o '<meta property="og:[^>]*>' dist/blog/post-1/index.html
 grep -o '<meta name="twitter:[^>]*>' dist/blog/post-1/index.html
 grep -o 'application/ld+json' dist/blog/post-1/index.html | wc -l   # expect 1
 
-# JSON-LD is exactly one Article block per post
-grep -c '"@type":"Article"' dist/blog/post-1/index.html   # expect 1
+# JSON-LD is exactly one @graph block per page, with one BlogPosting
+grep -c '"@type":"BlogPosting"' dist/blog/post-1/index.html   # expect 1
 
 # No duplicated domain in OG images (absolute URLs stay verbatim)
 grep -o '<meta property="og:image" content="[^"]*"' dist/blog/post-r2-example/index.html
@@ -225,13 +257,16 @@ refresh tools after changing images or titles.
 
 ## Known SEO gaps (honest list)
 
-- `og_description` is accepted but not consumed — no distinct
-  social description yet.
-- Custom `slug` frontmatter does not change the URL; routing uses
-  the filename (see [CONTENT_SCHEMA.md](CONTENT_SCHEMA.md)).
+- `featured` is accepted but has no featured-post UI — setting it
+  changes nothing visible.
+- No `SearchAction` JSON-LD: search is a client-side modal, not a
+  search-results page.
 - No multilingual / hreflang support — the site is single-language
   (`site.language` / `site.locale` only set `lang` and `og:locale`).
-- No security headers are configured on any host (see
-  [CHANGELOG.md](CHANGELOG.md)).
+- Security headers are configured in the repo (see
+  [SECURITY.md](SECURITY.md)), but they are served by the host, not
+  by the theme — verify them against the live deployment, and note
+  the Vercel deployment needs them added in the dashboard (no
+  `vercel.json` in the repo).
 - No Lighthouse / PageSpeed measurement has been run on this build,
   so no Core Web Vitals or performance-score claims are made.

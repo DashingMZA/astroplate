@@ -267,8 +267,33 @@ function getContentElement(root, contentSelector) {
   return el;
 }
 
-async function processHtml(html, llmsConfig) {
+/** True when the built HTML opts out of indexing (`noindex` robots meta). */
+function isNoindexHtml(html) {
   const root = parse(html);
+  const robotsContent =
+    root.querySelector('meta[name="robots"]')?.getAttribute("content") || "";
+  return /(^|,)\s*noindex(\s|,|$)/i.test(robotsContent);
+}
+
+function normaliseHrefPath(href) {
+  if (!href) return "";
+  let p = href.split("#")[0].split("?")[0];
+  try {
+    // Absolute links to this site: compare by pathname only.
+    p = new URL(p, "http://localhost").pathname;
+  } catch {
+    // Relative href: use as-is.
+  }
+  if (p.length > 1 && p.endsWith("/")) p = p.slice(0, -1);
+  return p;
+}
+
+async function processHtml(html, llmsConfig, noindexPaths = new Set()) {
+  const root = parse(html);
+
+  // A page that opts out of indexing (`noindex,follow`) must not leak into
+  // llms.txt / llms-full.txt / its per-page .md file either.
+  const noindex = isNoindexHtml(html);
 
   const title = getTitle(root, llmsConfig?.title_selector);
 
@@ -282,6 +307,18 @@ async function processHtml(html, llmsConfig) {
     contentElement
       .querySelectorAll("script, style, noscript, iframe, svg")
       .forEach((el) => el.remove());
+
+    // A noindex page must not leak through OTHER pages either: listing
+    // pages carry BlogCards linking to it, and llms-full.txt concatenates
+    // every page's content. Strip links to noindex pages (the whole anchor,
+    // so the card title / "read more" text goes with it) before converting.
+    if (noindexPaths.size > 0) {
+      contentElement.querySelectorAll("a").forEach((a) => {
+        if (noindexPaths.has(normaliseHrefPath(a.getAttribute("href")))) {
+          a.remove();
+        }
+      });
+    }
 
     const turndownService = new TurndownService({
       headingStyle: "atx",
@@ -297,19 +334,19 @@ async function processHtml(html, llmsConfig) {
     content = turndownService.turndown(contentElement.innerHTML);
   }
 
-  return { title, description, content };
+  return { title, description, content, noindex };
 }
 
-async function processHtmlFile(filePath, llmsConfig) {
+async function processHtmlFile(filePath, llmsConfig, noindexPaths) {
   const html = fs.readFileSync(filePath, "utf8");
-  return processHtml(html, llmsConfig);
+  return processHtml(html, llmsConfig, noindexPaths);
 }
 
 /**
  * Fetches a page from a server and processes it as HTML.
  * Returns null if the fetch fails or the page returns an error status.
  */
-async function fetchAndProcessPage(url, llmsConfig) {
+async function fetchAndProcessPage(url, llmsConfig, noindexPaths) {
   try {
     const response = await fetch(url, {
       headers: { Accept: "text/html" },
@@ -319,7 +356,7 @@ async function fetchAndProcessPage(url, llmsConfig) {
     if (!response.ok) return null;
 
     const html = await response.text();
-    return processHtml(html, llmsConfig);
+    return processHtml(html, llmsConfig, noindexPaths);
   } catch {
     return null;
   }
@@ -633,6 +670,24 @@ async function generateLlmsFiles() {
   const pages = [];
   const seenPaths = new Set();
 
+  // Pre-pass: collect the URL paths of every noindex page first, so links
+  // to them can be stripped from listing pages' content (see processHtml).
+  const noindexPaths = new Set();
+  for (const file of htmlFiles) {
+    try {
+      if (isNoindexHtml(fs.readFileSync(file, "utf8"))) {
+        noindexPaths.add(fileToUrlPath(file, clientDir));
+      }
+    } catch {
+      // Unreadable file: the main loop below reports it.
+    }
+  }
+  if (noindexPaths.size > 0) {
+    console.log(
+      `   Found ${noindexPaths.size} noindex page(s); links to them will be stripped from llms output`,
+    );
+  }
+
   for (const file of htmlFiles) {
     try {
       const urlPath = fileToUrlPath(file, clientDir);
@@ -657,7 +712,12 @@ async function generateLlmsFiles() {
       if (seenPaths.has(urlPath)) continue;
       seenPaths.add(urlPath);
 
-      const pageData = await processHtmlFile(file, llms);
+      const pageData = await processHtmlFile(file, llms, noindexPaths);
+
+      if (pageData.noindex) {
+        console.log(`   ⤷ Skipping noindex page: ${urlPath}`);
+        continue;
+      }
 
       if (!pageData.title) {
         console.log(`   ⚠️  No title found for ${urlPath}, skipping`);
@@ -722,10 +782,15 @@ async function generateLlmsFiles() {
           const url = `${fetchBase}${route}`;
           process.stdout.write(`   ⤷ Fetching ${route} ... `);
 
-          const pageData = await fetchAndProcessPage(url, llms);
+          const pageData = await fetchAndProcessPage(url, llms, noindexPaths);
 
           if (!pageData) {
             console.log("❌ failed");
+            continue;
+          }
+
+          if (pageData.noindex) {
+            console.log("⤷ noindex, skipping");
             continue;
           }
 

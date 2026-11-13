@@ -62,6 +62,120 @@ export function canonicalFor(pathname: string): string {
 }
 
 /**
+ * Normalise an absolute URL's trailing slash to the configured
+ * `trailing_slash` setting. Used for explicit `canonical` frontmatter
+ * values, which must not disagree with the canonicals `canonicalFor()`
+ * produces. Unparseable input is returned unchanged.
+ */
+export function normalizeUrlTrailingSlash(url: string): string {
+  try {
+    const parsed = new URL(url);
+    let pathname = parsed.pathname;
+    if (trailingSlash) {
+      if (!pathname.endsWith("/")) {
+        pathname = `${pathname}/`;
+      }
+    } else if (pathname.length > 1 && pathname.endsWith("/")) {
+      pathname = pathname.slice(0, -1);
+    }
+    parsed.pathname = pathname;
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
+/**
+ * Canonical URL for a page. An explicit `canonical` frontmatter value wins:
+ * absolute URLs are used (trailing-slash normalised), site-relative paths
+ * are resolved through `canonicalFor()`. Otherwise the page's own public
+ * path is canonicalised.
+ */
+export function buildCanonical(
+  explicitCanonical: string | undefined | null,
+  pathname: string,
+): string {
+  if (explicitCanonical) {
+    return isAbsoluteUrl(explicitCanonical)
+      ? normalizeUrlTrailingSlash(explicitCanonical)
+      : canonicalFor(explicitCanonical);
+  }
+  return canonicalFor(pathname);
+}
+
+/** og:title priority: og_title > meta_title > title > site title. */
+export function resolveOgTitle(input: {
+  og_title?: string | null;
+  meta_title?: string | null;
+  title?: string | null;
+}): string {
+  return input.og_title || input.meta_title || input.title || config.site.title;
+}
+
+/** <title> priority: meta_title > title > site title. (og_title is NOT a title fallback.) */
+export function resolvePageTitle(input: {
+  meta_title?: string | null;
+  title?: string | null;
+}): string {
+  return input.meta_title || input.title || config.site.title;
+}
+
+/** meta description priority: description > excerpt > site default. */
+export function resolvePageDescription(input: {
+  description?: string | null;
+  excerpt?: string | null;
+}): string {
+  return input.description || input.excerpt || config.metadata.meta_description;
+}
+
+/** og:description priority: og_description > description > excerpt > site default. */
+export function resolveOgDescription(input: {
+  og_description?: string | null;
+  description?: string | null;
+  excerpt?: string | null;
+}): string {
+  return (
+    input.og_description ||
+    input.description ||
+    input.excerpt ||
+    config.metadata.meta_description
+  );
+}
+
+/**
+ * OG image priority: og_image > image > site default. Returns the absolute
+ * URL plus whether the image came from the page (true) or the site default
+ * (false) — the alt text follows the image source.
+ */
+export function resolveOgImage(input: {
+  og_image?: string | null;
+  image?: string | null;
+}): { url: string; isPageImage: boolean } {
+  const pageImage = input.og_image || input.image;
+  if (pageImage) {
+    return { url: resolveImage(pageImage), isPageImage: true };
+  }
+  return { url: resolveImage(undefined), isPageImage: false };
+}
+
+/**
+ * Twitter handles from config (`social.twitter_site` / `twitter_creator`).
+ * Empty/missing values return undefined so no tag is emitted — handles are
+ * never invented.
+ */
+export function resolveTwitterHandles(): {
+  site?: string;
+  creator?: string;
+} {
+  const social = (config as { social?: Record<string, unknown> }).social;
+  const pick = (key: string): string | undefined => {
+    const value = social?.[key];
+    return typeof value === "string" && value.trim() ? value.trim() : undefined;
+  };
+  return { site: pick("twitter_site"), creator: pick("twitter_creator") };
+}
+
+/**
  * Escape a string for safe use inside `new RegExp(...)`.
  * Prevents user input such as `(`, `[`, `*` or `+` from throwing a
  * SyntaxError (or changing the match semantics) in search.

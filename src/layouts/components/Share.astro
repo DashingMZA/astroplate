@@ -1,6 +1,6 @@
 ---
 import config from "@/config/config.json";
-import { absoluteUrl } from "@/lib/utils/seo";
+import { absoluteUrl, canonicalFor } from "@/lib/utils/seo";
 import {
   IoLogoFacebook,
   IoLogoLinkedin,
@@ -26,21 +26,32 @@ const {
 } = Astro.props;
 
 // Preferred: full absolute canonical URL passed by the caller.
-// Fallback: a bare slug (e.g. post id "post-1") resolves to /blog/<slug>.
+// Fallback: a bare slug (e.g. post id "post-1" or a custom slug) resolves to
+// the post's canonical URL via canonicalFor, so share links always agree
+// with the page canonical (base_path / trailing_slash aware).
 const cleanSlug = slug ? slug.replace(/^\/+/, "").replace(/^blog\//, "") : "";
 const shareUrl = url
   ? url
   : cleanSlug
-    ? `${base_url}/blog/${cleanSlug}`
+    ? canonicalFor(`/blog/${cleanSlug}`)
     : base_url;
 const shareImage = image ? absoluteUrl(image) : "";
+
+// Share targets take these as query params, so every value must be
+// percent-encoded: raw titles/URLs with spaces, "&", "?" or Unicode
+// (e.g. "Café Guide & Tips!") would otherwise truncate or corrupt the link.
+const encUrl = encodeURIComponent(shareUrl);
+const encTitle = encodeURIComponent(title ?? "");
+const encDescription = encodeURIComponent(description ?? "");
+const encImage = encodeURIComponent(shareImage);
+const encSource = encodeURIComponent(base_url);
 ---
 
 <ul class={`${className}`}>
   <li class="inline-block">
     <a
       aria-label="facebook share button"
-      href={`https://facebook.com/sharer/sharer.php?u=${shareUrl}`}
+      href={`https://facebook.com/sharer/sharer.php?u=${encUrl}`}
       target="_blank"
       rel="noreferrer noopener"
     >
@@ -50,7 +61,7 @@ const shareImage = image ? absoluteUrl(image) : "";
   <li class="inline-block">
     <a
       aria-label="twitter share button"
-      href={`https://twitter.com/intent/tweet/?text=${title}&amp;url=${shareUrl}`}
+      href={`https://twitter.com/intent/tweet/?text=${encTitle}&url=${encUrl}`}
       target="_blank"
       rel="noreferrer noopener"
     >
@@ -60,7 +71,7 @@ const shareImage = image ? absoluteUrl(image) : "";
   <li class="inline-block">
     <a
       aria-label="linkedin share button"
-      href={`https://www.linkedin.com/shareArticle?mini=true&url=${shareUrl}&title=${title}&summary=${description}&source=${base_url}`}
+      href={`https://www.linkedin.com/shareArticle?mini=true&url=${encUrl}&title=${encTitle}&summary=${encDescription}&source=${encSource}`}
       target="_blank"
       rel="noreferrer noopener"
     >
@@ -70,7 +81,7 @@ const shareImage = image ? absoluteUrl(image) : "";
   <li class="inline-block">
     <a
       aria-label="pinterest share button"
-      href={`https://pinterest.com/pin/create/button/?url=${shareUrl}&media=${shareImage}&description=${description}`}
+      href={`https://pinterest.com/pin/create/button/?url=${encUrl}&media=${encImage}&description=${encDescription}`}
       target="_blank"
       rel="noreferrer noopener"
     >

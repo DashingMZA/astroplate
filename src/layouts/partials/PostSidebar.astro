@@ -9,11 +9,13 @@ const lang = getLangFromUrl(Astro.url);
 <div class="lg:col-4">
   <!-- categories -->
   <div class="mb-8">
-    <h5 class="mb-6">Categories</h5>
+    <h3 class="mb-6">Categories</h3>
     <div class="rounded bg-light p-8 dark:bg-darkmode-light">
       <ul class="space-y-4">
-        {categories.map((category: any) => {
-          const count = allCategories.filter((c: any) => c === category).length;
+        {categories.map((category: string) => {
+          const count = allCategories.filter(
+            (c: string) => c === category,
+          ).length;
           return (
             <li>
               <a
@@ -30,10 +32,10 @@ const lang = getLangFromUrl(Astro.url);
   </div>
   <!-- tags -->
   <div class="mb-8">
-    <h5 class="mb-6">Tags</h5>
+    <h3 class="mb-6">Tags</h3>
     <div class="rounded bg-light p-6 dark:bg-darkmode-light">
       <ul>
-        {tags.map((tag: any) => {
+        {tags.map((tag: string) => {
           return (
             <li class="inline-block">
               <a

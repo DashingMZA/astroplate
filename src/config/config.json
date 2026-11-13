@@ -50,7 +50,7 @@
   },
   "metadata": {
     "meta_author": "zeon.studio",
-    "meta_image": "/images/og-image.png",
+    "meta_image": "/images/og-image.jpg",
     "meta_description": "astro and tailwind boilerplate",
     "meta_image_alt": "Astroplate"
   },
@@ -66,5 +66,13 @@
     "type": "Organization",
     "logo": "/images/logo.png",
     "url": "https://astroplate-multilang.netlify.app"
+  },
+  "social": {
+    "twitter_site": "",
+    "twitter_creator": ""
+  },
+  "contact_form": {
+    "action": "",
+    "provider": ""
   }
 }

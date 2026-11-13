@@ -4,16 +4,25 @@ import TwSizeIndicator from "@/components/TwSizeIndicator.astro";
 import config from "@/config/config.json";
 import theme from "@/config/theme.json";
 import {
-  absoluteUrl,
-  canonicalFor,
-  isAbsoluteUrl,
-  resolveImage,
+  buildCanonical,
+  resolveOgDescription,
+  resolveOgImage,
+  resolveOgTitle,
+  resolvePageDescription,
+  resolvePageTitle,
+  resolveTwitterHandles,
 } from "@/lib/utils/seo";
+// Site-wide WebSite + Organization JSON-LD builders land with 90ac0dc
+// (src/lib/utils/jsonld.ts); until then pages emit only their own blocks.
 import { getLangFromUrl } from "@/lib/utils/languageParser";
 import { plainify } from "@/lib/utils/textConverter";
 import Footer from "@/partials/Footer.astro";
 import Header from "@/partials/Header.astro";
 import "@/styles/main.css";
+// KaTeX styles for rendered math (remark-math + rehype-katex). The CSS is
+// global by design — math can appear on any content page — while the
+// mermaid JS stays per-page (see Mermaid.astro).
+import "katex/dist/katex.min.css";
 import {
   GoogleTagmanager,
   GoogleTagmanagerNoscript,
@@ -42,7 +51,15 @@ export interface Props {
   title?: string;
   meta_title?: string;
   description?: string;
+  excerpt?: string;
   image?: string;
+  og_title?: string;
+  og_description?: string;
+  og_image?: string;
+  /** Alt text for a page-specific OG image (defaults to the page title). */
+  og_image_alt?: string;
+  /** Alias of og_image_alt, kept for call sites that pass `image_alt`. */
+  image_alt?: string;
   noindex?: boolean;
   canonical?: string;
   ogType?: "website" | "article";
@@ -58,33 +75,41 @@ const {
   title,
   meta_title,
   description,
+  excerpt,
   image,
+  og_title,
+  og_description,
+  og_image,
+  og_image_alt,
+  image_alt,
   noindex,
   canonical,
   ogType,
   article,
   jsonLd,
-  lang,
 } = Astro.props;
 
-// Multilingual: page language from the prop or the URL.
-const language = lang || getLangFromUrl(Astro.url);
-
-const pageTitle = plainify(
-  meta_title ? meta_title : title ? title : config.site.title,
-);
+// <title>: meta_title > title > site title. og_title is NOT a title fallback.
+// plainify() leaves a trailing newline from marked's block output — trim it
+// so it never lands inside a <title> or meta content attribute.
+const pageTitle = plainify(resolvePageTitle({ meta_title, title })).trim();
+// meta description: description > excerpt > site default.
 const pageDescription = plainify(
-  description ? description : config.metadata.meta_description,
-);
+  resolvePageDescription({ description, excerpt }),
+).trim();
+// og:title: og_title > meta_title > title > site title.
+// og:description: og_description > description > excerpt > site default.
+const ogTitle = plainify(
+  resolveOgTitle({ og_title, meta_title, title }),
+).trim();
+const ogDescription = plainify(
+  resolveOgDescription({ og_description, description, excerpt }),
+).trim();
 
-// Canonical: always emitted. Defaults to this page's own URL (Astro.url
-// pathname + base_url, honouring base_path / trailing_slash); an explicit
-// `canonical` prop overrides it (absolute URL used as-is, path resolved).
-const canonicalUrl = canonical
-  ? isAbsoluteUrl(canonical)
-    ? canonical
-    : canonicalFor(canonical)
-  : canonicalFor(Astro.url.pathname);
+// Canonical: always emitted. An explicit `canonical` prop overrides the
+// page's own public URL (absolute URLs are trailing-slash normalised,
+// relative paths resolved); otherwise the current pathname is canonical.
+const canonicalUrl = buildCanonical(canonical, Astro.url.pathname);
 
 // og:url is the canonical URL.
 const ogUrl = canonicalUrl;
@@ -93,16 +118,20 @@ const ogUrl = canonicalUrl;
 // "website" otherwise.
 const resolvedOgType = ogType ?? (article ? "article" : "website");
 
-// OG / Twitter image: absolute URLs (e.g. R2/CDN) are never prefixed with
-// base_url; relative paths fall back to the default OG image.
-const rawImage = image ? image : config.metadata.meta_image;
-const ogImage = resolveImage(rawImage);
-// Only the default OG image or a local image gets declared dimensions —
-// never invent width/height for a remote image.
-const isLocalImage = !isAbsoluteUrl(rawImage);
+// OG / Twitter image: og_image > image > site default. Absolute URLs (e.g.
+// R2/CDN) are never prefixed with base_url.
+const { url: ogImage, isPageImage } = resolveOgImage({ og_image, image });
+// No og:image:width/height is emitted: image dimensions are not known at
+// render time, and the previous hardcoded 1200x630 was wrong even for the
+// default OG image (3600x2400). Invented dimensions are worse than none.
 const twitterCard = ogImage ? "summary_large_image" : "summary";
-const ogImageAlt = (config.metadata as { meta_image_alt?: string })
-  .meta_image_alt;
+// Alt follows the image source: a page-specific image gets the page's alt
+// (og_image_alt / image_alt / page title); the site-default image keeps the
+// configured default alt.
+const ogImageAlt = isPageImage
+  ? (og_image_alt ?? image_alt ?? title ?? config.metadata.meta_image_alt)
+  : config.metadata.meta_image_alt;
+const twitterHandles = resolveTwitterHandles();
 
 const toIsoDate = (value?: string | Date) => {
   if (!value) return undefined;
@@ -114,6 +143,10 @@ const articleAuthors = article?.author
     ? article.author
     : [article.author]
   : [];
+
+// Structured data: the single @graph assembly (site-wide WebSite +
+// Organization blocks + page blocks) lands with 90ac0dc. Until then the
+// page's own block, if any, is emitted as-is.
 ---
 
 <!doctype html>
@@ -143,7 +176,13 @@ const articleAuthors = article?.author
 
     <!-- google font css - Astro 6 built-in Font API -->
     {fontEntries.map(([key]) => {
-      const cssVar = `--font-${key}` as any;
+      // Font's cssVariable only accepts the variables declared in theme.json
+      // (`--font-primary` / `--font-secondary`); derive that union from the
+      // theme keys instead of casting to `any`.
+      const cssVar = `--font-${key}` as `--font-${Exclude<
+        keyof typeof theme.fonts.font_family,
+        `${string}_type`
+      >}`;
       return <Font cssVariable={cssVar} preload />;
     })}
 
@@ -168,7 +207,7 @@ const articleAuthors = article?.author
     />
 
     <!-- noindex robots (only emitted when a page opts out; the default is index,follow) -->
-    {noindex && <meta name="robots" content="noindex,nofollow" />}
+    {noindex && <meta name="robots" content="noindex,follow" />}
 
     <!-- meta-description -->
     <meta name="description" content={pageDescription} />
@@ -179,8 +218,8 @@ const articleAuthors = article?.author
     <meta name="author" content={config.metadata.meta_author} />
 
     <!-- open graph -->
-    <meta property="og:title" content={pageTitle} />
-    <meta property="og:description" content={pageDescription} />
+    <meta property="og:title" content={ogTitle} />
+    <meta property="og:description" content={ogDescription} />
     <meta property="og:type" content={resolvedOgType} />
     <meta property="og:url" content={ogUrl} />
     <meta property="og:site_name" content={config.site.title} />
@@ -220,20 +259,20 @@ const articleAuthors = article?.author
 
     <!-- og-image -->
     <meta property="og:image" content={ogImage} />
-    {isLocalImage && (
-      <>
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-      </>
-    )}
     {ogImageAlt && <meta property="og:image:alt" content={ogImageAlt} />}
 
     <!-- twitter -->
-    <meta name="twitter:title" content={pageTitle} />
-    <meta name="twitter:description" content={pageDescription} />
-    <meta name="twitter:image" content={ogImage} />
     <meta name="twitter:card" content={twitterCard} />
+    <meta name="twitter:title" content={ogTitle} />
+    <meta name="twitter:description" content={ogDescription} />
+    <meta name="twitter:image" content={ogImage} />
     {ogImageAlt && <meta name="twitter:image:alt" content={ogImageAlt} />}
+    {twitterHandles.site && (
+      <meta name="twitter:site" content={twitterHandles.site} />
+    )}
+    {twitterHandles.creator && (
+      <meta name="twitter:creator" content={twitterHandles.creator} />
+    )}
 
     <!-- structured data -->
     {jsonLd && <JsonLd data={jsonLd} />}
