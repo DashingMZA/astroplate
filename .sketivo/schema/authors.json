@@ -1,0 +1,78 @@
+{
+  "file": "src/content/authors/john-doe.md",
+  "name": "authors",
+  "fileType": "md",
+  "fmType": "yaml",
+  "template": [
+    {
+      "name": "title",
+      "label": "Title",
+      "type": "string",
+      "value": "",
+      "isRequired": true
+    },
+    {
+      "name": "email",
+      "label": "Email",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "name": "image",
+      "label": "Image",
+      "type": "media",
+      "value": ""
+    },
+    {
+      "name": "description",
+      "label": "Description",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "name": "canonical",
+      "label": "Canonical URL",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "name": "noindex",
+      "label": "Noindex",
+      "type": "boolean",
+      "value": false
+    },
+    {
+      "name": "social",
+      "label": "Social Links",
+      "type": "Array",
+      "subType": "object",
+      "value": [],
+      "fields": [
+        {
+          "name": "name",
+          "label": "Name",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "icon",
+          "label": "Icon",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "link",
+          "label": "Link",
+          "type": "string",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "name": "draft",
+      "label": "Draft",
+      "type": "boolean",
+      "value": false
+    }
+  ]
+}

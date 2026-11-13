@@ -1,0 +1,75 @@
+{
+  "file": "src/content/pages/privacy-policy.md",
+  "name": "pages",
+  "fileType": "md",
+  "fmType": "yaml",
+  "template": [
+    {
+      "name": "title",
+      "label": "Title",
+      "type": "string",
+      "value": "",
+      "isRequired": true
+    },
+    {
+      "name": "meta_title",
+      "label": "Meta Title",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "name": "description",
+      "label": "Description",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "name": "image",
+      "label": "Image",
+      "type": "media",
+      "value": ""
+    },
+    {
+      "name": "slug",
+      "label": "Custom Slug",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "name": "og_title",
+      "label": "Social Share Title (OG Title)",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "name": "og_description",
+      "label": "Social Share Description (OG Description)",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "name": "og_image",
+      "label": "Social Share Image (OG Image)",
+      "type": "media",
+      "value": ""
+    },
+    {
+      "name": "canonical",
+      "label": "Canonical URL",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "name": "noindex",
+      "label": "Noindex",
+      "type": "boolean",
+      "value": false
+    },
+    {
+      "name": "draft",
+      "label": "Draft",
+      "type": "boolean",
+      "value": false
+    }
+  ]
+}
