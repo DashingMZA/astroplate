@@ -42,7 +42,7 @@ const { theme_switcher }: { theme_switcher: boolean } = config.settings;
     <>
       <ImageMod
         src={src ? src : logo}
-        class={`inline-block ${theme_switcher && "dark:hidden"}`}
+        class={`inline-block ${theme_switcher ? "dark:hidden" : ""}`}
         width={logoWidth * 2}
         height={logoHeight * 2}
         alt={title}

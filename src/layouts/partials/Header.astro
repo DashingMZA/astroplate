@@ -23,7 +23,7 @@ const { navigation_button, settings } = config;
 const { pathname } = Astro.url;
 ---
 
-<header class={`header z-30 ${settings.sticky_header && "sticky top-0"}`}>
+<header class={`header z-30 ${settings.sticky_header ? "sticky top-0" : ""}`}>
   <nav class="navbar container">
     <!-- logo -->
     <div class="order-0">
@@ -106,9 +106,9 @@ const { pathname } = Astro.url;
                       href={child.url}
                       aria-label={child.name}
                       class={`nav-dropdown-link block ${
-                        (pathname === `${child.url}/` ||
-                          pathname === child.url) &&
-                        "active"
+                        pathname === `${child.url}/` || pathname === child.url
+                          ? "active"
+                          : ""
                       }`}
                     >
                       {child.name}
@@ -122,8 +122,9 @@ const { pathname } = Astro.url;
               <a
                 href={menu.url}
                 class={`nav-link block ${
-                  (pathname === `${menu.url}/` || pathname === menu.url) &&
-                  "active"
+                  pathname === `${menu.url}/` || pathname === menu.url
+                    ? "active"
+                    : ""
                 }`}
               >
                 {menu.name}
@@ -182,7 +183,7 @@ const { pathname } = Astro.url;
   // button while the menu is open (standard disclosure behaviour); Escape
   // closes the open menu/submenu and returns focus to its toggle.
   function initHeaderNav() {
-    const nav = document.querySelector(".navbar");
+    const nav = document.querySelector<HTMLElement>(".navbar");
     if (!nav || nav.hasAttribute("data-nav-bound")) {
       return;
     }

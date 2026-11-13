@@ -1,6 +1,5 @@
 import searchData from "../../../.json/search.json";
 import { escapeRegExp } from "@/lib/utils/seo";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import React, { useEffect, useRef, useState } from "react";
 import SearchResult from "./SearchResult";
 import type { ISearchItem } from "./searchTypes";
@@ -9,12 +8,17 @@ import type { ISearchItem } from "./searchTypes";
 // Accessibility contract:
 // - role="dialog" + aria-modal + aria-label so AT announces the modal.
 // - Focus moves into the input on open, is trapped inside while open, and
-//   returns to the trigger that opened it on close.
+//   returns to the trigger that opened it on close. While closed the
+//   modal is inert + aria-hidden so it is not focusable or announced.
 // - The document-level keydown listener is registered ONCE (empty deps);
 //   arrow-key handling fires only while the modal is open, and Ctrl/Cmd+K
 //   is preventDefaulted only when it opens/focuses the modal.
-// - Enter/exit animation uses motion (installed dependency); when the user
-//   prefers reduced motion the animation is disabled entirely.
+// - Enter/exit animation is a plain CSS transition (search.css), not
+//   motion: motion/react adds ~144 KB to this chunk (18,070 -> 162,191 B
+//   raw) for a 150 ms fade/slide, and motion/react-mini does not export
+//   AnimatePresence, so it cannot animate the exit at all. The CSS
+//   transition gives the same effect for ~0 bytes and is disabled by the
+//   global prefers-reduced-motion rule for users who ask for it.
 const SearchModal = () => {
   const [searchString, setSearchString] = useState("");
   const [open, setOpen] = useState(false);
@@ -25,7 +29,9 @@ const SearchModal = () => {
   const selectedIndexRef = useRef(-1);
   // Refs mirror state for the once-registered document listeners.
   const openRef = useRef(false);
-  const reduceMotion = useReducedMotion();
+
+  const prefersReducedMotion = () =>
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const openModal = (trigger: Element | null) => {
     lastTriggerRef.current = trigger;
@@ -122,7 +128,7 @@ const SearchModal = () => {
       });
       // Smooth scrolling is disabled for reduced-motion users.
       items[selectedIndexRef.current]?.scrollIntoView({
-        behavior: reduceMotion ? "auto" : "smooth",
+        behavior: prefersReducedMotion() ? "auto" : "smooth",
         block: "nearest",
       });
     };
@@ -211,34 +217,24 @@ const SearchModal = () => {
   }, []);
 
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          id="searchModal"
-          ref={modalRef}
-          className="search-modal show"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Search"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: reduceMotion ? 0 : 0.15 }}
-        >
-          {/* Full-screen close control (a real button, not a clickable div). */}
-          <button
-            type="button"
-            aria-label="Close search"
-            className="search-modal-overlay"
-            onClick={closeModal}
-          />
-          <motion.div
-            className="search-wrapper"
-            initial={{ y: reduceMotion ? 0 : -12, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: reduceMotion ? 0 : -12, opacity: 0 }}
-            transition={{ duration: reduceMotion ? 0 : 0.18, ease: "easeOut" }}
-          >
+    <div
+      id="searchModal"
+      ref={modalRef}
+      className={open ? "search-modal show" : "search-modal"}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Search"
+      aria-hidden={!open}
+      inert={!open}
+    >
+      {/* Full-screen close control (a real button, not a clickable div). */}
+      <button
+        type="button"
+        aria-label="Close search"
+        className="search-modal-overlay"
+        onClick={closeModal}
+      />
+      <div className="search-wrapper">
             <div className="search-wrapper-header">
               <label htmlFor="searchInput" className="sr-only">
                 Search the site
@@ -350,10 +346,8 @@ const SearchModal = () => {
                 <kbd>ESC</kbd> to close
               </span>
             </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+      </div>
+    </div>
   );
 };
 

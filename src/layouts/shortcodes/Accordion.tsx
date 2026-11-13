@@ -14,7 +14,7 @@ const Accordion = ({
   const buttonId = `${panelId}-button`;
 
   return (
-    <div className={`accordion ${show && "active"} ${className}`}>
+    <div className={`accordion ${show ? "active" : ""} ${className}`}>
       <button
         id={buttonId}
         className="accordion-header"

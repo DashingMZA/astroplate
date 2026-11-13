@@ -65,7 +65,7 @@ const Tabs = ({
             <li
               key={index}
               id={`tab-${index}`}
-              className={`tab-nav-item ${index === active && "active"}`}
+              className={`tab-nav-item ${index === active ? "active" : ""}`}
               role="tab"
               aria-selected={index === active}
               aria-controls={`tabpanel-${index}`}
