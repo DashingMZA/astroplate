@@ -14,6 +14,7 @@ import sharp from "sharp";
 import config from "./src/config/config.json";
 import languagesJSON from "./src/config/language.json";
 import theme from "./src/config/theme.json";
+import { buildSitemapManifest } from "./scripts/seoManifest.js";
 
 const { default_language } = config.settings;
 
@@ -61,6 +62,12 @@ const fontsConfig = Object.entries(theme.fonts.font_family)
     };
   });
 
+// Sitemap manifest: noindex exclusions + lastmod dates, scanned from
+// content frontmatter at config load (scripts/seoManifest.js). Throws on
+// duplicate public URLs. Missing content dirs degrade to an empty manifest
+// (no exclusions) rather than failing config load.
+const sitemapManifest = buildSitemapManifest();
+
 // https://astro.build/config
 export default defineConfig({
   site: config.site.base_url ? config.site.base_url : "http://examplesite.com",
@@ -73,16 +80,29 @@ export default defineConfig({
   integrations: [
     react(),
     sitemap({
-      // Exclude error/draft/preview/private pages from the sitemap.
+      // Exclude error/draft/preview/private pages from the sitemap, plus
+      // every published `noindex: true` page. The sitemap filter only sees
+      // URLs, so the noindex set comes from a frontmatter scan at config
+      // load (scripts/seoManifest.js) — see that file for the details.
       filter: (page) => {
         const { pathname } = new URL(page);
         if (pathname === "/404") {
+          return false;
+        }
+        if (sitemapManifest.excludedPaths.has(pathname)) {
           return false;
         }
         const segments = pathname.split("/").filter(Boolean);
         return !segments.some((segment) =>
           ["draft", "drafts", "preview", "private"].includes(segment),
         );
+      },
+      // Emit lastmod from frontmatter (`updated ?? lastmod ?? date`) so
+      // sitemap entries are dated; entries without a date stay undated.
+      serialize: (item) => {
+        const { pathname } = new URL(item.url);
+        const lastmod = sitemapManifest.lastmodByPath[pathname];
+        return lastmod ? { ...item, lastmod } : item;
       },
     }),
     AutoImport({

@@ -20,6 +20,7 @@ import matter from "gray-matter";
 import { normalizeSlug, postSlug, publicSlug } from "../src/lib/utils/slug.ts";
 
 function readSiteSettings() {
+  const fallback = { basePath: "", trailingSlash: false, languages: [] };
   try {
     const config = JSON.parse(
       fs.readFileSync(
@@ -27,16 +28,57 @@ function readSiteSettings() {
         "utf8",
       ),
     );
+    // Multilingual: content lives under per-language dirs (english/, french/).
+    // A file's first path segment selects its URL prefix: the default
+    // language has none (unless default_language_in_subdir), others get
+    // "/<code>". Unknown dirs fall back to the default language.
+    let languages = [];
+    try {
+      const langs = JSON.parse(
+        fs.readFileSync(
+          new URL("../src/config/language.json", import.meta.url),
+          "utf8",
+        ),
+      );
+      const defaultLanguage = config.settings?.default_language;
+      const defaultInSubdir = Boolean(
+        config.settings?.default_language_in_subdir,
+      );
+      languages = langs.map((l) => ({
+        contentDir: l.contentDir ?? l.languageCode,
+        prefix:
+          l.languageCode === defaultLanguage
+            ? defaultInSubdir
+              ? `/${l.languageCode}`
+              : ""
+            : `/${l.languageCode}`,
+      }));
+    } catch {
+      languages = [];
+    }
     return {
       basePath:
         config.site?.base_path && config.site.base_path !== "/"
           ? `/${String(config.site.base_path).replace(/^\/+|\/+$/g, "")}`
           : "",
       trailingSlash: Boolean(config.site?.trailing_slash),
+      languages,
     };
   } catch {
-    return { basePath: "", trailingSlash: false };
+    return fallback;
   }
+}
+
+// Split a collection-relative id ("english/post-1") into its language URL
+// prefix ("" or "/fr") and the language-neutral id ("post-1"). Single-
+// language trees (no language.json) pass through unchanged.
+function splitLangDir(id, languages) {
+  const [first, ...rest] = id.split("/");
+  const lang = languages.find((l) => l.contentDir === first);
+  if (lang && rest.length > 0) {
+    return { prefix: lang.prefix, id: rest.join("/") };
+  }
+  return { prefix: "", id };
 }
 
 function normalisePath(pathname, { basePath, trailingSlash }) {
@@ -116,20 +158,22 @@ export function buildSitemapManifest(contentRoot = "src/content") {
   for (const file of listContentFiles(path.join(root, "blog"))) {
     const { data } = matter(fs.readFileSync(file, "utf8"));
     if (!publishable(file, data)) continue;
-    const id = path
+    const rawId = path
       .relative(path.join(root, "blog"), file)
       .replace(/\.(md|mdx)$/i, "");
-    register(`/blog/${postSlug({ id, data })}`, file, data);
+    const { prefix, id } = splitLangDir(rawId, settings.languages);
+    register(`${prefix}/blog/${postSlug({ id, data })}`, file, data);
   }
 
   // Regular pages: /<public slug>.
   for (const file of listContentFiles(path.join(root, "pages"))) {
     const { data } = matter(fs.readFileSync(file, "utf8"));
     if (!publishable(file, data)) continue;
-    const id = path
+    const rawId = path
       .relative(path.join(root, "pages"), file)
       .replace(/\.(md|mdx)$/i, "");
-    register(`/${publicSlug({ id, data })}`, file, data);
+    const { prefix, id } = splitLangDir(rawId, settings.languages);
+    register(`${prefix}/${publicSlug({ id, data })}`, file, data);
   }
 
   // Author pages: /authors/<file id>. (Author slugs come from the file id;
@@ -137,10 +181,11 @@ export function buildSitemapManifest(contentRoot = "src/content") {
   for (const file of listContentFiles(path.join(root, "authors"))) {
     const { data } = matter(fs.readFileSync(file, "utf8"));
     if (!publishable(file, data)) continue;
-    const id = path
+    const rawId = path
       .relative(path.join(root, "authors"), file)
       .replace(/\.(md|mdx)$/i, "");
-    register(`/authors/${normalizeSlug(id)}`, file, data);
+    const { prefix, id } = splitLangDir(rawId, settings.languages);
+    register(`${prefix}/authors/${normalizeSlug(id)}`, file, data);
   }
 
   // Single pages with fixed routes: about -> /about, contact -> /contact.
@@ -152,7 +197,11 @@ export function buildSitemapManifest(contentRoot = "src/content") {
     for (const file of listContentFiles(path.join(root, collection))) {
       const { data } = matter(fs.readFileSync(file, "utf8"));
       if (!publishable(file, data, { allowIndex: true })) continue;
-      register(route, file, data);
+      const rawId = path
+        .relative(path.join(root, collection), file)
+        .replace(/\.(md|mdx)$/i, "");
+      const { prefix } = splitLangDir(rawId, settings.languages);
+      register(`${prefix}${route}`, file, data);
     }
   }
 
