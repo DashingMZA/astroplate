@@ -15,26 +15,24 @@ const allCategories = await getAllTaxonomy(BLOG_FOLDER, "categories");
   <section class="section">
     <div class="container text-center">
       <ul>
-<<<<<<< HEAD
-        {
-          categories.map((category: string) => {
-            const count = allCategories.filter((c) => c === category).length;
-            return (
-              <li class="m-3 inline-block">
-                <a
-                  href={`/categories/${category}`}
-                  class="block rounded bg-light px-4 py-2 text-xl text-text-text-dark dark:bg-darkmode-light dark:text-darkmode-text-text-dark"
-                >
-                  {humanize(category)}{" "}
-                  <span class="ml-2 rounded bg-body px-2 dark:bg-darkmode-body">
-                    {count}
-                  </span>
-                </a>
-              </li>
-            );
-          })
-        }
-=======
+        <<<<<<< HEAD
+        {categories.map((category: string) => {
+          const count = allCategories.filter((c) => c === category).length;
+          return (
+            <li class="m-3 inline-block">
+              <a
+                href={`/categories/${category}`}
+                class="block rounded bg-light px-4 py-2 text-xl text-text-text-dark dark:bg-darkmode-light dark:text-darkmode-text-text-dark"
+              >
+                {humanize(category)}{" "}
+                <span class="ml-2 rounded bg-body px-2 dark:bg-darkmode-body">
+                  {count}
+                </span>
+              </a>
+            </li>
+          );
+        })}
+        =======
         {categories.map((category: string) => {
           const count = allCategories.filter((c) => c === category).length;
           return (
@@ -51,7 +49,8 @@ const allCategories = await getAllTaxonomy(BLOG_FOLDER, "categories");
             </li>
           );
         })}
->>>>>>> a576fb7 (style: reformat .astro files with prettier-plugin-astro 1.1.2)
+        >>>>>>> a576fb7 (style: reformat .astro files with prettier-plugin-astro
+        1.1.2)
       </ul>
     </div>
   </section>

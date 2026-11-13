@@ -10,7 +10,6 @@ import {
 } from "@/lib/utils/languageParser";
 import { markdownify } from "@/lib/utils/textConverter";
 
-
 const lang = getLangFromUrl(Astro.url);
 const menu = await getTranslations(lang);
 let footer: any = [];
@@ -27,21 +26,20 @@ if (menu) {
       </div>
       <div class="mb-8 text-center lg:col-6 lg:mb-0">
         <ul>
-<<<<<<< HEAD
-          {
-            footer.map((menu: any) => (
-              <li class="m-3 inline-block">
-                <a href={slugSelector(menu.url, lang)}>{menu.name}</a>
-              </li>
-            ))
-          }
-=======
+          <<<<<<< HEAD
+          {footer.map((menu: any) => (
+            <li class="m-3 inline-block">
+              <a href={slugSelector(menu.url, lang)}>{menu.name}</a>
+            </li>
+          ))}
+          =======
           {footer.map((menu) => (
             <li class="m-3 inline-block">
               <a href={menu.url}>{menu.name}</a>
             </li>
           ))}
->>>>>>> a576fb7 (style: reformat .astro files with prettier-plugin-astro 1.1.2)
+          >>>>>>> a576fb7 (style: reformat .astro files with
+          prettier-plugin-astro 1.1.2)
         </ul>
       </div>
       <div class="mb-8 text-center lg:col-3 lg:mb-0 lg:mt-0 lg:text-right">
