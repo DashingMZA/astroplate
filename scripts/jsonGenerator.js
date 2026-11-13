@@ -1,4 +1,5 @@
 import matter from "gray-matter";
+import { postSlug } from "../src/lib/utils/slug.ts";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -9,6 +10,9 @@ const JSON_FOLDER = "./.json";
 const CONTENT_ROOT = "src/content";
 const CONTENT_DEPTH = 3;
 const BLOG_FOLDER = "blog";
+
+// slug -> source file, for the duplicate-slug build error below.
+const slugSources = new Map();
 
 // get data from markdown
 const getData = (folder, groupDepth, langIndex = 0) => {
@@ -35,18 +39,25 @@ const getData = (folder, groupDepth, langIndex = 0) => {
             const { data, content } = matter(file);
             const pathParts = filepath.split(path.sep);
 
-            let slug;
-            if (data.slug) {
-              const slugParts = data.slug.split("/");
-              slugParts[0] = BLOG_FOLDER;
-              slug = slugParts.join("/");
-            } else {
-              slug = pathParts
-                .slice(CONTENT_DEPTH)
-                .join("/")
-                .replace(/\.[^/.]+$/, "");
-              slug = `${BLOG_FOLDER}/${slug.split("/").slice(1).join("/")}`;
+            // Filename-derived id within this language dir, e.g. "post-1"
+            // (nested: "guides/x"). A custom `slug` wins over it (normalised,
+            // leading `blog/` forgiven); the emitted search slug is always the
+            // full public path, so result links are `/blog/<slug>` — a bare
+            // custom slug previously produced a broken `/<slug>` link.
+            const id = pathParts
+              .slice(CONTENT_DEPTH + 1)
+              .join("/")
+              .replace(/\.[^/.]+$/, "");
+            const slug = `${BLOG_FOLDER}/${postSlug({ id, data })}`;
+            // Two posts in the SAME language must never resolve to the same
+            // public URL. (Keyed per language: en/post-1 and fr/post-1 share
+            // the slug "blog/post-1" legitimately.)
+            const langCode = languages[index].languageCode;
+            const dupKey = `${langCode}:${slug}`;
+            if (!slugSources.has(dupKey)) {
+              slugSources.set(dupKey, []);
             }
+            slugSources.get(dupKey).push(filepath);
             data.slug = slug;
             const group = "blog";
 
@@ -62,7 +73,16 @@ const getData = (folder, groupDepth, langIndex = 0) => {
     })
     .flat();
 
-  return getPaths.filter((page) => !page.frontmatter?.draft && page);
+  const now = new Date();
+  return getPaths.filter(
+    (page) =>
+      page &&
+      // Same visibility rules as the router (getSinglePage) and RSS:
+      // no drafts, no noindex pages, no future-dated posts.
+      !page.frontmatter?.draft &&
+      !page.frontmatter?.noindex &&
+      (!page.frontmatter?.date || new Date(page.frontmatter.date) <= now),
+  );
 };
 
 try {
@@ -72,16 +92,36 @@ try {
   }
 
   // create json files
-  fs.writeFileSync(
-    `${JSON_FOLDER}/posts.json`,
-    JSON.stringify(getData(BLOG_FOLDER, 3)),
+  const posts = getData(BLOG_FOLDER, 3);
+
+  // Two posts must never resolve to the same public URL. Fail loudly here
+  // (before astro build) with the conflicting files listed.
+  const conflicts = [...slugSources.entries()].filter(
+    ([, files]) => files.length > 1,
   );
+  if (conflicts.length > 0) {
+    const lines = conflicts.map(
+      ([dupKey, files]) =>
+        `  /${dupKey.split(":")[1]} (${dupKey.split(":")[0]}) <- ${[...files].sort().join(", ")}`,
+    );
+    throw new Error(
+      `Duplicate blog post URLs — two or more posts resolve to the same public URL. ` +
+        `Give each post a unique custom \`slug\` (or rename the file):\n${lines.join("\n")}`,
+    );
+  }
+
+  fs.writeFileSync(`${JSON_FOLDER}/posts.json`, JSON.stringify(posts));
 
   // merge json files for search
-  const postsPath = new URL(`../${JSON_FOLDER}/posts.json`, import.meta.url);
-  const posts = JSON.parse(fs.readFileSync(postsPath, "utf8"));
-  const search = [...posts];
+  // (read back the file just written, relative to the working directory —
+  // the old code resolved it against this script's own location, which only
+  // agreed with the write when run from the repo root.)
+  const search = JSON.parse(
+    fs.readFileSync(`${JSON_FOLDER}/posts.json`, "utf8"),
+  );
   fs.writeFileSync(`${JSON_FOLDER}/search.json`, JSON.stringify(search));
 } catch (err) {
   console.error(err);
+  // A broken search index must fail the build, not silently ship stale JSON.
+  process.exit(1);
 }

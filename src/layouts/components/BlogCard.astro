@@ -6,23 +6,37 @@ import {
   getTranslations,
   slugSelector,
 } from "@/lib/utils/languageParser";
+import { postUrl } from "@/lib/utils/slug";
 import { humanize, plainify, slugify } from "@/lib/utils/textConverter";
-
 import { FaRegFolder, FaRegUserCircle } from "react-icons/fa";
 import ImageMod from "./ImageMod.astro";
 
-const { summary_length }: { summary_length: number; blog_folder: string } =
-  config.settings;
+const { summary_length }: { summary_length: number } = config.settings;
 const { data } = Astro.props;
-const { title, image, date, author, categories } = data.data;
+const {
+  title,
+  image,
+  date,
+  author,
+  authors,
+  categories,
+  excerpt,
+  description,
+} = data.data;
 
 const lang = getLangFromUrl(Astro.url);
 const { read_more } = await getTranslations(lang);
 
-const slugParts = data.id.split("/");
-slugParts[0] = "blog";
-const modifiedSlug = slugParts.join("/");
-data.id = modifiedSlug;
+// Card text: excerpt > description > raw-body slice. The old code sliced
+// the raw Markdown body, which could cut mid-syntax and ignored the
+// excerpt/description fields entirely.
+const summaryLength = Number(summary_length);
+const cardText =
+  excerpt ?? description ?? plainify(data.body?.slice(0, summaryLength) ?? "");
+
+// Author resolution against the authors collection lands with 90ac0dc
+// (src/lib/utils/authors.ts); until then the single `author` field links
+// to its author page as before.
 ---
 
 <div class="bg-body dark:bg-darkmode-body">
@@ -36,11 +50,13 @@ data.id = modifiedSlug;
       format="webp"
       loading="lazy"
       decoding="async"
+      sizes="(max-width: 768px) 100vw, 445px"
+      widths={[445, 890]}
     />
   )}
-  <h4 class="mb-3">
-    <a href={slugSelector(`/${data.id}`, lang)}>{title}</a>
-  </h4>
+  <h3 class="mb-3">
+    <a href={slugSelector(postUrl(data), lang)}>{title}</a>
+  </h3>
   <ul class="mb-4">
     <li class="mr-4 inline-block">
       <a href={slugSelector(`/authors/${slugify(author)}`, lang)}>
@@ -48,7 +64,6 @@ data.id = modifiedSlug;
         {humanize(author)}
       </a>
     </li>
-
     <li class="mr-4 inline-block">
       <FaRegFolder className={"mr-2 -mt-1 inline-block"} />
       {categories.map((category: string, index: number) => (
@@ -60,10 +75,10 @@ data.id = modifiedSlug;
     </li>
     {date && <li class="inline-block">{dateFormat(date)}</li>}
   </ul>
-  <p class="mb-6">{plainify(data.body?.slice(0, Number(summary_length)))}</p>
+  <p class="mb-6">{cardText}</p>
   <a
     class="btn btn-outline-primary btn-sm"
-    href={slugSelector(`/${data.id}`, lang)}
+    href={slugSelector(postUrl(data), lang)}
   >
     {read_more}
   </a>

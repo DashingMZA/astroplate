@@ -4,6 +4,7 @@ import Base from "@/layouts/Base.astro";
 import PostSingle from "@/layouts/PostSingle.astro";
 import { getSinglePage } from "@/lib/contentParser.astro";
 import { absoluteUrl } from "@/lib/utils/seo";
+import { checkDuplicateSlugs, postSlug } from "@/lib/utils/slug";
 import { supportedLang } from "@/lib/utils/languageParser";
 
 export async function getStaticPaths() {
@@ -13,10 +14,24 @@ export async function getStaticPaths() {
     supportedLang.map(async (lang) => {
       const posts = await getSinglePage(BLOG_FOLDER, lang);
 
+      // Two posts in the SAME language must never resolve to the same public
+      // URL (custom slug colliding with another post's slug or filename).
+      // Fail the build loudly. (Checked per language: en/post-1 and fr/post-1
+      // legitimately share a slug.)
+      const langNeutral = (post: { id: string; data: { slug?: string } }) => ({
+        id: post.id.split("/").slice(1).join("/"),
+        data: post.data,
+      });
+      checkDuplicateSlugs(
+        posts.map(langNeutral),
+        (post) => `/blog/${postSlug(post)}`,
+        "blog post",
+      );
+
       return posts.map((post) => ({
         params: {
           lang: lang || undefined,
-          single: post.id.split("/").pop(),
+          single: postSlug(langNeutral(post)),
         },
         props: {
           post,
@@ -32,6 +47,8 @@ const {
   title,
   meta_title,
   og_title,
+  og_description,
+  excerpt,
   description,
   image,
   og_image,
@@ -85,6 +102,8 @@ const articleJsonLd = {
 <Base
   title={title}
   meta_title={meta_title || og_title}
+  og_description={og_description}
+  excerpt={excerpt}
   description={description}
   image={seoImage}
   ogType="article"
