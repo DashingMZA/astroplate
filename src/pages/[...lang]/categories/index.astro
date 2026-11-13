@@ -30,24 +30,22 @@ const allCategories = await getAllTaxonomy(langCollection, "categories");
   <section class="section">
     <div class="container text-center">
       <ul>
-        {
-          categories.map((category: string) => {
-            const count = allCategories.filter((c) => c === category).length;
-            return (
-              <li class="m-3 inline-block">
-                <a
-                  href={slugSelector(`/categories/${category}`, lang)}
-                  class="block rounded bg-light px-4 py-2 text-xl text-text-dark dark:bg-darkmode-light dark:text-darkmode-text-dark"
-                >
-                  {humanize(category)}{" "}
-                  <span class="ml-2 rounded bg-body px-2 dark:bg-darkmode-body">
-                    {count}
-                  </span>
-                </a>
-              </li>
-            );
-          })
-        }
+        {categories.map((category: string) => {
+          const count = allCategories.filter((c) => c === category).length;
+          return (
+            <li class="m-3 inline-block">
+              <a
+                href={slugSelector(`/categories/${category}`, lang)}
+                class="block rounded bg-light px-4 py-2 text-xl text-text-dark dark:bg-darkmode-light dark:text-darkmode-text-dark"
+              >
+                {humanize(category)}{" "}
+                <span class="ml-2 rounded bg-body px-2 dark:bg-darkmode-body">
+                  {count}
+                </span>
+              </a>
+            </li>
+          );
+        })}
       </ul>
     </div>
   </section>

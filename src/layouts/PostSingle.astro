@@ -146,9 +146,7 @@ const postSlugValue = postSlug({ id: postId, data: post.data });
               title={title}
               description={description}
               slug={postSlugValue}
-              url={canonicalFor(
-                slugSelector(`/blog/${postSlugValue}`, lang),
-              )}
+              url={canonicalFor(slugSelector(`/blog/${postSlugValue}`, lang))}
               image={image}
             />
           </div>
