@@ -6,7 +6,9 @@
      ~144 KB to this chunk for a 150 ms fade, and motion/react-mini has
      no AnimatePresence for the exit. Reduced-motion users get an
      instant open/close via the global rule in base.css. */
-  transition: opacity 0.15s ease, visibility 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    visibility 0.15s ease;
 }
 .search-modal.show {
   @apply visible opacity-100;
@@ -18,7 +20,9 @@
   @apply bg-white dark:bg-darkmode-body w-[660px] max-w-[96%] mt-24 rounded shadow-lg relative z-10;
   transform: translateY(-12px);
   opacity: 0;
-  transition: opacity 0.18s ease-out, transform 0.18s ease-out;
+  transition:
+    opacity 0.18s ease-out,
+    transform 0.18s ease-out;
 }
 .search-modal.show .search-wrapper {
   transform: translateY(0);

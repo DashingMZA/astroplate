@@ -39,26 +39,23 @@ if (!buildDrafts && contactIndex.data.draft) {
     <div class="container">
       <div class="row">
         <div class="mx-auto md:col-10 lg:col-6">
-          {
-            !contactForm.configured ? (
-              <div
-                class="mb-6 rounded border border-border bg-light px-6 py-5 dark:border-darkmode-border dark:bg-darkmode-light"
-                role="status"
-              >
-                <h2 class="h5 mb-2">Contact form not configured</h2>
-                <p class="mb-0">
-                  This form has no endpoint yet, so it is disabled. To
-                  enable it, set <code>contact_form.action</code> in{" "}
-                  <code>src/config/config.json</code> to your form
-                  provider&apos;s endpoint (for example a Formspree or
-                  Getform form URL) and rebuild. See{" "}
-                  <code>CONFIGURATION.md</code> for provider setup.
-                </p>
-              </div>
-            ) : (
-              <p id="contact-status" class="mb-6" aria-live="polite" />
-            )
-          }
+          {!contactForm.configured ? (
+            <div
+              class="mb-6 rounded border border-border bg-light px-6 py-5 dark:border-darkmode-border dark:bg-darkmode-light"
+              role="status"
+            >
+              <h2 class="h5 mb-2">Contact form not configured</h2>
+              <p class="mb-0">
+                This form has no endpoint yet, so it is disabled. To enable it,
+                set <code>contact_form.action</code> in{" "}
+                <code>src/config/config.json</code> to your form provider&apos;s
+                endpoint (for example a Formspree or Getform form URL) and
+                rebuild. See <code>CONFIGURATION.md</code> for provider setup.
+              </p>
+            </div>
+          ) : (
+            <p id="contact-status" class="mb-6" aria-live="polite" />
+          )}
           {/* Labels wrap their controls (and keep for/id): the jsx-a11y
             label rule only recognises JSX `htmlFor`, not Astro's HTML
             `for` — nesting is the association the linter can verify. */}
@@ -70,7 +67,10 @@ if (!buildDrafts && contactIndex.data.draft) {
             <fieldset disabled={!contactForm.configured} class="contents">
               <div class="mb-6">
                 <label for="name" class="form-label">
-                  Full Name <span class="text-red-500" aria-hidden="true">*</span>
+                  Full Name{" "}
+                  <span class="text-red-500" aria-hidden="true">
+                    *
+                  </span>
                   <span class="sr-only">(required)</span>
                   <input
                     id="name"
@@ -87,7 +87,10 @@ if (!buildDrafts && contactIndex.data.draft) {
               </div>
               <div class="mb-6">
                 <label for="email" class="form-label">
-                  Email <span class="text-red-500" aria-hidden="true">*</span>
+                  Email{" "}
+                  <span class="text-red-500" aria-hidden="true">
+                    *
+                  </span>
                   <span class="sr-only">(required)</span>
                   <input
                     id="email"
@@ -100,16 +103,14 @@ if (!buildDrafts && contactIndex.data.draft) {
                     aria-describedby="email-error"
                   />
                 </label>
-                <p
-                  id="email-error"
-                  class="mt-2 text-sm text-red-600"
-                  hidden
-                />
+                <p id="email-error" class="mt-2 text-sm text-red-600" hidden />
               </div>
               <div class="mb-6">
                 <label for="message" class="form-label">
                   Anything else?{" "}
-                  <span class="text-red-500" aria-hidden="true">*</span>
+                  <span class="text-red-500" aria-hidden="true">
+                    *
+                  </span>
                   <span class="sr-only">(required)</span>
                   <textarea
                     id="message"
@@ -142,129 +143,118 @@ if (!buildDrafts && contactIndex.data.draft) {
   </section>
 </Base>
 
-{
-  contactForm.configured && (
-    <script>
-      // Client-side submit: native validation first, then a real POST to
-      // the configured provider endpoint. Success/error feedback comes
-      // from that submission — never a fake "thank you".
-      function initContactForm() {
-        const form = document.getElementById(
-          "contact-form",
-        ) as HTMLFormElement | null;
-        if (!form || form.hasAttribute("data-contact-bound")) {
-          return;
+{contactForm.configured && <script>
+  // Client-side submit: native validation first, then a real POST to
+  // the configured provider endpoint. Success/error feedback comes
+  // from that submission — never a fake "thank you".
+  function initContactForm() {
+    const form = document.getElementById(
+      "contact-form",
+    ) as HTMLFormElement | null;
+    if (!form || form.hasAttribute("data-contact-bound")) {
+      return;
+    }
+    form.setAttribute("data-contact-bound", "");
+    const status = document.getElementById("contact-status");
+    const submitButton = form.querySelector<HTMLButtonElement>(
+      'button[type="submit"]',
+    );
+
+    const setFieldError = (field: HTMLElement, message: string) => {
+      const error = document.getElementById(`${field.id}-error`);
+      if (error) {
+        error.textContent = message;
+        error.hidden = false;
+      }
+      field.setAttribute("aria-invalid", "true");
+    };
+    const clearFieldError = (field: HTMLElement) => {
+      const error = document.getElementById(`${field.id}-error`);
+      if (error) {
+        error.textContent = "";
+        error.hidden = true;
+      }
+      field.removeAttribute("aria-invalid");
+    };
+    const showStatus = (message: string, isError: boolean) => {
+      if (!status) {
+        return;
+      }
+      status.textContent = message;
+      status.className = isError ? "mb-6 text-red-600" : "mb-6 text-green-600";
+      status.setAttribute("role", isError ? "alert" : "status");
+    };
+
+    const fields = Array.from(
+      form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+        "input, textarea",
+      ),
+    );
+    fields.forEach((field) => {
+      field.addEventListener("input", () => {
+        if (field.validity.valid) {
+          clearFieldError(field);
         }
-        form.setAttribute("data-contact-bound", "");
-        const status = document.getElementById("contact-status");
-        const submitButton = form.querySelector<HTMLButtonElement>(
-          'button[type="submit"]',
-        );
+      });
+      // Announce the native validation message for this field.
+      field.addEventListener("invalid", () => {
+        setFieldError(field, field.validationMessage);
+      });
+    });
 
-        const setFieldError = (field: HTMLElement, message: string) => {
-          const error = document.getElementById(`${field.id}-error`);
-          if (error) {
-            error.textContent = message;
-            error.hidden = false;
-          }
-          field.setAttribute("aria-invalid", "true");
-        };
-        const clearFieldError = (field: HTMLElement) => {
-          const error = document.getElementById(`${field.id}-error`);
-          if (error) {
-            error.textContent = "";
-            error.hidden = true;
-          }
-          field.removeAttribute("aria-invalid");
-        };
-        const showStatus = (message: string, isError: boolean) => {
-          if (!status) {
-            return;
-          }
-          status.textContent = message;
-          status.className = isError
-            ? "mb-6 text-red-600"
-            : "mb-6 text-green-600";
-          status.setAttribute("role", isError ? "alert" : "status");
-        };
-
-        const fields = Array.from(
-          form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
-            "input, textarea",
-          ),
-        );
-        fields.forEach((field) => {
-          field.addEventListener("input", () => {
-            if (field.validity.valid) {
-              clearFieldError(field);
-            }
-          });
-          // Announce the native validation message for this field.
-          field.addEventListener("invalid", () => {
-            setFieldError(field, field.validationMessage);
-          });
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      fields.forEach(clearFieldError);
+      if (!form.checkValidity()) {
+        // reportValidity() shows the native bubble and fires `invalid`
+        // on each bad field, which populates the aria-describedby
+        // error text above.
+        form.reportValidity();
+        return;
+      }
+      if (!submitButton) {
+        return;
+      }
+      submitButton.disabled = true;
+      submitButton.textContent = "Sending…";
+      try {
+        const response = await fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: { Accept: "application/json" },
         });
-
-        form.addEventListener("submit", async (event) => {
-          event.preventDefault();
-          fields.forEach(clearFieldError);
-          if (!form.checkValidity()) {
-            // reportValidity() shows the native bubble and fires `invalid`
-            // on each bad field, which populates the aria-describedby
-            // error text above.
-            form.reportValidity();
-            return;
-          }
-          if (!submitButton) {
-            return;
-          }
-          submitButton.disabled = true;
-          submitButton.textContent = "Sending…";
+        if (response.ok) {
+          form.reset();
+          showStatus("Thank you — your message was sent.", false);
+        } else {
+          let detail = `The form provider returned an error (HTTP ${response.status}).`;
           try {
-            const response = await fetch(form.action, {
-              method: "POST",
-              body: new FormData(form),
-              headers: { Accept: "application/json" },
-            });
-            if (response.ok) {
-              form.reset();
-              showStatus(
-                "Thank you — your message was sent.",
-                false,
-              );
-            } else {
-              let detail = `The form provider returned an error (HTTP ${response.status}).`;
-              try {
-                const data = await response.json();
-                const providerMessage =
-                  data?.message ??
-                  data?.errors?.[0]?.message ??
-                  data?.error;
-                if (typeof providerMessage === "string" && providerMessage) {
-                  detail = providerMessage;
-                }
-              } catch {
-                // Non-JSON error body — keep the HTTP status message.
-              }
-              showStatus(
-                `Sorry, your message could not be sent. ${detail} Please try again later.`,
-                true,
-              );
+            const data = await response.json();
+            const providerMessage =
+              data?.message ?? data?.errors?.[0]?.message ?? data?.error;
+            if (typeof providerMessage === "string" && providerMessage) {
+              detail = providerMessage;
             }
           } catch {
-            showStatus(
-              "Sorry, your message could not be sent — the form provider could not be reached. Please try again later.",
-              true,
-            );
-          } finally {
-            submitButton.disabled = false;
-            submitButton.textContent = "Submit";
+            // Non-JSON error body — keep the HTTP status message.
           }
-        });
+          showStatus(
+            `Sorry, your message could not be sent. ${detail} Please try again later.`,
+            true,
+          );
+        }
+      } catch {
+        showStatus(
+          "Sorry, your message could not be sent — the form provider could not be reached. Please try again later.",
+          true,
+        );
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = "Submit";
       }
+    });
+  }
 
-      initContactForm();
-      document.addEventListener("astro:page-load", initContactForm);
-    </script>
-  )
-}
+  initContactForm();
+  document.addEventListener("astro:page-load", initContactForm);
+</script>}

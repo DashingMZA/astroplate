@@ -67,8 +67,9 @@ const { className }: { className?: string } = Astro.props;
   }
 
   const setDarkMode = () => {
-    const themeSwitch =
-      document.querySelectorAll<HTMLInputElement>("[data-theme-switcher]");
+    const themeSwitch = document.querySelectorAll<HTMLInputElement>(
+      "[data-theme-switcher]",
+    );
     toggleTheme(themeSwitch);
     themeSwitch.forEach((sw) => {
       sw.addEventListener("click", function () {

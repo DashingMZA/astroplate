@@ -54,11 +54,8 @@ const { enable, content, expire_days } = config.announcement;
     }
     closeButton.setAttribute("data-bound", "");
     closeButton.addEventListener("click", () => {
-      const expires = new Date(
-        Date.now() + expireDays * 864e5,
-      ).toUTCString();
-      const secure =
-        window.location.protocol === "https:" ? "; Secure" : "";
+      const expires = new Date(Date.now() + expireDays * 864e5).toUTCString();
+      const secure = window.location.protocol === "https:" ? "; Secure" : "";
       document.cookie =
         `announcement-close=true; expires=${expires}; path=/; ` +
         `SameSite=Lax${secure}`;
