@@ -5,9 +5,10 @@ command = "pnpm build"
 [build.environment]
 NODE_VERSION = "24"
 
-# Security headers. Keep in sync with public/_headers (Cloudflare) and
-# config/nginx/nginx.conf (Docker). See public/_headers for the CSP
-# domain inventory and the documented 'unsafe-inline' trade-off.
+# Security headers. Keep in sync with public/_headers (Cloudflare),
+# vercel.json headers, and config/nginx/nginx.conf (Docker). See
+# public/_headers for the CSP domain inventory and the documented
+# 'unsafe-inline' trade-off.
 # HSTS is included here because Netlify serves this over HTTPS.
 [[headers]]
   for = "/*"
