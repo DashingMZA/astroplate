@@ -20,15 +20,22 @@ const bgImageMod = async (
   // Function to get the image info like width, height, format, etc.
   const getImagePath = async (image: string) => {
     try {
-      const imageData = (await images[image]()) as any;
+      const imageData = (await images[image]()) as { default: string };
       return imageData;
-    } catch (error) {
+    } catch {
       return `Image not found - ${src}. Make sure the image is in the /public/images folder.`;
     }
   };
 
   // Get the image data for the specified source path
   const image = await getImagePath(src);
+
+  // A missing image resolves to an error string, not image data — return
+  // empty instead of crashing on `image.default` (the old `as any` hid this).
+  if (typeof image === "string") {
+    console.error(`\x1b[31m${image}\x1b[0m`);
+    return "";
+  }
 
   // Optimize the image for development
   const ImageMod = await getImage({

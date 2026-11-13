@@ -1,28 +1,40 @@
+type SimilarEntry = {
+  id: string;
+  data: {
+    categories?: string[];
+    tags?: string[];
+    date?: string | Date | null;
+  };
+};
+
 // similar products
-const similarItems = (currentItem: any, allItems: any[]) => {
+const similarItems = (
+  currentItem: SimilarEntry,
+  allItems: SimilarEntry[],
+): SimilarEntry[] => {
   let categories: string[] = [];
   let tags: string[] = [];
 
   // set categories
-  if (currentItem.data.categories.length > 0) {
-    categories = currentItem.data.categories;
+  if ((currentItem.data.categories ?? []).length > 0) {
+    categories = currentItem.data.categories ?? [];
   }
 
   // set tags
-  if (currentItem.data.tags.length > 0) {
-    tags = currentItem.data.tags;
+  if ((currentItem.data.tags ?? []).length > 0) {
+    tags = currentItem.data.tags ?? [];
   }
 
   // NaN-safe date: undated posts sort last.
-  const timeOf = (item: any): number => {
-    const time = new Date(item.data.date).valueOf();
+  const timeOf = (item: SimilarEntry): number => {
+    const time = new Date(item.data.date ?? "").valueOf();
     return Number.isNaN(time) ? -Infinity : time;
   };
 
   // score candidates: shared categories first, then shared tags, then recency
   const scored = allItems
-    .filter((item: any) => item.id !== currentItem.id)
-    .map((item: any) => {
+    .filter((item) => item.id !== currentItem.id)
+    .map((item) => {
       const itemCategories: string[] = item.data.categories ?? [];
       const itemTags: string[] = item.data.tags ?? [];
       const sharedCategories = categories.filter((category) =>
