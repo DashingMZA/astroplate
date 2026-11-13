@@ -32,7 +32,7 @@ import {
 } from "@digi4care/astro-google-tagmanager";
 import { Font } from "astro:assets";
 import { ClientRouter } from "astro:transitions";
-import Announcement from "./helpers/Announcement";
+import Announcement from "./helpers/Announcement.astro";
 import SearchModal from "./helpers/SearchModal";
 
 // font families - extract font names for Font component (filter out type keys)
@@ -316,7 +316,7 @@ const jsonLdGraph = {
     {config.google_tag_manager.enable && (
       <GoogleTagmanagerNoscript id={config.google_tag_manager.gtm_id} />
     )}
-    <Announcement lang={language} client:only="react" />
+    <Announcement />
     <Header />
     <SearchModal lang={language} client:only="react" />
     <main class="grow" id="main-content">
