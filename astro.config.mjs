@@ -2,15 +2,18 @@ import { unified } from "@astrojs/markdown-remark";
 import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
+import compress from "@playform/compress";
 import tailwindcss from "@tailwindcss/vite";
 import AutoImport from "astro-auto-import";
 import { defineConfig, fontProviders } from "astro/config";
+import rehypeKatex from "rehype-katex";
 import remarkCollapse from "remark-collapse";
+import remarkMath from "remark-math";
 import remarkToc from "remark-toc";
 import sharp from "sharp";
 import config from "./src/config/config.json";
 import theme from "./src/config/theme.json";
-
+import { buildSitemapManifest } from "./scripts/seoManifest.js";
 
 // Helper to parse font string format: "FontName:wght@400;500;600;700"
 function parseFontString(fontStr) {
@@ -48,6 +51,12 @@ const fontsConfig = Object.entries(theme.fonts.font_family)
     };
   });
 
+// Sitemap manifest: noindex exclusions + lastmod dates, scanned from
+// content frontmatter at config load (scripts/seoManifest.js). Throws on
+// duplicate public URLs. Missing content dirs degrade to an empty manifest
+// (no exclusions) rather than failing config load.
+const sitemapManifest = buildSitemapManifest();
+
 // https://astro.build/config
 export default defineConfig({
   site: config.site.base_url ? config.site.base_url : "http://examplesite.com",
@@ -60,16 +69,29 @@ export default defineConfig({
   integrations: [
     react(),
     sitemap({
-      // Exclude error/draft/preview/private pages from the sitemap.
+      // Exclude error/draft/preview/private pages from the sitemap, plus
+      // every published `noindex: true` page. The sitemap filter only sees
+      // URLs, so the noindex set comes from a frontmatter scan at config
+      // load (scripts/seoManifest.js) — see that file for the details.
       filter: (page) => {
         const { pathname } = new URL(page);
         if (pathname === "/404") {
+          return false;
+        }
+        if (sitemapManifest.excludedPaths.has(pathname)) {
           return false;
         }
         const segments = pathname.split("/").filter(Boolean);
         return !segments.some((segment) =>
           ["draft", "drafts", "preview", "private"].includes(segment),
         );
+      },
+      // Emit lastmod from frontmatter (`updated ?? lastmod ?? date`) so
+      // sitemap entries are dated; entries without a date stay undated.
+      serialize: (item) => {
+        const { pathname } = new URL(item.url);
+        const lastmod = sitemapManifest.lastmodByPath[pathname];
+        return lastmod ? { ...item, lastmod } : item;
       },
     }),
     AutoImport({
@@ -84,6 +106,12 @@ export default defineConfig({
       ],
     }),
     mdx(),
+    // Compress must run last: it post-processes the built output (HTML/CSS/
+    // Image/SVG/JSON). JavaScript is disabled on purpose — Astro/Vite already
+    // minifies JS, and a second terser pass only re-minifies it for no gain
+    // (see the PowerAI lesson). No adapter is wired: this is a static build
+    // served via wrangler Static Assets / nginx.
+    compress({ JavaScript: false }),
   ],
 
   markdown: {
@@ -91,7 +119,12 @@ export default defineConfig({
       remarkPlugins: [
         remarkToc,
         [remarkCollapse, { test: "Table of contents" }],
+        // Math: `$…$` / `$$…$$` render via KaTeX (CSS imported in Base.astro).
+        remarkMath,
       ],
+      // `strict: "ignore"` renders unparseable math as plain text instead of
+      // failing the build on a typo'd formula.
+      rehypePlugins: [[rehypeKatex, { strict: "ignore" }]],
     }),
     shikiConfig: { theme: "one-dark-pro", wrap: true },
   },
