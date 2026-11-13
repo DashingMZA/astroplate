@@ -1,4 +1,5 @@
 ---
+/* global astroHTML */
 import type { ImageMetadata } from "astro";
 import { Image } from "astro:assets";
 
@@ -13,9 +14,13 @@ interface Props {
   format?: "auto" | "avif" | "jpeg" | "png" | "svg" | "webp";
   fit?: "cover" | "contain" | "fill" | "none" | "scale-down";
   class?: string;
-  style?: any;
+  style?: astroHTML.JSX.CSSProperties;
   fetchpriority?: "high" | "low" | "auto";
   sizes?: string;
+  /** Responsive widths for local images (Astro generates one variant per
+    width). Remote (R2/CDN) images have no local variants, so this is
+    ignored for them — their absolute URL is preserved verbatim. */
+  widths?: number[];
 }
 
 // Destructuring Astro.props to get the component's props
@@ -32,7 +37,13 @@ const {
   fit,
   fetchpriority,
   sizes,
+  widths,
 } = Astro.props;
+
+// Below-fold images are lazy by default; only callers that explicitly pass
+// loading="eager" (hero, logo) load eagerly. Previously an omitted
+// `loading` meant the browser default (eager) for every below-fold image.
+const resolvedLoading = loading ?? "lazy";
 
 // Remote (absolute) URLs — including protocol-relative and data: URIs —
 // are rendered verbatim as a plain <img>. They must never be prefixed
@@ -72,11 +83,15 @@ if (!isRemote) {
 
 // Log a warning message in red if a local image is not found.
 // (Remote images are never looked up, so they never hit this branch.)
+// A missing local image still renders the bundled placeholder at the
+// requested dimensions (with the alt text) instead of rendering nothing
+// and collapsing the layout.
 const isValidPath = isRemote || Boolean(localKey);
-!isValidPath &&
+if (!isValidPath) {
   console.error(
     `\x1b[31mImage not found - ${src}.\x1b[0m Make sure the image is in the /public/images folder.`,
   );
+}
 ---
 
 {isRemote ? (
@@ -85,28 +100,76 @@ const isValidPath = isRemote || Boolean(localKey);
     alt={alt}
     width={width}
     height={height}
-    loading={loading}
+    loading={resolvedLoading}
+    decoding={decoding}
+    fetchpriority={fetchpriority}
+    sizes={sizes}
+    class={className}
+    style={style}
+    data-image-fallback="/images/image-placeholder.png"
+  />
+) : isValidPath ? (
+  <Image
+    src={images[localKey!]() as Promise<{ default: ImageMetadata }>}
+    alt={alt}
+    width={width}
+    height={height}
+    loading={resolvedLoading}
+    fit={fit ? fit : "contain"}
+    decoding={decoding}
+    fetchpriority={fetchpriority}
+    sizes={sizes}
+    widths={widths}
+    class={className}
+    format={format}
+    style={style}
+  />
+) : (
+  <img
+    src="/images/image-placeholder.png"
+    alt={alt}
+    width={width}
+    height={height}
+    loading={resolvedLoading}
     decoding={decoding}
     fetchpriority={fetchpriority}
     sizes={sizes}
     class={className}
     style={style}
   />
-) : (
-  isValidPath && (
-    <Image
-      src={images[localKey!]() as Promise<{ default: ImageMetadata }>}
-      alt={alt}
-      width={width}
-      height={height}
-      loading={loading}
-      fit={fit ? fit : "contain"}
-      decoding={decoding}
-      fetchpriority={fetchpriority}
-      sizes={sizes}
-      class={className}
-      format={format}
-      style={style}
-    />
-  )
 )}
+
+<script>
+  // Missing-remote-image fallback without inline `onerror` handlers
+  // (inline handlers would need a CSP exception and trip the linter's
+  // non-interactive-element rule). <img> errors do not bubble, but they
+  // do fire in the capture phase, so one delegated listener covers every
+  // remote image on the page. Guarded against double-binding: Astro
+  // re-runs component scripts after view-transition swaps.
+  declare global {
+    interface Window {
+      __astroplateImageFallbackBound?: boolean;
+    }
+  }
+
+  if (!window.__astroplateImageFallbackBound) {
+    window.__astroplateImageFallbackBound = true;
+    document.addEventListener(
+      "error",
+      (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLImageElement)) {
+          return;
+        }
+        const fallback = target.dataset.imageFallback;
+        if (!fallback) {
+          return;
+        }
+        // Clear first so a failing placeholder cannot loop.
+        delete target.dataset.imageFallback;
+        target.src = fallback;
+      },
+      true,
+    );
+  }
+</script>

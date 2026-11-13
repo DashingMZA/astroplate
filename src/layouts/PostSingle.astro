@@ -1,12 +1,11 @@
 ---
-import config from "@/config/config.json";
 import BlogCard from "@/components/BlogCard.astro";
 import Breadcrumbs from "@/components/Breadcrumbs.astro";
 import Mermaid from "@/components/Mermaid.astro";
 import Share from "@/components/Share.astro";
 import TableOfContents from "@/components/TableOfContents.astro";
 import Disqus from "@/helpers/Disqus";
-import { getSinglePage } from "@/lib/contentParser";
+import { getSinglePage } from "@/lib/contentParser.astro";
 import { displayAuthorNames, resolveAuthors } from "@/lib/utils/authors";
 import dateFormat from "@/lib/utils/dateFormat";
 import readingTime from "@/lib/utils/readingTime";
@@ -138,12 +137,7 @@ const resolvedAuthors = resolveAuthors(
             />
           </div>
         </div>
-        {/* Gate the island on its enable flag: mounting it unconditionally
-          shipped the ~21 KB Disqus chunk on every post even while Disqus
-          was disabled (the component itself only rendered null). */}
-        {config.disqus.enable && (
-          <Disqus className="mt-20" client:only="react" />
-        )}
+        <Disqus className="mt-20" client:only="react" />
       </article>
     </div>
 
