@@ -7,7 +7,67 @@ release is cut.
 
 ## Unreleased
 
-Upgrade of the Astroplate template: Astro 7.4.10 (from 7.1.4),
+### Wave C — accessibility, contact form, images, security headers, performance, docs
+
+- **Accessibility (P0):** mobile nav toggle is a real `<button>` with
+  dynamic `aria-expanded` / `aria-label` ("Open menu" / "Close menu"),
+  `aria-controls` to the menu, Escape closes and returns focus to the
+  toggle, and submenu toggles are keyboard-reachable buttons
+  (`focus-within`, never hover-only — no more `lg:invisible` trapping
+  links out of the tab order). Search modal is a `role="dialog"`
+  (`aria-modal`, accessible label, focus trap, focus returns to the
+  trigger, real clear button, arrow-key handling only while open).
+  Accordion and Tabs implement the full ARIA patterns (accordion:
+  `aria-expanded`/`aria-controls` + `role="region"`; tabs: `tablist`/
+  `tab`/`tabpanel` with arrow-key/Home/End navigation). Global
+  `:focus-visible` outline, no more focus suppression on search/form
+  inputs, and a `prefers-reduced-motion` media query that disables
+  smooth scrolling/transitions/animations (including the testimonial
+  autoplay).
+- **Contact form:** configurable endpoint via `contact_form.action`
+  in `config.json` (legacy fallback `params.contact_form_action`);
+  unconfigured = visibly disabled form with setup instructions and a
+  build warning, never a fake success; configured = validated
+  submission with accessible labels, `autocomplete`, `aria-describedby`
+  errors, and real success/error feedback. Provider setup documented
+  in `CONFIGURATION.md` (Formspree / Getform / Netlify Forms).
+- **Images:** `ImageMod` defaults to `loading="lazy"` with responsive
+  `srcset`/`sizes` for local images (hero, post hero, features,
+  cards, CTA); hero/logo stay `eager` + `fetchpriority="high"`;
+  descriptive hero alt text (was the generic `"banner"`); missing
+  local images render a bundled placeholder instead of nothing, and
+  dead remote images fall back to the same placeholder at runtime.
+  Default OG image is now a 1200×630 JPEG (45,694 B), down from the
+  460,475 B 3600×2400 PNG — same image, no quality loss.
+- **Security headers:** CSP + `nosniff` + Referrer/Permissions-Policy
+  configured identically for Cloudflare (`public/_headers`, HSTS),
+  Netlify (`netlify.toml`, HSTS), and nginx (`config/nginx/nginx.conf`,
+  no HSTS — HTTP-only container). See `SECURITY.md` for the CSP domain
+  inventory and the documented `unsafe-inline` trade-off. Vercel is
+  not covered (no `vercel.json` in the repo; add headers in the
+  dashboard).
+- **Performance:** the announcement banner is now a dependency-free
+  Astro component (no React island, no JS chunk on every page);
+  Disqus ships no JavaScript while disabled; dead code removed
+  (`bgImageMod.ts`, `useTheme.ts`); duplicated search-item types
+  consolidated to one definition (`src/layouts/helpers/searchTypes.ts`).
+- **Lint / types:** `pnpm run lint` exits 0 (was 40 errors);
+  `contentParser` / `taxonomyParser` converted from `.astro` to `.ts`
+  modules (all 18 importers updated); `astro check` 0 errors.
+- **Docs:** README, INSTALLATION, CONFIGURATION, CONTENT_SCHEMA,
+  SEO_GUIDE, IMAGE_STORAGE, DEPLOYMENT, SECURITY, and ACCESSIBILITY
+  rewritten to match the actual implementation after Waves A+B+C.
+- **Tests:** new `node:test` suites for contact-form config resolution,
+  header-config validity, and image URL handling.
+- **Known:** `motion` is installed but not wired into the search modal
+  — `motion/react` would grow the search chunk from ~18 KB to ~162 KB
+  for a 150 ms fade, and `motion/react-mini` has no `AnimatePresence`;
+  the modal animates with a CSS transition instead. The Disqus chunk
+  is still emitted by the build but is referenced by no page while
+  Disqus is disabled.
+
+
+Upgrade of the Astroplate template: Astro 7.4.11 (from 7.1.4),
 React 19.3.1, Tailwind CSS 4.3.5, `@astrojs/rss` 4.0.19 (new),
 TypeScript strict mode. `pnpm check` reports 0 errors and the
 production build emits 30 pages.
@@ -61,7 +121,7 @@ production build emits 30 pages.
 
 ### Changed
 
-- Astro 7.1.4 → 7.4.10; React 19.3.1; Tailwind CSS 4.3.5.
+- Astro 7.1.4 → 7.4.11; React 19.3.1; Tailwind CSS 4.3.5.
 - TypeScript strict mode (`astro/tsconfigs/strict`, `"strict": true`).
 - `ImageMod.astro` rewritten around the verbatim-remote rule and
   the `public/images/` glob (see [IMAGE_STORAGE.md](IMAGE_STORAGE.md)).
@@ -94,53 +154,33 @@ production build emits 30 pages.
 
 ### Security notes
 
-- JSON-LD output escapes `</` sequences (`JsonLd.astro`), so post
-  content cannot break out of the structured-data script element.
-- Search input is escaped before being compiled into a RegExp
-  (see above).
-- No security headers are configured on any host
-  (Cloudflare Workers, Netlify, Docker/nginx). This is a known
-  gap, not a shipped feature — see “Known limitations”.
-- The contact form posts to `"#"` (no backend). Do not collect
-  real submissions until a real endpoint is configured.
+- Security headers (CSP, `nosniff`, Referrer/Permissions-Policy,
+  HSTS where HTTPS is guaranteed) are configured for Cloudflare,
+  Netlify, and nginx — see `SECURITY.md`. Vercel is not covered (no
+  `vercel.json`); add headers in the dashboard and verify with
+  `curl -I`.
+- CSP uses `'unsafe-inline'` for scripts/styles — a documented
+  trade-off (Astro inline scripts on every page; static hosts cannot
+  inject nonces). See `SECURITY.md` for the full reasoning.
+- The CSP allow-lists only domains actually used (`media.csofts.tech`
+  R2, YouTube-nocookie / i.ytimg, w3schools demo video, Formspree /
+  Getform for the contact form). GTM/Disqus domains are deliberately
+  absent while both are disabled.
+- No API keys or secrets are in the repo; the contact form has no
+  backend of its own and no endpoint is ever invented.
 
 ### Known limitations
 
-Honest list of what is not done or not verified in this upgrade:
-
-- **Custom `slug` is stored but routing still uses the filename.**
-  Setting `slug` in frontmatter does not change a post's URL;
-  the URL stays `/blog/<filename>/`.
-- **`og_description` is accepted by the schema but not yet
-  consumed** as a distinct social description. The social
-  description always comes from `description`.
-- **Nav `aria-expanded` is static.** The mobile menu is a
-  checkbox hack; the `aria-expanded="false"` attribute on the
-  menu label is never flipped by JavaScript, so it does not
-  reflect the menu's open/closed state.
-- **No security headers** configured on any host.
-- **No Lighthouse / PageSpeed measurement was run**, so no Core
-  Web Vitals or performance-score claims are made. (Do not carry
-  forward the old readme's PageSpeed 100% claim — it predates
-  this upgrade and was not re-measured.)
-- **The `markdown.remarkPlugins` deprecation notice still prints
-  during build.** The config already uses `unified()`; the notice
-  comes from MDX defaults, not from this repo's config.
-- **Contact form action is `"#"`** — a dead end until a real
-  form endpoint is configured.
-- **GitHub Pages workflow is unverified**: it contains a literal
-  `$default-branch` placeholder in the branch trigger and pins
-  Node 20, while the project targets Node 24+.
-- **Multilingual / hreflang is NOT implemented.** The site is
-  single-language; the old multilingual demo claim does not
-  apply to this copy.
-- **`bgImageMod.ts` is dead code** (zero imports). It is
-  documented as unused in [IMAGE_STORAGE.md](IMAGE_STORAGE.md);
-  do not wire it back in.
-- **Deploy targets were not deployed or tested live** from this
-  copy (Cloudflare Workers, Netlify, Docker). The Docker image
-  also pins a `node:22.20.0-alpine` base, differing from the
-  Node 24+ local requirement.
-- **No deployment is live from this upgrade** until someone runs
-  the deploy steps in [DEPLOYMENT.md](DEPLOYMENT.md) and passes
-  the post-deploy smoke checks.
+- `featured` frontmatter is accepted but unconsumed — no featured-post
+  UI exists.
+- No `SearchAction` JSON-LD — search is a client-side modal, not a
+  search-results page.
+- No Lighthouse / Core Web Vitals measurement has been run — no
+  performance-score claims are made.
+- CodeQL verification is pending the next push.
+- Docker is untested live (image builds; the container has not been
+  run end-to-end against a live domain).
+- GitHub Pages workflow is manual-only (`workflow_dispatch`); the
+  Pages deployment itself is unverified live, and Pages cannot serve
+  custom security headers.
+- No multilingual / hreflang support — single-language site.
