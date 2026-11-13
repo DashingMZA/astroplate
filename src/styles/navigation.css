@@ -54,6 +54,18 @@
     @apply absolute opacity-0;
   }
 
+  /* The checkbox is opacity-0 but focusable, so its own focus outline
+     would draw on an invisible box. Suppress it there and draw the
+     outline on the visible label/knob instead. */
+  input:focus-visible {
+    outline: none;
+  }
+
+  input:focus-visible + label {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
   span {
     @apply bg-dark absolute -top-1 left-0 flex h-6 w-6 items-center justify-center rounded-full transition-all duration-300 dark:bg-white;
   }
@@ -63,4 +75,8 @@
       @apply lg:left-4;
     }
   }
+}
+
+.dark .theme-switcher input:focus-visible + label {
+  outline-color: var(--color-darkmode-primary);
 }

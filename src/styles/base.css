@@ -57,3 +57,38 @@ code {
 blockquote > p {
   @apply my-0!;
 }
+
+button {
+  @apply cursor-pointer;
+}
+
+/* Visible keyboard focus everywhere. Previously there was no :focus-visible
+   rule at all, and the search input (search.css) and form inputs
+   (utilities.css) explicitly suppressed their focus ring, leaving only a
+   border-colour change as the focus cue. */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.dark :focus-visible {
+  outline-color: var(--color-darkmode-primary);
+}
+
+/* Respect prefers-reduced-motion: no smooth scrolling, no transitions or
+   animations. Motion-driven components (search modal, Swiper autoplay)
+   are additionally gated in JS behind the same media query. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+}

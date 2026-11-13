@@ -4,7 +4,10 @@
 
 /* form style */
 @utility form-input {
-  @apply w-full rounded border-transparent bg-light px-6 py-4 text-text-dark placeholder:text-text-light focus:border-primary dark:focus:border-darkmode-primary focus:ring-transparent dark:border-darkmode-border dark:bg-darkmode-light dark:text-darkmode-text-light;
+  /* No focus:ring-transparent here: the global :focus-visible rule in
+     base.css draws the focus outline. Suppressing it left only a
+     border-colour change as the focus cue. */
+  @apply w-full rounded border-transparent bg-light px-6 py-4 text-text-dark placeholder:text-text-light focus:border-primary dark:focus:border-darkmode-primary dark:border-darkmode-border dark:bg-darkmode-light dark:text-darkmode-text-light;
 }
 
 @utility form-label {
