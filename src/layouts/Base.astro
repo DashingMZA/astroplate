@@ -140,20 +140,25 @@ const articleAuthors = article?.author
     />
     <meta name="generator" content={Astro.generator} />
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
     <!-- google font css - Astro 6 built-in Font API -->
     {fontEntries.map(([key]) => {
       const cssVar = `--font-${key}` as any;
       return <Font cssVariable={cssVar} preload />;
     })}
+
     <!-- responsive meta -->
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, maximum-scale=5"
     />
+
     <!-- title -->
     <title>{pageTitle}</title>
+
     <!-- canonical url (always emitted; defaults to this page's own URL) -->
     <link rel="canonical" href={canonicalUrl} />
+
     <!-- rss feed -->
     <link
       rel="alternate"
@@ -161,20 +166,24 @@ const articleAuthors = article?.author
       title={config.site.title}
       href={absoluteUrl("/rss.xml")}
     />
+
     <!-- noindex robots (only emitted when a page opts out; the default is index,follow) -->
     {noindex && <meta name="robots" content="noindex,nofollow" />}
+
     <!-- meta-description -->
     <meta name="description" content={pageDescription} />
+
     <ClientRouter />
+
     <!-- author from config.json -->
     <meta name="author" content={config.metadata.meta_author} />
+
     <!-- open graph -->
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={pageDescription} />
     <meta property="og:type" content={resolvedOgType} />
     <meta property="og:url" content={ogUrl} />
     <meta property="og:site_name" content={config.site.title} />
-    <<<<<<< HEAD
     {/*
       Multilingual: og:locale follows the page language (fr pages are
       fr_FR); other languages fall back to the configured locale.
@@ -208,35 +217,7 @@ const articleAuthors = article?.author
         ))}
       </>
     )}
-    =======
-    <meta property="og:locale" content={config.site.locale ?? "en_US"} />
-    {resolvedOgType === "article" && article && (
-      <>
-        {toIsoDate(article.publishedTime) && (
-          <meta
-            property="article:published_time"
-            content={toIsoDate(article.publishedTime)}
-          />
-        )}
-        {toIsoDate(article.modifiedTime) && (
-          <meta
-            property="article:modified_time"
-            content={toIsoDate(article.modifiedTime)}
-          />
-        )}
-        {articleAuthors.map((author: string) => (
-          <meta property="article:author" content={author} />
-        ))}
-        {article.section && (
-          <meta property="article:section" content={article.section} />
-        )}
-        {article.tags?.map((tag: string) => (
-          <meta property="article:tag" content={tag} />
-        ))}
-      </>
-    )}
-    >>>>>>> a576fb7 (style: reformat .astro files with prettier-plugin-astro
-    1.1.2)
+
     <!-- og-image -->
     <meta property="og:image" content={ogImage} />
     {isLocalImage && (
@@ -246,12 +227,14 @@ const articleAuthors = article?.author
       </>
     )}
     {ogImageAlt && <meta property="og:image:alt" content={ogImageAlt} />}
+
     <!-- twitter -->
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={pageDescription} />
     <meta name="twitter:image" content={ogImage} />
     <meta name="twitter:card" content={twitterCard} />
     {ogImageAlt && <meta name="twitter:image:alt" content={ogImageAlt} />}
+
     <!-- structured data -->
     {jsonLd && <JsonLd data={jsonLd} />}
   </head>
@@ -263,18 +246,10 @@ const articleAuthors = article?.author
       Skip to content
     </a>
     {/* google tag manager noscript */}
-    <<<<<<< HEAD
     {config.google_tag_manager.enable && (
       <GoogleTagmanagerNoscript id={config.google_tag_manager.gtm_id} />
     )}
     <Announcement lang={language} client:only="react" />
-    =======
-    {config.google_tag_manager.enable && (
-      <GoogleTagmanagerNoscript id={config.google_tag_manager.gtm_id} />
-    )}
-    <Announcement client:only="react" />
-    >>>>>>> a576fb7 (style: reformat .astro files with prettier-plugin-astro
-    1.1.2)
     <Header />
     <SearchModal lang={language} client:only="react" />
     <main class="grow" id="main-content">

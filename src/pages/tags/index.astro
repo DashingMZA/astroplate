@@ -15,7 +15,6 @@ const allTags = await getAllTaxonomy(BLOG_FOLDER, "tags");
   <section class="section">
     <div class="container text-center">
       <ul>
-        <<<<<<< HEAD
         {tags.map((tag: any) => {
           const count = allTags.filter((c) => c === tag).length;
           return (
@@ -32,25 +31,6 @@ const allTags = await getAllTaxonomy(BLOG_FOLDER, "tags");
             </li>
           );
         })}
-        =======
-        {tags.map((tag: any) => {
-          const count = allTags.filter((c) => c === tag).length;
-          return (
-            <li class="m-3 inline-block">
-              <a
-                href={`/tags/${tag}`}
-                class="block rounded bg-light px-4 py-2 text-xl text-text-dark dark:bg-darkmode-light dark:text-darkmode-text-dark"
-              >
-                {humanize(tag)}{" "}
-                <span class="ml-2 rounded bg-body px-2 dark:bg-darkmode-body">
-                  {count}
-                </span>
-              </a>
-            </li>
-          );
-        })}
-        >>>>>>> a576fb7 (style: reformat .astro files with prettier-plugin-astro
-        1.1.2)
       </ul>
     </div>
   </section>

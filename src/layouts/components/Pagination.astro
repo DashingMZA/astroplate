@@ -30,8 +30,11 @@ for (let i = 1; i <= totalPages; i++) {
       <a
         href={
           indexPageLink
-            ? `${section ? "/" + section : "/"}`
-            : `${section ? "/" + section : ""}/page/${currentPage - 1}`
+            ? slugSelector(`/${section ? section : ""}`, lang)
+            : slugSelector(
+                `/${section ? section : ""}/page/${currentPage - 1}`,
+                lang,
+              )
         }
         class="rounded px-2 py-1.5 text-text-dark hover:bg-light dark:text-darkmode-text-dark dark:hover:bg-darkmode-light"
       >
@@ -80,20 +83,13 @@ for (let i = 1; i <= totalPages; i++) {
         </span>
       ) : (
         <a
-          href={
-<<<<<<< HEAD
-            indexPageLink
-              ? slugSelector(`/${section ? section : ""}`, lang)
-              : slugSelector(
-                  `/${section ? section : ""}/page/${currentPage - 1}`,
-                  lang
-                )
-=======
+          href={slugSelector(
             i === 0
-              ? `${section ? "/" + section : "/"}`
-              : `${section ? "/" + section : ""}/page/${pagination}`
->>>>>>> a576fb7 (style: reformat .astro files with prettier-plugin-astro 1.1.2)
-          }
+              ? `/${section ? section : ""}`
+              : `/${section ? section : ""}/page/${pagination}`,
+            lang,
+          )}
+          aria-current="page"
           class="rounded px-4 py-2 text-text-dark hover:bg-light dark:text-darkmode-text-dark dark:hover:bg-darkmode-light"
         >
           {pagination}
@@ -101,45 +97,13 @@ for (let i = 1; i <= totalPages; i++) {
       ),
     )}
 
-<<<<<<< HEAD
-      {/* page index */}
-      {pageList.map((pagination, i) =>
-        pagination === currentPage ? (
-          <span
-            aria-current="page"
-            class="rounded bg-primary px-4 py-2 text-white dark:bg-darkmode-primary dark:text-text-dark"
-          >
-            {pagination}
-          </span>
-        ) : (
-          <a
-            href={slugSelector(
-              i === 0
-                ? `/${section ? section : ""}`
-                : `/${section ? section : ""}/page/${pagination}`,
-              lang
-            )}
-            aria-current="page"
-            class="rounded px-4 py-2 text-text-dark hover:bg-light dark:text-darkmode-text-dark dark:hover:bg-darkmode-light"
-          >
-            {pagination}
-          </a>
-        )
-      )}
-
-      {/* next page */}
-      {hasNextPage ? (
-        <a
-          href={slugSelector(
-            `/${section ? section : ""}/page/${currentPage + 1}`,
-            lang
-          )}
-          class="rounded px-2 py-1.5 text-text-dark hover:bg-light dark:text-darkmode-text-dark dark:hover:bg-darkmode-light"
-=======
     {/* next page */}
     {hasNextPage ? (
       <a
-        href={`${section ? "/" + section : ""}/page/${currentPage + 1}`}
+        href={slugSelector(
+          `/${section ? section : ""}/page/${currentPage + 1}`,
+          lang,
+        )}
         class="rounded px-2 py-1.5 text-text-dark hover:bg-light dark:text-darkmode-text-dark dark:hover:bg-darkmode-light"
       >
         <span class="sr-only">Next</span>
@@ -149,7 +113,6 @@ for (let i = 1; i <= totalPages; i++) {
           aria-hidden="true"
           height="30"
           width="30"
->>>>>>> a576fb7 (style: reformat .astro files with prettier-plugin-astro 1.1.2)
         >
           <path
             fill-rule="evenodd"

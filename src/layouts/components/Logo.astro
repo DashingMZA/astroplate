@@ -32,13 +32,7 @@ if (disabledLanguages.includes(lang)) {
 }
 ---
 
-<<<<<<< HEAD
 <a href={slugSelector("/", lang)} class="navbar-brand inline-block">
-  {
-    src || srcDarkmode || logo || logo_darkmode ? (
-      <>
-=======
-<a href="/" class="navbar-brand inline-block">
   {src || srcDarkmode || logo || logo_darkmode ? (
     <>
       <ImageMod
@@ -56,7 +50,6 @@ if (disabledLanguages.includes(lang)) {
         format="webp"
       />
       {theme_switcher && (
->>>>>>> a576fb7 (style: reformat .astro files with prettier-plugin-astro 1.1.2)
         <ImageMod
           src={srcDarkmode ? srcDarkmode : logo_darkmode}
           class={"hidden dark:inline-block"}

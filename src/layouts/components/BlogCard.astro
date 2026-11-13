@@ -39,12 +39,7 @@ data.id = modifiedSlug;
     />
   )}
   <h4 class="mb-3">
-    <<<<<<< HEAD
     <a href={slugSelector(`/${data.id}`, lang)}>{title}</a>
-    =======
-    <a href={`/${blog_folder}/${data.id}`}>{title}</a>
-    >>>>>>> a576fb7 (style: reformat .astro files with prettier-plugin-astro
-    1.1.2)
   </h4>
   <ul class="mb-4">
     <li class="mr-4 inline-block">
@@ -56,22 +51,12 @@ data.id = modifiedSlug;
 
     <li class="mr-4 inline-block">
       <FaRegFolder className={"mr-2 -mt-1 inline-block"} />
-      <<<<<<< HEAD
       {categories.map((category: string, index: number) => (
         <a href={slugSelector(`/categories/${slugify(category)}`, lang)}>
           {humanize(category)}
           {index !== categories.length - 1 && ","}
         </a>
       ))}
-      =======
-      {categories.map((category: string, index: number) => (
-        <a href={`/categories/${slugify(category)}`}>
-          {humanize(category)}
-          {index !== categories.length - 1 && ","}
-        </a>
-      ))}
-      >>>>>>> a576fb7 (style: reformat .astro files with prettier-plugin-astro
-      1.1.2)
     </li>
     {date && <li class="inline-block">{dateFormat(date)}</li>}
   </ul>
