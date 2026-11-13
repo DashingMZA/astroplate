@@ -2,10 +2,13 @@ import { unified } from "@astrojs/markdown-remark";
 import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
+import compress from "@playform/compress";
 import tailwindcss from "@tailwindcss/vite";
 import AutoImport from "astro-auto-import";
 import { defineConfig, fontProviders } from "astro/config";
+import rehypeKatex from "rehype-katex";
 import remarkCollapse from "remark-collapse";
+import remarkMath from "remark-math";
 import remarkToc from "remark-toc";
 import sharp from "sharp";
 import config from "./src/config/config.json";
@@ -62,7 +65,7 @@ const fontsConfig = Object.entries(theme.fonts.font_family)
 export default defineConfig({
   site: config.site.base_url ? config.site.base_url : "http://examplesite.com",
   base: config.site.base_path ? config.site.base_path : "/",
-  trailingSlash: config.site.trailing_slash ? "always" : "ignore",
+  trailingSlash: config.site.trailing_slash ? "always" : "never",
   vite: { plugins: [tailwindcss()] },
   fonts: fontsConfig,
   i18n: { locales: filteredSupportedLang, defaultLocale: default_language },
@@ -94,13 +97,24 @@ export default defineConfig({
       ],
     }),
     mdx(),
+    // Compress must run last: it post-processes the built output (HTML/CSS/
+    // Image/SVG/JSON). JavaScript is disabled on purpose — Astro/Vite already
+    // minifies JS, and a second terser pass only re-minifies it for no gain
+    // (see the PowerAI lesson). No adapter is wired: this is a static build
+    // served via wrangler Static Assets / nginx.
+    compress({ JavaScript: false }),
   ],
   markdown: {
     processor: unified({
       remarkPlugins: [
         remarkToc,
         [remarkCollapse, { test: "Table of contents" }],
+        // Math: `$…$` / `$$…$$` render via KaTeX (CSS imported in Base.astro).
+        remarkMath,
       ],
+      // `strict: "ignore"` renders unparseable math as plain text instead of
+      // failing the build on a typo'd formula.
+      rehypePlugins: [[rehypeKatex, { strict: "ignore" }]],
     }),
     shikiConfig: { theme: "one-dark-pro", wrap: true },
   },
