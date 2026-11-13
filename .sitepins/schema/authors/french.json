@@ -33,6 +33,18 @@
       "defaultValue": ""
     },
     {
+      "name": "canonical",
+      "label": "Canonical URL",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "name": "noindex",
+      "label": "Noindex",
+      "type": "boolean",
+      "value": false
+    },
+    {
       "name": "social",
       "label": "Social",
       "type": "Array",

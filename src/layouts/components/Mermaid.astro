@@ -1,0 +1,33 @@
+---
+// Mermaid diagrams — loaded ONLY on pages whose raw content contains a
+// mermaid fence. The script is rendered conditionally (never globally), so
+// pages without diagrams ship zero mermaid JS. Astro bundles this inline
+// module script per page; the code fence itself is rendered by Shiki as
+// `pre > code.language-mermaid`, so the script swaps each such block for a
+// `div.mermaid` holding the raw diagram source and runs mermaid on it.
+const { content } = Astro.props;
+const hasMermaid =
+  typeof content === "string" && content.includes("```mermaid");
+---
+
+{hasMermaid && <script>
+  import mermaid from "mermaid";
+  mermaid.initialize({ startOnLoad: false });
+  const blocks = document.querySelectorAll("pre > code.language-mermaid");
+  const nodes: HTMLElement[] = [];
+  blocks.forEach((code) => {
+    const pre = code.parentElement;
+    const source = code.textContent ?? "";
+    if (!pre || !source.trim()) return;
+    const container = document.createElement("div");
+    container.className = "mermaid";
+    container.textContent = source;
+    pre.replaceWith(container);
+    nodes.push(container);
+  });
+  if (nodes.length > 0) {
+    mermaid.run({ nodes }).catch((error: unknown) => {
+      console.error("Mermaid failed to render a diagram:", error);
+    });
+  }
+</script>}
