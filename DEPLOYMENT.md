@@ -5,10 +5,13 @@ The build output is fully static. `pnpm build` produces `dist/`
 server component, no database, and no runtime secrets needed for
 the static build.
 
-> Status: the deploy targets below are **present in the repo but
-> have not been deployed or tested live** from this copy. The
-> instructions describe what the repo configures, not a verified
-> live deployment.
+> Status: the live production site is on **Vercel at
+> https://astroplate.jadoo.bond** (dashboard-managed deployment,
+> verified serving HTTP 200 with the custom domain). The Cloudflare,
+> Netlify, and Docker targets below are present in the repo but have
+> not been deployed or tested live from this copy — the instructions
+> describe what the repo configures, not a verified live deployment
+> for those targets.
 
 ## Build first
 
@@ -28,7 +31,8 @@ stale, deploy nothing — rebuild.
 Deployments are manual: build, preview, verify (see “After deploy”
 below), then deploy. Nothing in this repo auto-deploys on push.
 The GitHub Pages workflow (`.github/workflows/`) is **not** verified
-(see “GitHub Pages” below) and should not be relied on until fixed.
+(see “GitHub Pages” below) and should not be relied on until it has
+been triggered once and confirmed.
 
 ## Cloudflare Workers
 
@@ -58,9 +62,33 @@ Notes:
   unknown routes.
 - `wrangler deploy` requires a Cloudflare account and login
   (`wrangler login`) — credentials live outside this repo.
-- The worker name is `astroplate`; the custom domain is attached in
-  the Cloudflare dashboard (the current demo domain is
-  `astroplate.csofts.tech`).
+- The worker name is `astroplate`; no custom domain is configured
+  in `wrangler.jsonc` — a custom domain, if one is wanted for this
+  target, is attached in the Cloudflare dashboard. (An earlier
+  version of this doc named `astroplate.csofts.tech` as the demo
+  domain; that was never recorded in the repo config and is not
+  verified — do not treat it as the Cloudflare domain. The live
+  production domain is https://astroplate.jadoo.bond on Vercel.)
+- Security headers for this target come from `public/_headers`,
+  which the build copies to `dist/_headers` — see
+  [SECURITY.md](SECURITY.md).
+
+## Vercel (live)
+
+The live production site is **https://astroplate.jadoo.bond**,
+deployed from this repo through the Vercel dashboard (Git push
+auto-deploys production). There is **no `vercel.json` in the repo**
+— deployment is dashboard-managed on purpose, so the Vercel
+project settings (framework preset, Node version, custom domain)
+live in the dashboard, not in code.
+
+One consequence: the security headers configured in this repo
+(`public/_headers`, `netlify.toml`, nginx) are **not** served by
+Vercel — Vercel does not read `_headers` files. Until headers are
+added in the Vercel dashboard (or a `vercel.json` is introduced),
+the live Vercel site does not send the CSP / HSTS / `nosniff`
+headers documented in [SECURITY.md](SECURITY.md). See that file
+before claiming the live site is header-hardened.
 
 ## Netlify
 
@@ -70,13 +98,18 @@ Configured in `netlify.toml`:
 [build]
 publish = "dist"
 command = "pnpm build"
+
+[build.environment]
+NODE_VERSION = "24"
 ```
 
 Connect the repo in the Netlify dashboard (or use the Netlify CLI)
 with build command `pnpm build` and publish directory `dist`.
 No environment variables are required for the static build. The
 old upstream demo (`astroplate.netlify.app`) is not this copy's
-deployment.
+deployment. Security headers are configured in the same file
+(`[[headers]]` for `/*`, including HSTS) — see
+[SECURITY.md](SECURITY.md).
 
 ## Static hosting (any host)
 
@@ -98,7 +131,11 @@ Pages, S3 + CloudFront, nginx, …). Requirements:
 `Dockerfile` is a multi-stage build: install deps → build →
 serve `dist/` with nginx. The nginx config is
 `config/nginx/nginx.conf` (gzip on, `try_files $uri ${uri}.html
-$uri/index.html =404`, `error_page 404 /404.html`).
+$uri/index.html =404`, `error_page 404 /404.html`, plus the
+security headers documented in [SECURITY.md](SECURITY.md) —
+CSP, `nosniff`, Referrer/Permissions-Policy, but **no HSTS**:
+the container listens on port 80 only, so HSTS must be added at
+the TLS-terminating reverse proxy in front of it).
 
 ```bash
 docker build -t astroplate .
@@ -110,26 +147,20 @@ docker run -it --rm astroplate ash
 The default installer is pnpm (`ARG INSTALLER=pnpm`); `npm` and
 `yarn` are also supported via `--build-arg INSTALLER=npm|yarn`.
 
-> Note: the `Dockerfile` pins a `node:22.20.0-alpine` base image,
-> which differs from the Node 24+ local-dev requirement in
-> [INSTALLATION.md](INSTALLATION.md). It has not been verified
+> Note: the `Dockerfile` uses a `node:24-alpine` base image,
+> matching the Node 24+ local-dev requirement in
+> [INSTALLATION.md](INSTALLATION.md), and pins pnpm to the exact
+> version in `package.json` (12.19.0). It has not been verified
 > against the current dependency set — treat the Docker path as
 > untested until someone builds and runs it.
 
 ## GitHub Pages
 
 `.github/workflows/deploy-to-github-pages.yml` exists but is
-**unverified and currently broken as written**:
-
-- The branch trigger contains a literal `$default-branch`
-  placeholder (`branches: [$default-branch]`) that GitHub does not
-  expand — it must be replaced with the real branch name
-  (e.g. `main`).
-- The workflow pins `node-version: "20"`, while the project targets
-  Node 24+.
-
-Fix both, then trigger the workflow manually (`workflow_dispatch`)
-and confirm the deployment before relying on it.
+**unverified**: it triggers on `workflow_dispatch` only and pins
+`node-version: "24"`, matching the project target. Trigger the
+workflow manually once and confirm the deployment before relying
+on it.
 
 ## Environment considerations
 
@@ -140,8 +171,9 @@ and confirm the deployment before relying on it.
     and a real `gtm_id` (the placeholder is `GTM-XXXXXX`).
   - Disqus: disabled by default; set `enable: true` and your
     `shortname` (the placeholder is `csofts-template`).
-  - Contact form: `params.contact_form_action` is `"#"` by
-    default — point it at a real endpoint before launch.
+  - Contact form: `contact_form.action` is empty by default —
+    the page renders a disabled form until a real provider
+    endpoint is configured (see [CONFIGURATION.md](CONFIGURATION.md)).
 - `site.base_url` **must** be the production domain before
   building for release. Canonical URLs, sitemap, RSS, and OG URLs
   are all baked in at build time; deploying the same `dist/` to a
@@ -173,7 +205,7 @@ work as documented. See [INSTALLATION.md](INSTALLATION.md).
 Run these against the live domain (replace the domain with yours):
 
 ```bash
-DOMAIN="https://astroplate.csofts.tech"
+DOMAIN="https://astroplate.jadoo.bond"
 
 # Home page serves, canonical is absolute and self-referential
 curl -s $DOMAIN/ | grep -o '<link rel="canonical" href="[^"]*"'
@@ -200,15 +232,31 @@ curl -s -o /dev/null -w "%{http_code}\n" $DOMAIN/this-page-does-not-exist
 Also verify in a browser: the homepage renders, the theme switcher
 works, search opens and returns results, a blog post shows its hero
 image (including the remote-image demo post `/blog/post-r2-example/`),
-and the mobile menu opens.
+and the mobile menu opens (button toggle, `aria-expanded` flips,
+Escape closes it, submenu opens on keyboard focus).
+
+# Verify the security headers are actually served (host-dependent)
+curl -s -I $DOMAIN/ | grep -i "content-security-policy\|strict-transport\|x-content-type-options\|referrer-policy\|permissions-policy"
 
 ## Security headers
 
-**No security headers are configured on any host in this repo**
-— no `Content-Security-Policy`, `Strict-Transport-Security`,
-`X-Content-Type-Options`, or similar in `wrangler.jsonc`,
-`netlify.toml`, or `config/nginx/nginx.conf`. If the deployment
-needs them, add them at the host layer (Cloudflare Transform Rules /
-`_headers` file for Netlify / nginx `add_header` directives).
-Do not claim the site ships hardened headers until that work is
-done and verified.
+Security headers **are** configured in the repo — one CSP, kept
+identical across all three targets (see [SECURITY.md](SECURITY.md)
+for the domain inventory and the `unsafe-inline` trade-off):
+
+- Cloudflare: `public/_headers` (copied to `dist/_headers` by the
+  build; includes HSTS).
+- Netlify: `[[headers]]` in `netlify.toml` (includes HSTS).
+- Docker/nginx: `add_header` in `config/nginx/nginx.conf`
+  (**no HSTS** — the container is HTTP-only; add it at the TLS
+  terminator).
+- Vercel: **not covered** — Vercel ignores `_headers` files and
+  there is no `vercel.json` in the repo, so the live Vercel site
+  needs headers added in the dashboard. Do not claim the live site
+  ships hardened headers until that is done and verified with the
+  `curl -I` check above.
+- GitHub Pages: cannot serve custom headers at all — that target
+  has no header configuration, by platform limitation.
+
+The headers are config, not a live guarantee: after deploying to
+any target, run the `curl -I` check above against the live domain.

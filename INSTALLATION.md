@@ -5,7 +5,7 @@
 | Requirement | Version |
 | --- | --- |
 | Node.js | 24+ |
-| pnpm | 11.17.0 (the repo pins this in `package.json` under `packageManager`) |
+| pnpm | 12.19.0 (the repo pins this in `package.json` under `packageManager`) |
 
 Check yours:
 
@@ -18,7 +18,7 @@ If pnpm is not installed, enable it via Corepack (ships with Node):
 
 ```bash
 corepack enable
-corepack prepare pnpm@11.17.0 --activate
+corepack prepare pnpm@12.19.0 --activate
 ```
 
 No other accounts, API keys, or secrets are needed. The static build
@@ -82,10 +82,12 @@ pnpm preview
 
 Serves `dist/` locally. Always preview after a build before deploying.
 
-## Type-check and format
+## Type-check, lint, and test
 
 ```bash
 pnpm check    # astro check — 0 errors expected
+pnpm lint     # eslint — 0 errors expected
+pnpm test     # node:test — all tests expected to pass
 pnpm format   # prettier -w ./src
 ```
 
@@ -140,11 +142,12 @@ The repo targets Node 24+. On older Node versions, Astro 7 / Vite 8
 may fail to start or build. Upgrade Node rather than downgrading
 dependencies.
 
-> Note: the `Dockerfile` in this repo currently uses a
-> `node:22.20.0-alpine` base image. That is the Docker image's pinned
-> version and differs from the Node 24+ local-dev requirement above;
-> it has not been verified against the current dependency set.
-> See [DEPLOYMENT.md](DEPLOYMENT.md).
+> Note: the `Dockerfile` in this repo uses a `node:24-alpine` base
+> image, matching the Node 24+ local-dev requirement above, and pins
+> pnpm to the exact version in `package.json` (12.19.0). The Docker
+> path has not been verified against the current dependency set — no
+> Docker daemon is available in the sandbox — so treat it as untested
+> until someone builds and runs it. See [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ### Stale generated files
 

@@ -1,3 +1,19 @@
 [build]
 publish = "dist"
 command = "pnpm build"
+
+[build.environment]
+NODE_VERSION = "24"
+
+# Security headers. Keep in sync with public/_headers (Cloudflare) and
+# config/nginx/nginx.conf (Docker). See public/_headers for the CSP
+# domain inventory and the documented 'unsafe-inline' trade-off.
+# HSTS is included here because Netlify serves this over HTTPS.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://media.csofts.tech https://i.ytimg.com; media-src 'self' https://media.csofts.tech https://www.w3schools.com; font-src 'self'; connect-src 'self'; frame-src https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'self' https://formspree.io https://getform.io; frame-ancestors 'self'; upgrade-insecure-requests"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
