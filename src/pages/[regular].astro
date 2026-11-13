@@ -1,6 +1,10 @@
 ---
+import Mermaid from "@/components/Mermaid.astro";
 import Base from "@/layouts/Base.astro";
-import { getSinglePage } from "@/lib/contentParser.astro";
+import { getSinglePage } from "@/lib/contentParser";
+import { buildBreadcrumbJsonLd } from "@/lib/utils/jsonld";
+import { buildCanonical, canonicalFor } from "@/lib/utils/seo";
+import { checkDuplicateSlugs, pageSlug, pageUrl } from "@/lib/utils/slug";
 import PageHeader from "@/partials/PageHeader.astro";
 import { render } from "astro:content";
 
@@ -10,9 +14,13 @@ export async function getStaticPaths() {
 
   const pages = await getSinglePage(COLLECTION_FOLDER);
 
+  // Two pages must never resolve to the same public URL (custom slug
+  // colliding with another page's slug or filename). Fail the build loudly.
+  checkDuplicateSlugs(pages, pageUrl, "page");
+
   const paths = pages.map((page) => ({
     params: {
-      regular: page.id,
+      regular: pageSlug(page),
     },
     props: { page },
   }));
@@ -20,15 +28,37 @@ export async function getStaticPaths() {
 }
 
 const { page } = Astro.props;
-const { title, meta_title, description, image } = page.data;
+const {
+  title,
+  meta_title,
+  description,
+  image,
+  og_title,
+  og_description,
+  og_image,
+  canonical,
+  noindex,
+} = page.data;
 const { Content } = await render(page);
+
+const pageCanonical = buildCanonical(canonical, pageUrl(page));
+const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+  { name: "Home", url: canonicalFor("/") },
+  { name: title, url: pageCanonical },
+]);
 ---
 
 <Base
   title={title}
   meta_title={meta_title}
   description={description}
-  image={image}
+  image={og_image ?? image}
+  og_title={og_title}
+  og_description={og_description}
+  image_alt={title}
+  canonical={canonical}
+  noindex={noindex}
+  jsonLd={[breadcrumbJsonLd]}
 >
   <PageHeader title={title} />
   <section class="section-sm">
@@ -38,6 +68,7 @@ const { Content } = await render(page);
           <div class="content">
             <Content />
           </div>
+          <Mermaid content={page.body} />
         </div>
       </div>
     </div>

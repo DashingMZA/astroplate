@@ -1,16 +1,40 @@
 ---
 import config from "@/config/config.json";
 import dateFormat from "@/lib/utils/dateFormat";
+import { displayAuthorNames, resolveAuthors } from "@/lib/utils/authors";
+import { postUrl } from "@/lib/utils/slug";
 import { humanize, plainify, slugify } from "@/lib/utils/textConverter";
+import { getCollection } from "astro:content";
 import { FaRegFolder, FaRegUserCircle } from "react-icons/fa";
 import ImageMod from "./ImageMod.astro";
 
-const {
-  summary_length,
-  blog_folder,
-}: { summary_length: number; blog_folder: string } = config.settings;
+const { summary_length }: { summary_length: number } = config.settings;
 const { data } = Astro.props;
-const { title, image, date, author, categories } = data.data;
+const {
+  title,
+  image,
+  date,
+  author,
+  authors,
+  categories,
+  excerpt,
+  description,
+} = data.data;
+
+// Card text: excerpt > description > raw-body slice. The old code sliced
+// the raw Markdown body, which could cut mid-syntax and ignored the
+// excerpt/description fields entirely.
+const summaryLength = Number(summary_length);
+const cardText =
+  excerpt ?? description ?? plainify(data.body?.slice(0, summaryLength) ?? "");
+
+// Authors resolved against the authors collection (file id first, legacy
+// display-name match as fallback). Unresolved names render as plain text.
+const allAuthors = await getCollection("authors");
+const resolvedAuthors = resolveAuthors(
+  displayAuthorNames({ data: { author, authors } }),
+  allAuthors,
+);
 ---
 
 <div class="bg-body dark:bg-darkmode-body">
@@ -24,17 +48,31 @@ const { title, image, date, author, categories } = data.data;
       format="webp"
       loading="lazy"
       decoding="async"
+      sizes="(max-width: 768px) 100vw, 445px"
+      widths={[445, 890]}
     />
   )}
-  <h4 class="mb-3">
-    <a href={`/${blog_folder}/${data.id}`}>{title}</a>
-  </h4>
+  <h3 class="mb-3">
+    <a href={postUrl(data)}>{title}</a>
+  </h3>
   <ul class="mb-4">
     <li class="mr-4 inline-block">
-      <a href={`/authors/${slugify(author)}`}>
-        <FaRegUserCircle className={"mr-2 -mt-1 inline-block"} />
-        {humanize(author)}
-      </a>
+      {resolvedAuthors.map((resolved, index: number) => (
+        <>
+          {resolved.url ? (
+            <a href={resolved.url}>
+              <FaRegUserCircle className={"mr-2 -mt-1 inline-block"} />
+              {humanize(resolved.name)}
+            </a>
+          ) : (
+            <span>
+              <FaRegUserCircle className={"mr-2 -mt-1 inline-block"} />
+              {humanize(resolved.name)}
+            </span>
+          )}
+          {index !== resolvedAuthors.length - 1 && ", "}
+        </>
+      ))}
     </li>
     <li class="mr-4 inline-block">
       <FaRegFolder className={"mr-2 -mt-1 inline-block"} />
@@ -47,8 +85,8 @@ const { title, image, date, author, categories } = data.data;
     </li>
     {date && <li class="inline-block">{dateFormat(date)}</li>}
   </ul>
-  <p class="mb-6">{plainify(data.body?.slice(0, Number(summary_length)))}</p>
-  <a class="btn btn-outline-primary btn-sm" href={`/${blog_folder}/${data.id}`}>
+  <p class="mb-6">{cardText}</p>
+  <a class="btn btn-outline-primary btn-sm" href={postUrl(data)}>
     read more
   </a>
 </div>

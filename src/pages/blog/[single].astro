@@ -2,16 +2,27 @@
 import config from "@/config/config.json";
 import Base from "@/layouts/Base.astro";
 import PostSingle from "@/layouts/PostSingle.astro";
-import { getSinglePage } from "@/lib/contentParser.astro";
-import { absoluteUrl } from "@/lib/utils/seo";
+import { getSinglePage } from "@/lib/contentParser";
+import { displayAuthorNames, resolveAuthors } from "@/lib/utils/authors";
+import {
+  buildBlogPostingJsonLd,
+  buildBreadcrumbJsonLd,
+} from "@/lib/utils/jsonld";
+import { absoluteUrl, buildCanonical, canonicalFor } from "@/lib/utils/seo";
+import { checkDuplicateSlugs, postSlug, postUrl } from "@/lib/utils/slug";
+import { getCollection } from "astro:content";
 
 export async function getStaticPaths() {
   const BLOG_FOLDER = "blog";
   const posts = await getSinglePage(BLOG_FOLDER);
 
+  // Two posts must never resolve to the same public URL (custom slug
+  // colliding with another post's slug or filename). Fail the build loudly.
+  checkDuplicateSlugs(posts, postUrl, "blog post");
+
   const paths = posts.map((post) => ({
     params: {
-      single: post.id,
+      single: postSlug(post),
     },
     props: { post },
   }));
@@ -23,6 +34,8 @@ const {
   title,
   meta_title,
   og_title,
+  og_description,
+  excerpt,
   description,
   image,
   og_image,
@@ -37,58 +50,77 @@ const {
   noindex,
 } = post.data;
 
-// Multi-author support: `authors` array when present, else the `author` field.
-const displayAuthors: string[] =
-  authors && authors.length > 0 ? authors : [author];
+// Authors resolved against the authors collection by file id first
+// (legacy display-name match only as a fallback). Unresolved names render
+// as plain text with no link — never a 404 author URL.
+const allAuthors = await getCollection("authors");
+const resolvedAuthors = resolveAuthors(
+  displayAuthorNames({ data: { author, authors } }),
+  allAuthors,
+);
 
 // Social-share image: per-post og_image wins, else the hero image.
 const seoImage = og_image ?? image;
 const modifiedDate = updated ?? lastmod ?? date;
 
-// Article structured data, emitted once via Base's `jsonLd` prop.
-const articleJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Article",
-  headline: title,
-  description: description,
-  image: seoImage ? [absoluteUrl(seoImage)] : undefined,
-  datePublished: date ? new Date(date).toISOString() : undefined,
-  dateModified: modifiedDate ? new Date(modifiedDate).toISOString() : undefined,
-  author: displayAuthors.map((name: string) => ({
-    "@type": "Person",
-    name,
-  })),
-  publisher: {
-    "@type": config.publisher?.type ?? "Organization",
-    name: config.publisher?.name ?? config.site.title,
-    ...(config.publisher?.logo
+// Canonical URL of this post: explicit frontmatter canonical wins,
+// otherwise the custom-slug public URL.
+const canonicalUrl = buildCanonical(canonical, postUrl(post));
+
+// Structured data: BlogPosting (+ BreadcrumbList). Base merges these into
+// the page's single @graph JSON-LD block.
+const articleJsonLd = buildBlogPostingJsonLd(
+  {
+    headline: title,
+    description: description ?? excerpt ?? undefined,
+    image: seoImage ? absoluteUrl(seoImage) : undefined,
+    datePublished: date ? new Date(date).toISOString() : undefined,
+    dateModified: modifiedDate
+      ? new Date(modifiedDate).toISOString()
+      : undefined,
+    authors: resolvedAuthors.map((a) => ({
+      name: a.name,
+      url: a.url ? absoluteUrl(a.url) : null,
+    })),
+    publisher: config.publisher
       ? {
-          logo: {
-            "@type": "ImageObject",
-            url: absoluteUrl(config.publisher.logo),
-          },
+          ...config.publisher,
+          logo: config.publisher.logo
+            ? absoluteUrl(config.publisher.logo)
+            : undefined,
         }
-      : {}),
+      : null,
+    url: canonicalUrl,
   },
-};
+  String(config.site.base_url ?? "").replace(/\/+$/, ""),
+);
+const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+  { name: "Home", url: canonicalFor("/") },
+  { name: "Blog", url: canonicalFor("/blog") },
+  { name: title, url: canonicalUrl },
+]);
 ---
 
 <Base
   title={title}
-  meta_title={meta_title || og_title}
+  meta_title={meta_title}
   description={description}
+  excerpt={excerpt}
   image={seoImage}
+  og_title={og_title}
+  og_description={og_description}
+  image_alt={title}
   ogType="article"
   article={{
     publishedTime: date,
     modifiedTime: modifiedDate,
-    author: displayAuthors,
+    author: resolvedAuthors.map((a) => a.name),
     section: categories[0],
     tags,
   }}
   canonical={canonical}
   noindex={noindex}
-  jsonLd={articleJsonLd}
+  jsonLd={[articleJsonLd, breadcrumbJsonLd]}
 >
   <PostSingle post={post} />
 </Base>
