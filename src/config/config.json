@@ -1,7 +1,7 @@
 {
   "site": {
     "title": "Astroplate",
-    "base_url": "https://astroplate.csofts.tech",
+    "base_url": "https://astroplate.jadoo.bond",
     "base_path": "/",
     "trailing_slash": false,
     "language": "en",
@@ -18,7 +18,12 @@
     "name": "Astroplate",
     "type": "Organization",
     "logo": "/images/logo.png",
-    "url": "https://astroplate.csofts.tech"
+    "url": "https://astroplate.jadoo.bond"
+  },
+
+  "social": {
+    "twitter_site": "",
+    "twitter_creator": ""
   },
 
   "settings": {
@@ -42,6 +47,11 @@
     "copyright": "Designed And Developed by [cSofts](https://csofts.com)"
   },
 
+  "contact_form": {
+    "action": "",
+    "provider": ""
+  },
+
   "navigation_button": {
     "enable": true,
     "label": "Edit with cSofts",
@@ -61,7 +71,7 @@
 
   "metadata": {
     "meta_author": "cSofts",
-    "meta_image": "/images/og-image.png",
+    "meta_image": "/images/og-image.jpg",
     "meta_image_alt": "Astroplate",
     "meta_description": "Astro and Tailwind boilerplate"
   },

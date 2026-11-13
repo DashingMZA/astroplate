@@ -1,10 +1,11 @@
 ---
 import BlogCard from "@/components/BlogCard.astro";
 import Base from "@/layouts/Base.astro";
-import { getSinglePage } from "@/lib/contentParser.astro";
-import { getTaxonomy } from "@/lib/taxonomyParser.astro";
+import { getSinglePage } from "@/lib/contentParser";
+import { getTaxonomy } from "@/lib/taxonomyParser";
 import { sortByDate } from "@/lib/utils/sortFunctions";
 import taxonomyFilter from "@/lib/utils/taxonomyFilter";
+import { humanize } from "@/lib/utils/textConverter";
 import PageHeader from "@/partials/PageHeader.astro";
 
 export async function getStaticPaths() {
@@ -25,10 +26,11 @@ const BLOG_FOLDER = "blog";
 const posts = await getSinglePage(BLOG_FOLDER);
 const filterByTags = taxonomyFilter(posts, "tags", tag!);
 const sortedPosts = sortByDate(filterByTags);
+const tagName = humanize(tag ?? "");
 ---
 
-<Base title={tag}>
-  <PageHeader title={tag} />
+<Base title={tagName} description={`All posts tagged ${tagName}.`}>
+  <PageHeader title={tagName} />
   <div class="section-sm pb-0">
     <div class="container">
       <div class="row">

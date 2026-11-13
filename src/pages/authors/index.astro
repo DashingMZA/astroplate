@@ -1,7 +1,7 @@
 ---
 import AuthorCard from "@/components/AuthorCard.astro";
 import Base from "@/layouts/Base.astro";
-import { getListPage, getSinglePage } from "@/lib/contentParser.astro";
+import { getListPage, getSinglePage } from "@/lib/contentParser";
 import PageHeader from "@/partials/PageHeader.astro";
 
 const authorIndex = await getListPage("authors", "-index");
@@ -14,7 +14,11 @@ if (!buildDrafts && authorIndex.data.draft) {
 const authors = await getSinglePage("authors");
 ---
 
-<Base title={authorIndex.data.title}>
+<Base
+  title={authorIndex.data.title}
+  description={authorIndex.data.description}
+  image={authorIndex.data.image}
+>
   <PageHeader title={authorIndex.data.title} />
   <section class="section-sm pb-0">
     <div class="container">

@@ -1,10 +1,11 @@
 ---
 import BlogCard from "@/components/BlogCard.astro";
 import Base from "@/layouts/Base.astro";
-import { getSinglePage } from "@/lib/contentParser.astro";
-import { getTaxonomy } from "@/lib/taxonomyParser.astro";
+import { getSinglePage } from "@/lib/contentParser";
+import { getTaxonomy } from "@/lib/taxonomyParser";
 import { sortByDate } from "@/lib/utils/sortFunctions";
 import taxonomyFilter from "@/lib/utils/taxonomyFilter";
+import { humanize } from "@/lib/utils/textConverter";
 import PageHeader from "@/partials/PageHeader.astro";
 
 // get static paths for all categories
@@ -26,10 +27,14 @@ const BLOG_FOLDER = "blog";
 const posts = await getSinglePage(BLOG_FOLDER);
 const filterByCategories = taxonomyFilter(posts, "categories", category!);
 const sortedPosts = sortByDate(filterByCategories);
+const categoryName = humanize(category ?? "");
 ---
 
-<Base title={category}>
-  <PageHeader title={category} />
+<Base
+  title={categoryName}
+  description={`All posts in the ${categoryName} category.`}
+>
+  <PageHeader title={categoryName} />
   <div class="section-sm pb-0">
     <div class="container">
       <div class="row">

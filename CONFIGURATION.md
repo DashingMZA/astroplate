@@ -25,7 +25,7 @@ GTM, and Disqus settings for every page's `<head>`.
 | Key | Type | Default | What it controls |
 | --- | --- | --- | --- |
 | `title` | string | `"Astroplate"` | Site name; fallback page title, `og:site_name`, RSS title |
-| `base_url` | string | `"https://astroplate.csofts.tech"` | Canonical domain. Every canonical URL, `og:url`, sitemap URL, and RSS link is built from this. Must be the public production URL, with scheme, no trailing slash |
+| `base_url` | string | `"https://astroplate.jadoo.bond"` | Canonical domain. Every canonical URL, `og:url`, sitemap URL, and RSS link is built from this. Must be the public production URL, with scheme, no trailing slash |
 | `base_path` | string | `"/"` | Sub-path the site is served under (e.g. `"/blog"`). `"/"` means root |
 | `trailing_slash` | boolean | `false` | `true` → URLs end with `/`; `false` → no trailing slash. Affects canonical URLs and Astro routing |
 | `language` | string | `"en"` | `lang` attribute on `<html>` |
@@ -46,9 +46,17 @@ Used for the JSON-LD `publisher` on every blog post.
 | `name` | string | `"Astroplate"` | Publisher name in JSON-LD |
 | `type` | string | `"Organization"` | Schema.org type (`Organization` or `Person`) |
 | `logo` | string | `"/images/logo.png"` | Publisher logo URL in JSON-LD (resolved to absolute) |
-| `url` | string | `"https://astroplate.csofts.tech"` | Publisher URL in JSON-LD |
+| `url` | string | `"https://astroplate.jadoo.bond"` | Publisher URL in JSON-LD |
 
-### `settings`
+### `social` (Twitter handles for SEO)
+
+| Key | Type | Default | What it controls |
+| --- | --- | --- | --- |
+| `twitter_site` | string | `""` | `twitter:site` tag (the site's @handle). Empty = no tag emitted |
+| `twitter_creator` | string | `""` | `twitter:creator` tag (the author's @handle). Empty = no tag emitted |
+
+Both are optional: when empty, `Base.astro` emits no `twitter:site` /
+`twitter:creator` tags rather than inventing a handle.
 
 | Key | Type | Default | What it controls |
 | --- | --- | --- | --- |
@@ -76,8 +84,49 @@ Set `enable` to `false` to hide it entirely.
 
 | Key | Type | Default | What it controls |
 | --- | --- | --- | --- |
-| `contact_form_action` | string | `"#"` | Where the contact form posts. `"#"` is a dead end — point this at a real form endpoint (e.g. Formspree, Netlify Forms, or your own API) before using the contact page in production |
+| `contact_form_action` | string | `"#"` | **Legacy fallback** for the contact-form endpoint — used only when `contact_form.action` (below) is absent. `"#"` means unconfigured; see `contact_form` for the supported setup |
 | `copyright` | string | `"Designed And Developed by [cSofts](https://csofts.com)"` | Footer copyright line (Markdown links allowed) |
+
+### `contact_form`
+
+The contact form has no backend of its own — it POSTs to an external
+form provider. When no endpoint is configured, the contact page
+renders a visibly disabled form with setup instructions and never
+fakes a successful submission; a build warning is printed so the
+missing endpoint is not silent.
+
+| Key | Type | Default | What it controls |
+| --- | --- | --- | --- |
+| `action` | string | `""` (unconfigured) | The provider's form endpoint URL. Empty or `"#"` = unconfigured |
+| `provider` | string | `""` | Free-text provider name, for documentation only |
+
+Setup (pick one provider, paste its endpoint, rebuild):
+
+- **Formspree** — create a form at
+  [formspree.io](https://formspree.io), copy its endpoint
+  (`https://formspree.io/f/<form-id>`), and set it as `action`.
+  Formspree accepts the `fetch` POST the page sends and returns JSON
+  success/error, which the page reports as its success/error state.
+- **Getform** — same pattern with a Getform endpoint
+  (`https://getform.io/f/<form-id>`).
+- **Netlify Forms** — enable form handling in the Netlify dashboard
+  for the deployed site and set `action` to the site-relative path
+  the form posts to (for example `"/contact"`); Netlify accepts the
+  POST and handles delivery/redirects. Note the CSP `form-action`
+  directive (see [SECURITY.md](SECURITY.md)) must allow the provider
+  you use — `formspree.io` and `getform.io` are already allow-listed;
+  a different provider needs to be added there first.
+- **Your own API** — any endpoint that accepts a `POST` of form
+  data and answers `2xx` on success works; non-2xx answers surface
+  as the form's error state (with the provider's JSON `message` /
+  `errors[0].message` when one is returned).
+
+The form validates required fields and the email format in the
+browser, announces field errors via `aria-describedby` /
+`aria-invalid`, and disables the submit button while a submission
+is in flight (double-submit guard). The fields carry
+`autocomplete="name"` / `autocomplete="email"`. No endpoint is ever
+invented by the theme — an unconfigured form stays disabled.
 
 ### `navigation_button`
 
@@ -104,7 +153,10 @@ The call-to-action button in the header.
 | `shortname` | string | `"csofts-template"` — your Disqus shortname |
 | `settings` | object | `{}` — passed through to the Disqus embed config |
 
-When `enable` is `false`, no Disqus code is rendered at all.
+When `enable` is `false`, no Disqus code is rendered at all — the
+Disqus island is not even mounted, so its JavaScript chunk is never
+referenced by any page. (The chunk file may still be emitted into
+`dist/_astro/` by the build; no page loads it.)
 
 ### `metadata`
 
@@ -114,7 +166,7 @@ values (see [SEO_GUIDE.md](SEO_GUIDE.md)).
 | Key | Type | Default | What it controls |
 | --- | --- | --- | --- |
 | `meta_author` | string | `"cSofts"` | `<meta name="author">` on every page |
-| `meta_image` | string | `"/images/og-image.png"` | Default Open Graph / Twitter image (1200×630 recommended) |
+| `meta_image` | string | `"/images/og-image.jpg"` | Default Open Graph / Twitter image (1200×630 JPEG, 45 KB) |
 | `meta_image_alt` | string | `"Astroplate"` | `og:image:alt` / `twitter:image:alt` |
 | `meta_description` | string | `"Astro and Tailwind boilerplate"` | Default `<meta name="description">`, OG description, and RSS channel description |
 
@@ -275,8 +327,11 @@ files below change.
     "blog_folder": "blog"
   },
   "announcement": { "enable": false },
+  "contact_form": {
+    "action": "https://formspree.io/f/your-form-id",
+    "provider": "Formspree"
+  },
   "params": {
-    "contact_form_action": "https://formspree.io/f/your-form-id",
     "copyright": "© Northwind Notes"
   },
   "navigation_button": {
@@ -288,7 +343,7 @@ files below change.
   "disqus": { "enable": false, "shortname": "northwind-notes", "settings": {} },
   "metadata": {
     "meta_author": "Northwind Notes",
-    "meta_image": "/images/og-image.png",
+    "meta_image": "/images/og-image.jpg",
     "meta_image_alt": "Northwind Notes",
     "meta_description": "Field notes on building small, fast websites."
   }
@@ -306,7 +361,7 @@ real endpoint instead of `"#"`.
   configured dimensions; use your own sizes and update `logo_width` /
   `logo_height` to match).
 - `favicon.png` — your favicon.
-- `og-image.png` — your default social-share image (1200×630).
+- `og-image.jpg` — your default social-share image (1200×630).
 
 Keep the same filenames and you do not need to edit any config paths.
 See [IMAGE_STORAGE.md](IMAGE_STORAGE.md) for formats and sizing.
