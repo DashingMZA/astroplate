@@ -79,36 +79,34 @@ const isValidPath = isRemote || Boolean(localKey);
   );
 ---
 
-{
-  isRemote ? (
-    <img
-      src={src}
+{isRemote ? (
+  <img
+    src={src}
+    alt={alt}
+    width={width}
+    height={height}
+    loading={loading}
+    decoding={decoding}
+    fetchpriority={fetchpriority}
+    sizes={sizes}
+    class={className}
+    style={style}
+  />
+) : (
+  isValidPath && (
+    <Image
+      src={images[localKey!]() as Promise<{ default: ImageMetadata }>}
       alt={alt}
       width={width}
       height={height}
       loading={loading}
+      fit={fit ? fit : "contain"}
       decoding={decoding}
       fetchpriority={fetchpriority}
       sizes={sizes}
       class={className}
+      format={format}
       style={style}
     />
-  ) : (
-    isValidPath && (
-      <Image
-        src={images[localKey!]() as Promise<{ default: ImageMetadata }>}
-        alt={alt}
-        width={width}
-        height={height}
-        loading={loading}
-        fit={fit ? fit : "contain"}
-        decoding={decoding}
-        fetchpriority={fetchpriority}
-        sizes={sizes}
-        class={className}
-        format={format}
-        style={style}
-      />
-    )
   )
-}
+)}

@@ -48,13 +48,11 @@ const currentPosts = sortedPosts.slice(0, config.settings.pagination);
         <!-- blog posts -->
         <div class="lg:col-8">
           <div class="row">
-            {
-              currentPosts.map((post) => (
-                <div class="mb-14 md:col-6">
-                  <BlogCard data={post} />
-                </div>
-              ))
-            }
+            {currentPosts.map((post) => (
+              <div class="mb-14 md:col-6">
+                <BlogCard data={post} />
+              </div>
+            ))}
           </div>
           <Pagination
             section={BLOG_FOLDER}

@@ -32,18 +32,22 @@ const { page_not_found_content, page_not_found, back_to_home } =
     <div class="container">
       <div class="row justify-center">
         <div class="sm:col-10 md:col-8 lg:col-6">
-          <span
-            class="text-[8rem] block font-bold text-text-dark dark:text-darkmode-text-dark"
-          >
+          <span class="text-[8rem] block font-bold text-text-dark dark:text-darkmode-text-dark">
             404
           </span>
           <h1 class="h2 mb-4">{page_not_found}</h1>
           <div class="content">
             <p>{page_not_found_content}</p>
           </div>
+<<<<<<< HEAD
           <a href={slugSelector("/", lang)} class="btn btn-primary mt-8"
             >{back_to_home}</a
           >
+=======
+          <a href="/" class="btn btn-primary mt-8">
+            Back to home
+          </a>
+>>>>>>> a576fb7 (style: reformat .astro files with prettier-plugin-astro 1.1.2)
         </div>
       </div>
     </div>

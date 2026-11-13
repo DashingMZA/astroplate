@@ -47,7 +47,8 @@ if (disabledLanguages.includes(lang)) {
         <title>Menu Close</title>
         <polygon
           points="11 9 22 9 22 11 11 11 11 22 9 22 9 11 -2 11 -2 9 9 9 9 -2 11 -2"
-          transform="rotate(45 10 10)"></polygon>
+          transform="rotate(45 10 10)"
+        ></polygon>
       </svg>
     </label>
     {/* /navbar toggler */}
@@ -56,6 +57,7 @@ if (disabledLanguages.includes(lang)) {
       id="nav-menu"
       class="navbar-nav order-3 hidden w-full pb-6 lg:order-1 lg:flex lg:w-auto lg:space-x-2 lg:pb-0 xl:space-x-8"
     >
+<<<<<<< HEAD
       {
         menu?.main.map((menu: any) => (
           <>
@@ -155,8 +157,68 @@ if (disabledLanguages.includes(lang)) {
       {/* Navigation button */}
       {
         navigation_button.enable && (
+=======
+      {main.map((menu) => (
+        <>
+          {menu.hasChildren ? (
+            <li class="nav-item nav-dropdown group relative">
+              <input
+                type="checkbox"
+                id={`submenu-${menu.name}`}
+                class="peer hidden lg:hidden"
+              />
+              <label
+                for={`submenu-${menu.name}`}
+                class={`nav-link inline-flex items-center ${
+                  menu.children?.map(({ url }) => url).includes(pathname) ||
+                  menu.children?.map(({ url }) => `${url}/`).includes(pathname)
+                    ? "active"
+                    : ""
+                }`}
+              >
+                {menu.name}
+                <svg class="h-4 w-4 fill-current" viewBox="0 0 20 20">
+                  <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                </svg>
+              </label>
+              <ul class="nav-dropdown-list hidden peer-checked:block lg:invisible lg:absolute lg:block lg:opacity-0 lg:group-hover:visible lg:group-hover:opacity-100">
+                {menu.children?.map((child) => (
+                  <li class="nav-dropdown-item">
+                    <a
+                      href={child.url}
+                      aria-label={child.name}
+                      class={`nav-dropdown-link block ${
+                        (pathname === `${child.url}/` ||
+                          pathname === child.url) &&
+                        "active"
+                      }`}
+                    >
+                      {child.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ) : (
+            <li class="nav-item">
+              <a
+                href={menu.url}
+                class={`nav-link block ${
+                  (pathname === `${menu.url}/` || pathname === menu.url) &&
+                  "active"
+                }`}
+              >
+                {menu.name}
+              </a>
+            </li>
+          )}
+        </>
+      ))}
+      {navigation_button.enable && (
+        <li class="mt-4 inline-block lg:hidden">
+>>>>>>> a576fb7 (style: reformat .astro files with prettier-plugin-astro 1.1.2)
           <a
-            class="btn btn-outline-primary btn-sm hidden lg:inline-block"
+            class="btn btn-outline-primary btn-sm"
             href={navigation_button.link}
             target={
               navigation_button.link.startsWith("http") ? "_blank" : "_self"
@@ -165,8 +227,32 @@ if (disabledLanguages.includes(lang)) {
           >
             {get_started}
           </a>
-        )
-      }
+        </li>
+      )}
+    </ul>
+    <div class="order-1 ml-auto flex items-center md:order-2 lg:ml-0">
+      {settings.search && (
+        <button
+          class="border-border text-text-dark hover:text-primary dark:border-darkmode-border mr-5 inline-block border-r pr-5 text-xl dark:text-white dark:hover:text-darkmode-primary"
+          aria-label="search"
+          data-search-trigger
+        >
+          <IoSearch />
+        </button>
+      )}
+      <ThemeSwitcher className="mr-5" />
+      {navigation_button.enable && (
+        <a
+          class="btn btn-outline-primary btn-sm hidden lg:inline-block"
+          href={navigation_button.link}
+          target={
+            navigation_button.link.startsWith("http") ? "_blank" : "_self"
+          }
+          rel={navigation_button.link.startsWith("http") ? "noopener" : ""}
+        >
+          {navigation_button.label}
+        </a>
+      )}
     </div>
   </nav>
 </header>

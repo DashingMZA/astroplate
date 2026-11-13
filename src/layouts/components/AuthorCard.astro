@@ -10,26 +10,22 @@ const lang = getLangFromUrl(Astro.url);
 ---
 
 <div class="rounded bg-light p-8 text-center dark:bg-darkmode-light">
-  {
-    image && (
-      <ImageMod
-        class="mx-auto mb-6 rounded"
-        src={image}
-        alt={title}
-        width={120}
-        height={120}
-        format="webp"
-        loading="lazy"
-        decoding="async"
-      />
-    )
-  }
+  {image && (
+    <ImageMod
+      class="mx-auto mb-6 rounded"
+      src={image}
+      alt={title}
+      width={120}
+      height={120}
+      format="webp"
+      loading="lazy"
+      decoding="async"
+    />
+  )}
   <h4 class="mb-3">
     <a href={slugSelector(`/authors/${data.id.split("/")[1]}`, lang)}>{title}</a
     >
   </h4>
-  <p class="mb-4">
-    {plainify(data.body?.slice(0, 100))}
-  </p>
+  <p class="mb-4">{plainify(data.body?.slice(0, 100))}</p>
   <Social source={social} className="social-icons" />
 </div>

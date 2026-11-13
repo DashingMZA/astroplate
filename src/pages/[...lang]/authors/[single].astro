@@ -57,22 +57,18 @@ const postFilterByAuthor = posts.filter((post) => {
 >
   <section class="section-sm pb-0">
     <div class="container">
-      <div
-        class="row justify-center border-b border-border pb-14 dark:border-darkmode-border"
-      >
+      <div class="row justify-center border-b border-border pb-14 dark:border-darkmode-border">
         <div class="text-center lg:col-4">
-          {
-            image && (
-              <ImageMod
-                src={image}
-                class="mx-auto mb-10 rounded"
-                height={200}
-                width={200}
-                alt={title}
-                format="webp"
-              />
-            )
-          }
+          {image && (
+            <ImageMod
+              src={image}
+              class="mx-auto mb-10 rounded"
+              height={200}
+              width={200}
+              alt={title}
+              format="webp"
+            />
+          )}
           <h1 class="h3 mb-6">{title}</h1>
           <div class="content">
             <Content />
@@ -82,13 +78,11 @@ const postFilterByAuthor = posts.filter((post) => {
       </div>
 
       <div class="row justify-center pb-16 pt-14">
-        {
-          postFilterByAuthor.map((post) => (
-            <div class="mb-12 md:col-6 lg:col-4">
-              <BlogCard data={post} />
-            </div>
-          ))
-        }
+        {postFilterByAuthor.map((post) => (
+          <div class="mb-12 md:col-6 lg:col-4">
+            <BlogCard data={post} />
+          </div>
+        ))}
       </div>
     </div>
   </section>
