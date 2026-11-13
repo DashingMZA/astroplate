@@ -1,15 +1,20 @@
 ---
+import config from "@/config/config.json";
 import BlogCard from "@/components/BlogCard.astro";
+import Breadcrumbs from "@/components/Breadcrumbs.astro";
+import Mermaid from "@/components/Mermaid.astro";
 import Share from "@/components/Share.astro";
 import TableOfContents from "@/components/TableOfContents.astro";
 import Disqus from "@/helpers/Disqus";
-import { getSinglePage } from "@/lib/contentParser.astro";
+import { getSinglePage } from "@/lib/contentParser";
+import { displayAuthorNames, resolveAuthors } from "@/lib/utils/authors";
 import dateFormat from "@/lib/utils/dateFormat";
 import readingTime from "@/lib/utils/readingTime";
 import { canonicalFor } from "@/lib/utils/seo";
+import { postSlug, postUrl } from "@/lib/utils/slug";
 import similarItems from "@/lib/utils/similarItems";
 import { humanize, markdownify, slugify } from "@/lib/utils/textConverter";
-import { render } from "astro:content";
+import { getCollection, render } from "astro:content";
 import { FaRegClock, FaRegFolder, FaRegUserCircle } from "react-icons/fa";
 import ImageMod from "./components/ImageMod.astro";
 
@@ -26,16 +31,27 @@ const { title, description, author, authors, categories, image, date, tags } =
 // Reading time from the raw Markdown body.
 const reading_time = readingTime(post.body ?? "");
 
-// Multi-author support: use the `authors` array when present, otherwise
-// fall back to the single `author` field.
-const displayAuthors: string[] =
-  authors && authors.length > 0 ? authors : [author];
+// Authors resolved against the authors collection (file id first, legacy
+// display-name match as fallback). Unresolved names render as plain text
+// with no link — never a link to a 404 author page.
+const allAuthors = await getCollection("authors");
+const resolvedAuthors = resolveAuthors(
+  displayAuthorNames({ data: { author, authors } }),
+  allAuthors,
+);
 ---
 
 <section class="section pt-7">
   <div class="container">
     <div class="row justify-center">
       <article class="lg:col-10">
+        <Breadcrumbs
+          items={[
+            { label: "Home", href: "/" },
+            { label: "Blog", href: "/blog" },
+            { label: title },
+          ]}
+        />
         {image && (
           <div class="mb-10">
             <ImageMod
@@ -47,19 +63,30 @@ const displayAuthors: string[] =
               fetchpriority="high"
               class="w-full rounded"
               format="webp"
+              sizes="(max-width: 768px) 100vw, 1200px"
+              widths={[640, 1024, 1200]}
             />
           </div>
         )}
-        <h1 set:html={markdownify(title)} class="h2 mb-4" />
+        <h1 class="h2 mb-4">
+          <span set:html={markdownify(title)} />
+        </h1>
         <ul class="mb-4">
           <li class="mr-4 inline-block">
-            {displayAuthors.map((name: string, index: number) => (
+            {resolvedAuthors.map((resolved, index: number) => (
               <>
-                <a href={`/authors/${slugify(name)}`}>
-                  <FaRegUserCircle className={"mr-2 -mt-1 inline-block"} />
-                  {humanize(name)}
-                </a>
-                {index !== displayAuthors.length - 1 && ", "}
+                {resolved.url ? (
+                  <a href={resolved.url}>
+                    <FaRegUserCircle className={"mr-2 -mt-1 inline-block"} />
+                    {humanize(resolved.name)}
+                  </a>
+                ) : (
+                  <span>
+                    <FaRegUserCircle className={"mr-2 -mt-1 inline-block"} />
+                    {humanize(resolved.name)}
+                  </span>
+                )}
+                {index !== resolvedAuthors.length - 1 && ", "}
               </>
             ))}
           </li>
@@ -82,6 +109,7 @@ const displayAuthors: string[] =
         <div class="content mb-10">
           <Content />
         </div>
+        <Mermaid content={post.body} />
         <div class="row items-start justify-between">
           <div class="mb-10 flex items-center lg:col-5 lg:mb-0">
             <span class="h5 mr-3">Tags :</span>
@@ -104,13 +132,18 @@ const displayAuthors: string[] =
               className="social-icons"
               title={title}
               description={description}
-              slug={post.id}
-              url={canonicalFor(`/blog/${post.id}`)}
+              slug={postSlug(post)}
+              url={canonicalFor(postUrl(post))}
               image={image}
             />
           </div>
         </div>
-        <Disqus className="mt-20" client:only="react" />
+        {/* Gate the island on its enable flag: mounting it unconditionally
+          shipped the ~21 KB Disqus chunk on every post even while Disqus
+          was disabled (the component itself only rendered null). */}
+        {config.disqus.enable && (
+          <Disqus className="mt-20" client:only="react" />
+        )}
       </article>
     </div>
 

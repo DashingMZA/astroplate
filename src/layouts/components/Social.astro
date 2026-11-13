@@ -10,7 +10,9 @@ export interface ISocial {
 ---
 
 <ul class={className}>
-  {source.map((social: ISocial) => (
+  {/* `social` is optional in the authors schema — an author without social
+      links must render an empty list, not crash the build. */}
+  {(source ?? []).map((social: ISocial) => (
     <li>
       <a
         aria-label={social.name}
