@@ -25,7 +25,7 @@ if (disabledLanguages.includes(lang)) {
 }
 ---
 
-<header class={`header z-30 ${settings.sticky_header && "sticky top-0"}`}>
+<header class={`header z-30 ${settings.sticky_header ? "sticky top-0" : ""}`}>
   <nav class="navbar container">
     {/* logo */}
     <div class="order-0">
@@ -112,9 +112,10 @@ if (disabledLanguages.includes(lang)) {
                       href={slugSelector(child.url, lang)}
                       aria-label={child.name}
                       class={`nav-dropdown-link block ${
-                        (pathname === slugSelector(child.url, lang) ||
-                          pathname === `${slugSelector(child.url, lang)}/`) &&
-                        "active"
+                        pathname === slugSelector(child.url, lang) ||
+                        pathname === `${slugSelector(child.url, lang)}/`
+                          ? "active"
+                          : ""
                       }`}
                     >
                       {child.name}
@@ -128,9 +129,10 @@ if (disabledLanguages.includes(lang)) {
               <a
                 href={slugSelector(menu.url, lang)}
                 class={`nav-link block ${
-                  (pathname === slugSelector(menu.url, lang) ||
-                    pathname === `${slugSelector(menu.url, lang)}/`) &&
-                  "active"
+                  pathname === slugSelector(menu.url, lang) ||
+                  pathname === `${slugSelector(menu.url, lang)}/`
+                    ? "active"
+                    : ""
                 }`}
               >
                 {menu.name}
@@ -198,7 +200,7 @@ if (disabledLanguages.includes(lang)) {
   // button while the menu is open (standard disclosure behaviour); Escape
   // closes the open menu/submenu and returns focus to its toggle.
   function initHeaderNav() {
-    const nav = document.querySelector(".navbar");
+    const nav = document.querySelector<HTMLElement>(".navbar");
     if (!nav || nav.hasAttribute("data-nav-bound")) {
       return;
     }
