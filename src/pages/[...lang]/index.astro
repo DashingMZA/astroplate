@@ -1,14 +1,9 @@
 ---
 import ImageMod from "@/components/ImageMod.astro";
 import Base from "@/layouts/Base.astro";
-<<<<<<< HEAD:src/pages/[...lang]/index.astro
 import { getListPage, getSinglePage } from "@/lib/contentParser.astro";
 import { supportedLang } from "@/lib/utils/languageParser";
-import { markdownify } from "@/lib/utils/textConverter";
-=======
-import { getListPage } from "@/lib/contentParser.astro";
 import { markdownify, plainify } from "@/lib/utils/textConverter";
->>>>>>> 7fbaf28 (feat: responsive images, lazy default, fallbacks, smaller OG image):src/pages/index.astro
 import CallToAction from "@/partials/CallToAction.astro";
 import Testimonial from "@/partials/Testimonial.astro";
 import type { Feature } from "@/types";
