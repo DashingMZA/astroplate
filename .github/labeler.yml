@@ -1,32 +1,42 @@
-# Labels applied by the Labeler workflow (.github/workflows/label.yml)
-# based on which files a pull request touches.
+# Labels applied by the Labeler workflow (.github/workflows/label.yml,
+# actions/labeler@v7) based on which files a pull request touches.
+# Format: labeler v5+ match objects — each label is a list of matchers,
+# `changed-files` with `any-glob-to-any-file` globs. (The old v4 format
+# of bare glob strings is rejected by labeler v5+.)
 
 content:
-  - src/content/**
+  - changed-files:
+      - any-glob-to-any-file: 'src/content/**'
 
 config:
-  - src/config/**
-  - .sitepins/**
+  - changed-files:
+      - any-glob-to-any-file: 'src/config/**'
+      - any-glob-to-any-file: '.sitepins/**'
 
 docs:
-  - "*.md"
-  - docs/**
+  - changed-files:
+      - any-glob-to-any-file: '*.md'
+      - any-glob-to-any-file: 'docs/**'
 
 workflows:
-  - .github/**
+  - changed-files:
+      - any-glob-to-any-file: '.github/**'
 
 seo:
-  - src/layouts/components/JsonLd.astro
-  - src/lib/utils/seo.ts
-  - src/pages/rss.xml.ts
-  - public/robots.txt
-  - src/content.config.ts
+  - changed-files:
+      - any-glob-to-any-file: 'src/layouts/components/JsonLd.astro'
+      - any-glob-to-any-file: 'src/lib/utils/seo.ts'
+      - any-glob-to-any-file: 'src/pages/rss.xml.ts'
+      - any-glob-to-any-file: 'public/robots.txt'
+      - any-glob-to-any-file: 'src/content.config.ts'
 
 images:
-  - src/layouts/components/ImageMod.astro
-  - public/images/**
+  - changed-files:
+      - any-glob-to-any-file: 'src/layouts/components/ImageMod.astro'
+      - any-glob-to-any-file: 'public/images/**'
 
 theme:
-  - src/styles/**
-  - src/config/theme.json
-  - tailwind.config.*
+  - changed-files:
+      - any-glob-to-any-file: 'src/styles/**'
+      - any-glob-to-any-file: 'src/config/theme.json'
+      - any-glob-to-any-file: 'tailwind.config.*'
