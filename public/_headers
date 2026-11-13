@@ -1,0 +1,31 @@
+# Security headers for Cloudflare Pages / Workers Static Assets.
+# This file is copied to dist/ by the build (public/ -> dist/).
+# Keep in sync with netlify.toml [[headers]] and config/nginx/nginx.conf.
+#
+# Content-Security-Policy — built from the domains the site actually uses:
+# - 'self': all local assets, self-hosted fonts, local images.
+# - media.csofts.tech: R2 images (img-src + media-src).
+# - i.ytimg.com / www.youtube-nocookie.com: lite-youtube thumbnails and
+#   embeds, used only on the /elements demo page (frame-src).
+# - www.w3schools.com: the demo <Video> on /elements (media-src, demo
+#   content only — remove with the demo video if it is ever dropped).
+# - formspree.io / getform.io: the documented contact-form providers
+#   (form-action only; narrow to the provider actually configured).
+# - GTM / Disqus / Google Analytics are DISABLED in config, so their
+#   domains are deliberately NOT allow-listed; re-enabling either
+#   requires extending this policy first.
+# - script-src / style-src 'unsafe-inline' is the honest trade-off:
+#   Astro generates inline scripts on every page (island loader, view
+#   transitions, component scripts) and React islands + style attributes
+#   need inline execution; static hosts cannot inject per-request
+#   nonces, and a hash allow-list would break on every Astro upgrade.
+#   Everything else is locked down (object-src 'none', base-uri 'self',
+#   frame-ancestors 'self').
+# - No report-uri/report-to: no reporting endpoint is configured.
+# HSTS is included here because Cloudflare serves this over HTTPS.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://media.csofts.tech https://i.ytimg.com; media-src 'self' https://media.csofts.tech https://www.w3schools.com; font-src 'self'; connect-src 'self'; frame-src https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'self' https://formspree.io https://getform.io; frame-ancestors 'self'; upgrade-insecure-requests
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
