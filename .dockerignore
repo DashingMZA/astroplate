@@ -1,6 +1,8 @@
 Dockerfile
 .dockerignore
 node_modules
+dist/
+.astro/
 npm-debug.log
 README.md
 .next
