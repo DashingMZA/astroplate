@@ -1,14 +1,14 @@
-/* navbar toggler */
-input#nav-toggle:checked + label #show-button {
-  @apply hidden;
-}
-
-input#nav-toggle:checked + label #hide-button {
-  @apply block;
-}
-
-input#nav-toggle:checked ~ #nav-menu {
-  @apply max-lg:block;
+/* Submenu opened via its toggle button (keyboard/click): force the list
+   visible even though it is `hidden` on mobile and `lg:invisible` on
+   desktop. This file is imported unlayered (see main.css), so the rule
+   beats Tailwind's utility-layer `hidden` / `lg:invisible` classes.
+   Hover and :focus-within reveal are handled by Tailwind classes on the
+   list itself (Header.astro); this rule only covers the explicit
+   button-driven open state. */
+.nav-dropdown-list[data-open="true"] {
+  display: block;
+  visibility: visible;
+  opacity: 1;
 }
 
 /* swiper pagination */

@@ -1,34 +1,7 @@
 import { escapeRegExp } from "@/lib/utils/seo";
 import { plainify, titleify } from "@/lib/utils/textConverter";
 import React from "react";
-
-export interface ISearchItem {
-  group: string;
-  slug: string;
-  frontmatter: {
-    title: string;
-    image?: string;
-    description?: string;
-    categories?: string[];
-    tags?: string[];
-  };
-  content: string;
-}
-
-export interface ISearchGroup {
-  group: string;
-  groupItems: {
-    slug: string;
-    frontmatter: {
-      title: string;
-      image?: string;
-      description?: string;
-      categories?: string[];
-      tags?: string[];
-    };
-    content: string;
-  }[];
-}
+import type { ISearchGroup, ISearchItem } from "./searchTypes";
 
 // search result component
 const SearchResult = ({
@@ -48,20 +21,10 @@ const SearchResult = ({
         if (groupIndex === -1) {
           groupItems.push({
             group: item.group,
-            groupItems: [
-              {
-                frontmatter: { ...item.frontmatter },
-                slug: item.slug,
-                content: item.content,
-              },
-            ],
+            groupItems: [item],
           });
         } else {
-          groupItems[groupIndex].groupItems.push({
-            frontmatter: { ...item.frontmatter },
-            slug: item.slug,
-            content: item.content,
-          });
+          groupItems[groupIndex].groupItems.push(item);
         }
 
         return groupItems;
@@ -147,7 +110,6 @@ const SearchResult = ({
                 {result.groupItems.map((item) => (
                   <div
                     key={item.slug}
-                    id="searchItem"
                     className="search-result-item"
                   >
                     {item.frontmatter.image && (
