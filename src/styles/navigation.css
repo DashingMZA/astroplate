@@ -26,6 +26,13 @@
   @apply mr-0;
 }
 
+/* The submenu checkbox is sr-only (visually hidden, still focusable),
+   so draw its focus ring on the visible label instead. */
+.nav-dropdown input:focus-visible + label {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .nav-dropdown > svg {
   @apply pointer-events-none;
 }
