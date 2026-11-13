@@ -1,9 +1,14 @@
 ---
 import ImageMod from "@/components/ImageMod.astro";
 import Base from "@/layouts/Base.astro";
+<<<<<<< HEAD:src/pages/[...lang]/index.astro
 import { getListPage, getSinglePage } from "@/lib/contentParser.astro";
 import { supportedLang } from "@/lib/utils/languageParser";
 import { markdownify } from "@/lib/utils/textConverter";
+=======
+import { getListPage } from "@/lib/contentParser.astro";
+import { markdownify, plainify } from "@/lib/utils/textConverter";
+>>>>>>> 7fbaf28 (feat: responsive images, lazy default, fallbacks, smaller OG image):src/pages/index.astro
 import CallToAction from "@/partials/CallToAction.astro";
 import Testimonial from "@/partials/Testimonial.astro";
 import type { Feature } from "@/types";
@@ -40,6 +45,7 @@ const call_to_action = await getSinglePage(
     <div class="container">
       <div class="row justify-center">
         <div class="lg:col-7 md:col-9 mb-8 text-center">
+          {/* eslint-disable-next-line jsx-a11y/heading-has-content -- set:html injects the heading text at runtime; the rule cannot see it. */}
           <h1
             set:html={markdownify(banner.title)}
             class="mb-4 text-h3 lg:text-h1"
@@ -64,10 +70,12 @@ const call_to_action = await getSinglePage(
               src={banner.image}
               height={380}
               width={1200}
-              alt="banner"
+              alt={plainify(banner.title)}
               format="webp"
               loading="eager"
               fetchpriority="high"
+              sizes="(max-width: 768px) 100vw, 1200px"
+              widths={[640, 1024, 1200]}
             />
           </div>
         )}
@@ -90,9 +98,14 @@ const call_to_action = await getSinglePage(
               width={520}
               alt={feature.title}
               format="webp"
+              loading="lazy"
+              decoding="async"
+              sizes="(max-width: 768px) 100vw, 520px"
+              widths={[520, 780]}
             />
           </div>
           <div class={`md:col-7 lg:col-6 ${index % 2 !== 0 && "md:order-1"}`}>
+            {/* eslint-disable-next-line jsx-a11y/heading-has-content -- set:html injects the heading text at runtime; the rule cannot see it. */}
             <h2 set:html={markdownify(feature.title)} class="mb-4" />
             <p set:html={markdownify(feature.content)} class="mb-8 text-lg" />
             <ul>

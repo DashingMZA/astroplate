@@ -154,12 +154,7 @@ const postSlugValue = postSlug({ id: postId, data: post.data });
             />
           </div>
         </div>
-        {/* Gate the island on its enable flag: mounting it unconditionally
-          shipped the ~21 KB Disqus chunk on every post even while Disqus
-          was disabled (the component itself only rendered null). */}
-        {config.disqus.enable && (
-          <Disqus className="mt-20" client:only="react" />
-        )}
+        <Disqus className="mt-20" client:only="react" />
       </article>
     </div>
 

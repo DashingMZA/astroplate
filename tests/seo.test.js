@@ -207,7 +207,7 @@ test("resolveOgImage: R2 https URLs pass through unchanged; local paths get the 
   const fallback = seo.resolveOgImage({});
   assert.equal(
     fallback.url,
-    "https://astroplate.jadoo.bond/images/og-image.png",
+    "https://astroplate.jadoo.bond/images/og-image.jpg",
   );
   assert.equal(fallback.isPageImage, false);
 });
