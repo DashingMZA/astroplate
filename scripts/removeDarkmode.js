@@ -31,7 +31,7 @@ import path from "node:path";
     try {
       fs.unlinkSync(asset);
       console.log(`${path.basename(asset)} deleted successfully!`);
-    } catch (error) {
+    } catch {
       console.error(`${asset} not found`);
     }
   }
@@ -77,7 +77,7 @@ import path from "node:path";
     let currentObj = obj;
     for (let i = 0; i < properties.length - 1; i++) {
       const property = properties[i];
-      if (currentObj.hasOwnProperty(property)) {
+      if (Object.prototype.hasOwnProperty.call(currentObj, property)) {
         currentObj = currentObj[property];
       } else {
         return; // Property not found, no need to continue
