@@ -79,7 +79,9 @@ const displayAuthors: string[] =
             <FaRegFolder className={"mr-2 -mt-1 inline-block"} />
             {
               categories.map((category: string, index: number) => (
-                <a href={slugSelector(`/categories/${slugify(category)}`, lang)}>
+                <a
+                  href={slugSelector(`/categories/${slugify(category)}`, lang)}
+                >
                   {humanize(category)}
                   {index !== categories.length - 1 && ","}
                 </a>

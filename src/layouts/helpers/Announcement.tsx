@@ -54,7 +54,9 @@ const Cookies = {
   },
 };
 
-const Announcement: React.FC<AnnouncementProps> = ({ lang = default_language }) => {
+const Announcement: React.FC<AnnouncementProps> = ({
+  lang = default_language,
+}) => {
   const [isVisible, setIsVisible] = useState(false);
   const [content, setContent] = useState("");
 
@@ -62,7 +64,8 @@ const Announcement: React.FC<AnnouncementProps> = ({ lang = default_language }) 
     const loadTranslations = async () => {
       try {
         const translations = await import(`../../i18n/${lang}.json`);
-        const announcementContent = translations.default?.announcement || translations.announcement;
+        const announcementContent =
+          translations.default?.announcement || translations.announcement;
 
         setContent(announcementContent);
 
@@ -78,14 +81,24 @@ const Announcement: React.FC<AnnouncementProps> = ({ lang = default_language }) 
           setIsVisible(true);
         }
       } catch (error) {
-        console.warn(`Translation file for "${lang}" not found, falling back to "${default_language}"`);
+        console.warn(
+          `Translation file for "${lang}" not found, falling back to "${default_language}"`,
+        );
         try {
-          const fallbackTranslations = await import(`../../i18n/${default_language}.json`);
-          const announcementContent = fallbackTranslations.default?.announcement || fallbackTranslations.announcement;
+          const fallbackTranslations = await import(
+            `../../i18n/${default_language}.json`
+          );
+          const announcementContent =
+            fallbackTranslations.default?.announcement ||
+            fallbackTranslations.announcement;
 
           setContent(announcementContent);
 
-          if (enable && announcementContent && !Cookies.get("announcement-close")) {
+          if (
+            enable &&
+            announcementContent &&
+            !Cookies.get("announcement-close")
+          ) {
             setIsVisible(true);
           }
         } catch (fallbackError) {

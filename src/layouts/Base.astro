@@ -188,15 +188,15 @@ const articleAuthors = article?.author
     <meta property="og:type" content={resolvedOgType} />
     <meta property="og:url" content={ogUrl} />
     <meta property="og:site_name" content={config.site.title} />
-    {/*
+    {
+      /*
       Multilingual: og:locale follows the page language (fr pages are
       fr_FR); other languages fall back to the configured locale.
-    */}
+    */
+    }
     <meta
       property="og:locale"
-      content={
-        language === "fr" ? "fr_FR" : (config.site.locale ?? "en_US")
-      }
+      content={language === "fr" ? "fr_FR" : (config.site.locale ?? "en_US")}
     />
     {
       resolvedOgType === "article" && article && (
