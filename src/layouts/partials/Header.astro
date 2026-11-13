@@ -8,6 +8,7 @@ import {
   getTranslations,
   slugSelector,
 } from "@/lib/utils/languageParser";
+import { slugify } from "@/lib/utils/textConverter";
 
 import { IoSearch } from "react-icons/io5";
 
@@ -72,17 +73,25 @@ if (disabledLanguages.includes(lang)) {
         <>
           {menu.hasChildren ? (
             <li class="nav-item nav-dropdown group relative">
-              {/* Submenu toggle is a real button: keyboard-operable, with
-                aria-expanded synced by the script below. The submenu list
-                opens on click, on hover (mouse) and on :focus-within
-                (keyboard) — never hover-only — and `lg:invisible` is only
-                lifted by those states or by the button's data-open. */}
-              <button
-                type="button"
-                data-submenu-toggle
-                aria-expanded="false"
-                aria-haspopup="true"
-                aria-controls={`submenu-${menu.name}`}
+              {/* Submenu toggle: a visually-hidden but keyboard-focusable
+                checkbox + label, revealed by `peer-checked:block`. This
+                is the upstream Astroplate mechanism (the netlify demo):
+                it opens on tap with no JavaScript at all, which is what
+                makes it reliable on touch — the previous real-button +
+                JS toggle never fired on mobile taps (desktop click
+                worked, mobile tap left aria-expanded="false").
+                The checkbox is `sr-only`, not `display:none`, so
+                keyboard users can Tab to it and toggle with Space; the
+                focus ring lands on the label via the rule in
+                navigation.css. */}
+              <input
+                type="checkbox"
+                id={`submenu-${slugify(menu.name)}`}
+                data-submenu-checkbox
+                class="peer sr-only"
+              />
+              <label
+                for={`submenu-${slugify(menu.name)}`}
                 class={`nav-link inline-flex items-center ${
                   menu.children?.some(
                     ({ url }: { url: string }) =>
@@ -101,11 +110,8 @@ if (disabledLanguages.includes(lang)) {
                 >
                   <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
                 </svg>
-              </button>
-              <ul
-                id={`submenu-${menu.name}`}
-                class="nav-dropdown-list hidden lg:invisible lg:absolute lg:block lg:opacity-0 lg:group-hover:visible lg:group-hover:opacity-100 lg:group-focus-within:visible lg:group-focus-within:opacity-100"
-              >
+              </label>
+              <ul class="nav-dropdown-list hidden peer-checked:block lg:invisible lg:absolute lg:block lg:opacity-0 lg:group-hover:visible lg:group-hover:opacity-100 lg:group-focus-within:visible lg:group-focus-within:opacity-100">
                 {menu.children?.map((child: any) => (
                   <li class="nav-dropdown-item">
                     <a
@@ -193,12 +199,16 @@ if (disabledLanguages.includes(lang)) {
 </header>
 
 <script>
-  // Mobile nav + dropdown submenus (disclosure pattern).
-  // Listeners live on the nav element itself so a view-transition swap
-  // (which replaces the header DOM) drops them with it; init is guarded
-  // per-element and re-run on astro:after-swap. Focus stays on the toggle
-  // button while the menu is open (standard disclosure behaviour); Escape
-  // closes the open menu/submenu and returns focus to its toggle.
+  // Mobile nav (disclosure pattern). The submenu itself is a
+  // checkbox + label toggled by CSS (`peer-checked:block`), so it
+  // opens on tap with no JavaScript; this script only owns the
+  // hamburger toggle and Escape handling. Listeners live on the nav
+  // element itself so a view-transition swap (which replaces the
+  // header DOM) drops them with it; init is guarded per-element and
+  // re-run on astro:after-swap. Focus stays on the toggle button
+  // while the menu is open (standard disclosure behaviour); Escape
+  // closes the open submenu first (focus back to its checkbox),
+  // otherwise the mobile menu (focus back to the toggle).
   function initHeaderNav() {
     const nav = document.querySelector<HTMLElement>(".navbar");
     if (!nav || nav.hasAttribute("data-nav-bound")) {
@@ -226,38 +236,20 @@ if (disabledLanguages.includes(lang)) {
       setMenuOpen(toggle.getAttribute("aria-expanded") !== "true");
     });
 
-    nav
-      .querySelectorAll<HTMLButtonElement>("[data-submenu-toggle]")
-      .forEach((button) => {
-        const listId = button.getAttribute("aria-controls");
-        const list = listId ? document.getElementById(listId) : null;
-        if (!list) {
-          return;
-        }
-        button.addEventListener("click", () => {
-          const open = button.getAttribute("aria-expanded") !== "true";
-          button.setAttribute("aria-expanded", String(open));
-          list.toggleAttribute("data-open", open);
-        });
-      });
-
-    // Escape closes the open submenu first (focus back to its button),
-    // otherwise the mobile menu (focus back to the toggle). On desktop the
-    // menu is always visible, so only submenus close there.
+    // Escape closes the open submenu first (uncheck its checkbox,
+    // focus back to it), otherwise the mobile menu (focus back to
+    // the toggle). On desktop the menu is always visible, so only
+    // submenus close there.
     nav.addEventListener("keydown", (event: KeyboardEvent) => {
       if (event.key !== "Escape") {
         return;
       }
-      const openSubmenu = nav.querySelector<HTMLElement>(
-        ".nav-dropdown-list[data-open='true']",
+      const openSubmenu = nav.querySelector<HTMLInputElement>(
+        "[data-submenu-checkbox]:checked",
       );
       if (openSubmenu) {
-        const button = nav.querySelector<HTMLButtonElement>(
-          `[data-submenu-toggle][aria-controls="${openSubmenu.id}"]`,
-        );
-        openSubmenu.removeAttribute("data-open");
-        button?.setAttribute("aria-expanded", "false");
-        button?.focus();
+        openSubmenu.checked = false;
+        openSubmenu.focus();
         return;
       }
       if (toggle.getAttribute("aria-expanded") === "true" && !isDesktop()) {
