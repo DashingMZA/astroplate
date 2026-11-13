@@ -1,5 +1,12 @@
 .search-modal {
   @apply z-50 fixed top-0 left-0 w-full h-full flex items-start justify-center invisible opacity-0;
+  /* Enter/exit fade. The modal stays mounted while closed (visibility
+     hidden + inert), so the transition plays both ways. A CSS transition
+     is used instead of motion here on purpose: motion/react would add
+     ~144 KB to this chunk for a 150 ms fade, and motion/react-mini has
+     no AnimatePresence for the exit. Reduced-motion users get an
+     instant open/close via the global rule in base.css. */
+  transition: opacity 0.15s ease, visibility 0.15s ease;
 }
 .search-modal.show {
   @apply visible opacity-100;
@@ -9,6 +16,13 @@
 }
 .search-wrapper {
   @apply bg-white dark:bg-darkmode-body w-[660px] max-w-[96%] mt-24 rounded shadow-lg relative z-10;
+  transform: translateY(-12px);
+  opacity: 0;
+  transition: opacity 0.18s ease-out, transform 0.18s ease-out;
+}
+.search-modal.show .search-wrapper {
+  transform: translateY(0);
+  opacity: 1;
 }
 .search-wrapper-header {
   @apply p-4 relative;
