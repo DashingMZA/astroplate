@@ -172,10 +172,10 @@ Honest list of what this template does not (yet) do — see
 [CHANGELOG.md](CHANGELOG.md) under “Known limitations”. In short:
 the `featured` frontmatter field is accepted but no featured-post UI
 exists; there is no `SearchAction` JSON-LD (search is a client-side
-modal, not a results page); `motion` is installed but not wired into
-any component (the search modal animates with a CSS transition
-instead — `motion/react` would add ~144 KB to the search chunk for
-a 150 ms fade, and `motion/react-mini` has no `AnimatePresence`);
+modal, not a results page); `motion` was evaluated for the search modal and removed —
+`motion/react` would add ~144 KB to the search chunk for a 150 ms fade
+(the modal animates with a CSS transition instead, and
+`motion/react-mini` has no `AnimatePresence`);
 no Lighthouse/Core Web Vitals measurement has been run; CodeQL
 verification is pending the next push; Docker is untested live;
 and there is no multilingual/hreflang support.

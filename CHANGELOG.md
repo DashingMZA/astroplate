@@ -59,9 +59,9 @@ release is cut.
   rewritten to match the actual implementation after Waves A+B+C.
 - **Tests:** new `node:test` suites for contact-form config resolution,
   header-config validity, and image URL handling.
-- **Known:** `motion` is installed but not wired into the search modal
+- **Known:** `motion` was evaluated for the search modal and removed
   — `motion/react` would grow the search chunk from ~18 KB to ~162 KB
-  for a 150 ms fade, and `motion/react-mini` has no `AnimatePresence`;
+  for a 150 ms fade, and `motion/react-mini` has no `AnimatePresence`.
   the modal animates with a CSS transition instead. The Disqus chunk
   is still emitted by the build but is referenced by no page while
   Disqus is disabled.
