@@ -47,16 +47,6 @@
     "copyright": "Designed And Developed by [cSofts](https://csofts.com)"
   },
 
-  // Contact form endpoint. The form has no backend of its own — it POSTs
-  // to an external provider (Formspree, Getform, Netlify Forms, …).
-  // - `action`: the provider's form endpoint URL, e.g.
-  //   "https://formspree.io/f/xxxxxx". Empty (or "#") means the form is
-  //   NOT configured: the contact page renders a visibly disabled form
-  //   with setup instructions and never fakes a submission.
-  // - `provider`: free-text provider name, shown on the contact page
-  //   when configured (documentation only).
-  // Legacy fallback: `params.contact_form_action` above, used only when
-  // `contact_form.action` is absent. See CONFIGURATION.md for setup.
   "contact_form": {
     "action": "",
     "provider": ""

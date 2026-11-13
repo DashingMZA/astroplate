@@ -227,7 +227,7 @@ const { pathname } = Astro.url;
     // Escape closes the open submenu first (focus back to its button),
     // otherwise the mobile menu (focus back to the toggle). On desktop the
     // menu is always visible, so only submenus close there.
-    nav.addEventListener("keydown", (event) => {
+    nav.addEventListener("keydown", (event: KeyboardEvent) => {
       if (event.key !== "Escape") {
         return;
       }

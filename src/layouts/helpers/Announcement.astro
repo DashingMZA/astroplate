@@ -13,6 +13,7 @@ const { enable, content, expire_days } = config.announcement;
 {enable && content && (
   <div
     id="announcement"
+    data-expire-days={expire_days}
     class="relative z-999 bg-body dark:bg-darkmode-body shadow-[1px_0_10px_7px_rgba(154,154,154,0.11)] px-4 py-4 pr-12 md:text-lg transition-all duration-300 w-full"
     hidden
   >
@@ -28,15 +29,19 @@ const { enable, content, expire_days } = config.announcement;
   </div>
 )}
 
-<script define:vars={{ expireDays: expire_days }}>
+<script>
   // Show the banner unless dismissed; the close button sets a dismissal
   // cookie (SameSite=Lax; Secure only on HTTPS so local http dev still
-  // works — the cookie is a non-sensitive dismissal flag).
+  // works — the cookie is a non-sensitive dismissal flag). The expiry
+  // comes from the banner's data-expire-days attribute (config value),
+  // so the script needs no templated variables.
   function initAnnouncement() {
     const banner = document.getElementById("announcement");
     if (!banner) {
       return;
     }
+    const expireDays =
+      Number.parseInt(banner.dataset.expireDays ?? "", 10) || 7;
     const dismissed = document.cookie
       .split("; ")
       .some((cookie) => cookie.startsWith("announcement-close="));
