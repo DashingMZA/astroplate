@@ -2,3 +2,5 @@ User-agent: *
 Allow: /
 
 Disallow: /api/*
+
+Sitemap: https://astroplate-multilang.netlify.app/sitemap-index.xml

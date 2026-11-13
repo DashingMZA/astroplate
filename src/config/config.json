@@ -9,9 +9,10 @@
     "logo_darkmode": "/images/logo-darkmode.png",
     "logo_width": "150",
     "logo_height": "30",
-    "logo_text": "Astroplate"
+    "logo_text": "Astroplate",
+    "language": "en",
+    "locale": "en_US"
   },
-
   "settings": {
     "search": true,
     "sticky_header": true,
@@ -24,45 +25,46 @@
     "disable_languages": [],
     "default_language_in_subdir": false
   },
-
   "announcement": {
     "enable": true,
-    "expire_days": 7
+    "expire_days": 7,
+    "content": "<span class='text-center block'>\u2665\ufe0f Loving Astroplate? <a class='underline' href='https://github.com/DashingMZA/astroplate' target='_blank' rel='noopener'>Please \u2b50\ufe0f on Github</a></span>"
   },
-
   "params": {
     "contact_form_action": "#",
     "copyright": "Designed And Developed by [Zeon Studio](https://zeon.studio)"
   },
-
   "navigation_button": {
     "enable": true,
     "label": "Github",
     "link": "https://github.com/zeon-studio/astroplate/tree/multilingual"
   },
-
   "google_tag_manager": {
     "enable": false,
     "gtm_id": "GTM-XXXXXX"
   },
-
   "disqus": {
-    "enable": true,
-    "shortname": "themefisher-template",
+    "enable": false,
+    "shortname": "csofts-template",
     "settings": {}
   },
-
   "metadata": {
     "meta_author": "zeon.studio",
     "meta_image": "/images/og-image.png",
-    "meta_description": "astro and tailwind boilerplate"
+    "meta_description": "astro and tailwind boilerplate",
+    "meta_image_alt": "Astroplate"
   },
-
   "llms": {
     "generate_llms_txt": true,
     "generate_llms_full_txt": true,
     "generate_individual_md": true,
     "include": [],
     "exclude": []
+  },
+  "publisher": {
+    "name": "Astroplate",
+    "type": "Organization",
+    "logo": "/images/logo.png",
+    "url": "https://astroplate-multilang.netlify.app"
   }
 }

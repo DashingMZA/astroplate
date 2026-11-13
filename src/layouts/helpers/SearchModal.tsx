@@ -1,4 +1,5 @@
 import searchData from "../../../.json/search.json";
+import { escapeRegExp } from "@/lib/utils/seo";
 import React, { useEffect, useState } from "react";
 import SearchResult, { type ISearchItem } from "./SearchResult";
 import config from "@/config/config.json";
@@ -15,7 +16,7 @@ const SearchModal = ({ lang }: { lang: string | undefined }) => {
 
   // generate search result
   const doSearch = (searchData: ISearchItem[]) => {
-    const regex = new RegExp(`${searchString}`, "gi");
+    const regex = new RegExp(escapeRegExp(searchString), "gi");
     if (searchString === "") {
       return [];
     } else {
