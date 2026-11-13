@@ -1,11 +1,9 @@
 ---
-import config from "@/config/config.json";
 import BlogCard from "@/components/BlogCard.astro";
 import Breadcrumbs from "@/components/Breadcrumbs.astro";
 import Mermaid from "@/components/Mermaid.astro";
 import Share from "@/components/Share.astro";
 import TableOfContents from "@/components/TableOfContents.astro";
-import Disqus from "@/helpers/Disqus";
 import { getSinglePage } from "@/lib/contentParser";
 import { displayAuthorNames, resolveAuthors } from "@/lib/utils/authors";
 import { getLangFromUrl, slugSelector } from "@/lib/utils/languageParser";
@@ -154,12 +152,16 @@ const postSlugValue = postSlug({ id: postId, data: post.data });
             />
           </div>
         </div>
-        {/* Gate the island on its enable flag: mounting it unconditionally
-          shipped the ~21 KB Disqus chunk on every post even while Disqus
-          was disabled (the component itself only rendered null). */}
-        {config.disqus.enable && (
-          <Disqus className="mt-20" client:only="react" />
-        )}
+        {/* Disqus is intentionally NOT imported here. A static import of
+          the client:only island made Astro emit the ~21 KB Disqus chunk
+          on every build even while disqus.enable was false — the render
+          gate alone did not stop the bundler, because the island stays
+          in the module graph. To re-enable comments, re-add
+          `import config from "@/config/config.json";` and
+          `import Disqus from "@/helpers/Disqus";` at the top and render
+          `{config.disqus.enable && (<Disqus className="mt-20" client:only="react" />)}`
+          here. src/layouts/helpers/Disqus.tsx and the disqus-react
+          dependency are kept so re-enabling is a small change. */}
       </article>
     </div>
 
