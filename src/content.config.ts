@@ -72,6 +72,14 @@ const pagesCollection = defineCollection({
   loader: glob({ pattern: "**/*.{md,mdx}", base: "src/content/pages" }),
   schema: z.object({
     ...commonFields,
+    // Custom URL slug (overrides the filename-derived id when routing supports it).
+    slug: z.string().optional(),
+    // Social-share image; falls back to `image` when unset.
+    og_image: z.string().optional(),
+    og_title: z.string().optional(),
+    og_description: z.string().optional(),
+    canonical: z.url().optional(),
+    noindex: z.boolean().optional(),
     draft: z.boolean().optional(),
   }),
 });

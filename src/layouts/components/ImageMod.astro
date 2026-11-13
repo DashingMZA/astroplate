@@ -16,6 +16,11 @@ interface Props {
   style?: any;
   fetchpriority?: "high" | "low" | "auto";
   sizes?: string;
+  /** Responsive widths for local images (Astro generates one variant per
+    width). Remote (R2/CDN) images have no local variants, so this is
+    ignored for them — their absolute URL is preserved verbatim.
+    (Pulled forward from 7fbaf28: BlogCard already passes widths.) */
+  widths?: number[];
 }
 
 // Destructuring Astro.props to get the component's props
@@ -32,6 +37,7 @@ const {
   fit,
   fetchpriority,
   sizes,
+  widths,
 } = Astro.props;
 
 // Remote (absolute) URLs — including protocol-relative and data: URIs —
@@ -104,6 +110,7 @@ const isValidPath = isRemote || Boolean(localKey);
       decoding={decoding}
       fetchpriority={fetchpriority}
       sizes={sizes}
+      widths={widths}
       class={className}
       format={format}
       style={style}

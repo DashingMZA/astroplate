@@ -4,6 +4,7 @@ import TwSizeIndicator from "@/components/TwSizeIndicator.astro";
 import config from "@/config/config.json";
 import theme from "@/config/theme.json";
 import {
+  absoluteUrl,
   buildCanonical,
   resolveOgDescription,
   resolveOgImage,
@@ -87,7 +88,11 @@ const {
   ogType,
   article,
   jsonLd,
+  lang,
 } = Astro.props;
+
+// Multilingual: page language from the prop or the URL.
+const language = lang || getLangFromUrl(Astro.url);
 
 // <title>: meta_title > title > site title. og_title is NOT a title fallback.
 // plainify() leaves a trailing newline from marked's block output — trim it

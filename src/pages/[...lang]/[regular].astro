@@ -5,7 +5,7 @@ import { supportedLang } from "@/lib/utils/languageParser";
 import { checkDuplicateSlugs, pageSlug } from "@/lib/utils/slug";
 import PageHeader from "@/partials/PageHeader.astro";
 
-import { render } from "astro:content";
+import { render, type CollectionEntry } from "astro:content";
 
 export async function getStaticPaths() {
   const paths = await Promise.all(
@@ -15,7 +15,7 @@ export async function getStaticPaths() {
       // Two pages in the SAME language must never resolve to the same public
       // URL (custom slug colliding with another page's slug or filename).
       // Fail the build loudly.
-      const langNeutral = (page: { id: string; data: { slug?: string } }) => ({
+      const langNeutral = (page: CollectionEntry<"pages">) => ({
         id: page.id.split("/").slice(1).join("/"),
         data: page.data,
       });

@@ -3,6 +3,7 @@ import config from "@/config/config.json";
 import Base from "@/layouts/Base.astro";
 import PostSingle from "@/layouts/PostSingle.astro";
 import { getSinglePage } from "@/lib/contentParser.astro";
+import type { CollectionEntry } from "astro:content";
 import { absoluteUrl } from "@/lib/utils/seo";
 import { checkDuplicateSlugs, postSlug } from "@/lib/utils/slug";
 import { supportedLang } from "@/lib/utils/languageParser";
@@ -18,7 +19,7 @@ export async function getStaticPaths() {
       // URL (custom slug colliding with another post's slug or filename).
       // Fail the build loudly. (Checked per language: en/post-1 and fr/post-1
       // legitimately share a slug.)
-      const langNeutral = (post: { id: string; data: { slug?: string } }) => ({
+      const langNeutral = (post: CollectionEntry<"blog">) => ({
         id: post.id.split("/").slice(1).join("/"),
         data: post.data,
       });
