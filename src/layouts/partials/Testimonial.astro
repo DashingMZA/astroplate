@@ -17,6 +17,8 @@ const swiperOptions: AstroSwiperOptions = {
   autoplay: {
     delay: 2500,
     disableOnInteraction: false,
+    // Pause while the pointer or keyboard focus is on the slider.
+    pauseOnMouseEnter: true,
   },
   pagination: {
     el: ".testimonial-slider-pagination",
@@ -40,6 +42,7 @@ const swiperOptions: AstroSwiperOptions = {
     <div class="container">
       <div class="row">
         <div class="mx-auto mb-12 text-center md:col-10 lg:col-8 xl:col-6">
+          {/* eslint-disable-next-line jsx-a11y/heading-has-content -- set:html injects the heading text at runtime; the rule cannot see it. */}
           <h2 set:html={markdownify(testimonial.data.title)} class="mb-4" />
           <p set:html={markdownify(testimonial.data.description)} />
         </div>
@@ -85,10 +88,12 @@ const swiperOptions: AstroSwiperOptions = {
                           />
                         </div>
                         <div class="ml-4">
-                          <h3
-                            set:text={item.name}
-                            class="h5 font-primary font-semibold"
-                          />
+                          {/* Expression child (not set:text): the heading
+                            text is visible to the jsx-a11y
+                            heading-has-content rule. */}
+                          <h3 class="h5 font-primary font-semibold">
+                            {item.name}
+                          </h3>
                           <p
                             set:text={item.designation}
                             class="text-text-dark dark:text-white"
@@ -107,3 +112,30 @@ const swiperOptions: AstroSwiperOptions = {
     </div>
   </section>
 )}
+
+<script>
+  // Stop the testimonial autoplay for users who prefer reduced motion.
+  // astro-swiper stores its instance on the slider element
+  // (`element.astroSwiper`) and initialises it from its own bundled script,
+  // so this runs on load, on view-transition swaps, and once more after a
+  // short delay to cover script ordering; the 2500 ms autoplay delay means
+  // the stop always lands before the first automatic advance.
+  type SwiperElement = HTMLElement & {
+    astroSwiper?: { autoplay?: { stop(): void } };
+  };
+
+  function stopTestimonialAutoplay() {
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+    document
+      .querySelectorAll<SwiperElement>(".testimonial-slider")
+      .forEach((element) => {
+        element.astroSwiper?.autoplay?.stop();
+      });
+  }
+
+  stopTestimonialAutoplay();
+  document.addEventListener("astro:page-load", stopTestimonialAutoplay);
+  window.setTimeout(stopTestimonialAutoplay, 300);
+</script>

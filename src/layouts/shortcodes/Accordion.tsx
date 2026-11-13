@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useId, useState } from "react";
 
 const Accordion = ({
   title,
@@ -10,10 +10,18 @@ const Accordion = ({
   className?: string;
 }) => {
   const [show, setShow] = useState(false);
+  const panelId = useId();
+  const buttonId = `${panelId}-button`;
 
   return (
     <div className={`accordion ${show && "active"} ${className}`}>
-      <button className="accordion-header" onClick={() => setShow(!show)}>
+      <button
+        id={buttonId}
+        className="accordion-header"
+        aria-expanded={show}
+        aria-controls={panelId}
+        onClick={() => setShow(!show)}
+      >
         {title}
         <svg
           className="accordion-icon"
@@ -21,6 +29,7 @@ const Accordion = ({
           y="0px"
           viewBox="0 0 512 512"
           xmlSpace="preserve"
+          aria-hidden="true"
         >
           <path
             fill="currentColor"
@@ -28,7 +37,18 @@ const Accordion = ({
           ></path>
         </svg>
       </button>
-      <div className="accordion-content">{children}</div>
+      {/* `hidden` removes the collapsed panel from the accessibility tree
+        and tab order; the max-height open/close animation still runs on
+        expand (the attribute is removed together with the class change). */}
+      <div
+        id={panelId}
+        className="accordion-content"
+        role="region"
+        aria-labelledby={buttonId}
+        hidden={!show}
+      >
+        {children}
+      </div>
     </div>
   );
 };

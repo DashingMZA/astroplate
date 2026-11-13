@@ -11,6 +11,7 @@ const { className }: { className?: string } = Astro.props;
 {theme_switcher && (
   <div class={`theme-switcher ${className}`}>
     <input id="theme-switcher" data-theme-switcher type="checkbox" />
+    {/* eslint-disable-next-line jsx-a11y/label-has-associated-control -- Astro templates use the HTML `for` attribute (correct here); the jsx-a11y rule only recognises JSX `htmlFor`. */}
     <label for="theme-switcher">
       <span class="sr-only">theme switcher</span>
       <span>
@@ -47,10 +48,12 @@ const { className }: { className?: string } = Astro.props;
   const matchMedia = window.matchMedia("(prefers-color-scheme: dark)");
 
   matchMedia.addEventListener("change", () =>
-    toggleTheme(document.querySelectorAll("[data-theme-switcher]")),
+    toggleTheme(
+      document.querySelectorAll<HTMLInputElement>("[data-theme-switcher]"),
+    ),
   );
 
-  function toggleTheme(themeSwitch: NodeListOf<Element>) {
+  function toggleTheme(themeSwitch: NodeListOf<HTMLInputElement>) {
     const defaulTheme =
       settings.default_theme === "system"
         ? matchMedia.matches
@@ -59,12 +62,13 @@ const { className }: { className?: string } = Astro.props;
         : settings.default_theme;
     const currentTheme = localStorage.getItem("theme") || defaulTheme;
     const isDarkTheme = currentTheme === "dark";
-    themeSwitch.forEach((sw: any) => (sw.checked = isDarkTheme));
+    themeSwitch.forEach((sw) => (sw.checked = isDarkTheme));
     document.documentElement.classList.toggle("dark", isDarkTheme);
   }
 
   const setDarkMode = () => {
-    const themeSwitch = document.querySelectorAll("[data-theme-switcher]");
+    const themeSwitch =
+      document.querySelectorAll<HTMLInputElement>("[data-theme-switcher]");
     toggleTheme(themeSwitch);
     themeSwitch.forEach((sw) => {
       sw.addEventListener("click", function () {
