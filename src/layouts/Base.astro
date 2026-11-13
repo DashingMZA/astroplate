@@ -13,8 +13,10 @@ import {
   resolvePageTitle,
   resolveTwitterHandles,
 } from "@/lib/utils/seo";
-// Site-wide WebSite + Organization JSON-LD builders land with 90ac0dc
-// (src/lib/utils/jsonld.ts); until then pages emit only their own blocks.
+import {
+  buildOrganizationJsonLd,
+  buildWebsiteJsonLd,
+} from "@/lib/utils/jsonld";
 import { getLangFromUrl } from "@/lib/utils/languageParser";
 import { plainify } from "@/lib/utils/textConverter";
 import Footer from "@/partials/Footer.astro";
@@ -149,9 +151,30 @@ const articleAuthors = article?.author
     : [article.author]
   : [];
 
-// Structured data: the single @graph assembly (site-wide WebSite +
-// Organization blocks + page blocks) lands with 90ac0dc. Until then the
-// page's own block, if any, is emitted as-is.
+// Structured data: exactly ONE JSON-LD script per page — a @graph holding
+// the site-wide WebSite + Organization blocks plus any page-specific blocks
+// (BlogPosting, BreadcrumbList, Person) passed via the `jsonLd` prop.
+const siteUrl = String(config.site.base_url ?? "").replace(/\/+$/, "");
+const siteGraph = [
+  buildWebsiteJsonLd(siteUrl, config.site.title),
+  buildOrganizationJsonLd(
+    config.publisher
+      ? {
+          ...config.publisher,
+          // JSON-LD logo must be an absolute URL.
+          logo: config.publisher.logo
+            ? absoluteUrl(config.publisher.logo)
+            : undefined,
+        }
+      : null,
+    siteUrl,
+  ),
+].filter(Boolean);
+const pageBlocks = Array.isArray(jsonLd) ? jsonLd : jsonLd ? [jsonLd] : [];
+const jsonLdGraph = {
+  "@context": "https://schema.org",
+  "@graph": [...siteGraph, ...pageBlocks],
+};
 ---
 
 <!doctype html>
@@ -279,8 +302,8 @@ const articleAuthors = article?.author
       <meta name="twitter:creator" content={twitterHandles.creator} />
     )}
 
-    <!-- structured data -->
-    {jsonLd && <JsonLd data={jsonLd} />}
+    <!-- structured data (one @graph block per page) -->
+    <JsonLd data={jsonLdGraph} />
   </head>
   <body class="flex flex-col min-h-screen">
     <a

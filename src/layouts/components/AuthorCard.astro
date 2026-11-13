@@ -5,8 +5,8 @@ import ImageMod from "./ImageMod.astro";
 import Social from "./Social.astro";
 
 const { data } = Astro.props;
-const { title, image, social } = data.data;
 const lang = getLangFromUrl(Astro.url);
+const { title, image, social } = data.data;
 ---
 
 <div class="rounded bg-light p-8 text-center dark:bg-darkmode-light">
@@ -22,11 +22,11 @@ const lang = getLangFromUrl(Astro.url);
       decoding="async"
     />
   )}
-  <h4 class="mb-3">
+  <h3 class="mb-3">
     <a href={slugSelector(`/authors/${data.id.split("/")[1]}`, lang)}>
       {title}
     </a>
-  </h4>
+  </h3>
   <p class="mb-4">{plainify(data.body?.slice(0, 100))}</p>
   <Social source={social} className="social-icons" />
 </div>

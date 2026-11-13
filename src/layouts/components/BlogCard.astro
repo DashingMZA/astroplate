@@ -1,12 +1,14 @@
 ---
 import config from "@/config/config.json";
 import dateFormat from "@/lib/utils/dateFormat";
+import { displayAuthorNames, resolveAuthors } from "@/lib/utils/authors";
 import {
   getLangFromUrl,
   getTranslations,
   slugSelector,
 } from "@/lib/utils/languageParser";
 import { postUrl } from "@/lib/utils/slug";
+import { getCollection } from "astro:content";
 import { humanize, plainify, slugify } from "@/lib/utils/textConverter";
 import { FaRegFolder, FaRegUserCircle } from "react-icons/fa";
 import ImageMod from "./ImageMod.astro";
@@ -34,9 +36,20 @@ const summaryLength = Number(summary_length);
 const cardText =
   excerpt ?? description ?? plainify(data.body?.slice(0, summaryLength) ?? "");
 
-// Author resolution against the authors collection lands with 90ac0dc
-// (src/lib/utils/authors.ts); until then the single `author` field links
-// to its author page as before.
+// Authors resolved against the authors collection (file id first, legacy
+// display-name match as fallback). Unresolved names render as plain text.
+// Author ids carry the language dir ("english/john-doe"), so it is stripped
+// before resolving: the URL slug is language-neutral, slugSelector adds
+// the /fr prefix.
+const allAuthors = await getCollection("authors");
+const langAuthors = allAuthors.map((a) => ({
+  ...a,
+  id: a.id.split("/").slice(1).join("/"),
+}));
+const resolvedAuthors = resolveAuthors(
+  displayAuthorNames({ data: { author, authors } }),
+  langAuthors,
+);
 ---
 
 <div class="bg-body dark:bg-darkmode-body">
@@ -59,10 +72,22 @@ const cardText =
   </h3>
   <ul class="mb-4">
     <li class="mr-4 inline-block">
-      <a href={slugSelector(`/authors/${slugify(author)}`, lang)}>
-        <FaRegUserCircle className={"mr-2 -mt-1 inline-block"} />
-        {humanize(author)}
-      </a>
+      {resolvedAuthors.map((resolved, index: number) => (
+        <>
+          {resolved.url ? (
+            <a href={slugSelector(resolved.url, lang)}>
+              <FaRegUserCircle className={"mr-2 -mt-1 inline-block"} />
+              {humanize(resolved.name)}
+            </a>
+          ) : (
+            <span>
+              <FaRegUserCircle className={"mr-2 -mt-1 inline-block"} />
+              {humanize(resolved.name)}
+            </span>
+          )}
+          {index !== resolvedAuthors.length - 1 && ", "}
+        </>
+      ))}
     </li>
     <li class="mr-4 inline-block">
       <FaRegFolder className={"mr-2 -mt-1 inline-block"} />

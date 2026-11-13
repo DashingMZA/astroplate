@@ -1,17 +1,21 @@
 ---
 import BlogCard from "@/components/BlogCard.astro";
+import Breadcrumbs from "@/components/Breadcrumbs.astro";
 import Share from "@/components/Share.astro";
-import config from "@/config/config.json";
 import TableOfContents from "@/components/TableOfContents.astro";
+import config from "@/config/config.json";
 import Disqus from "@/helpers/Disqus";
 import { getSinglePage } from "@/lib/contentParser.astro";
-import { slugSelector } from "@/lib/utils/languageParser";
+import { displayAuthorNames, resolveAuthors } from "@/lib/utils/authors";
+// Mermaid lands with 6336d61 (src/layouts/components/Mermaid.astro).
+import { getLangFromUrl, slugSelector } from "@/lib/utils/languageParser";
 import dateFormat from "@/lib/utils/dateFormat";
 import readingTime from "@/lib/utils/readingTime";
 import { canonicalFor } from "@/lib/utils/seo";
+import { postSlug, postUrl } from "@/lib/utils/slug";
 import similarItems from "@/lib/utils/similarItems";
 import { humanize, markdownify, slugify } from "@/lib/utils/textConverter";
-import { render } from "astro:content";
+import { getCollection, render } from "astro:content";
 import { FaRegClock, FaRegFolder, FaRegUserCircle } from "react-icons/fa";
 import ImageMod from "./components/ImageMod.astro";
 
@@ -34,16 +38,34 @@ const { title, description, author, authors, categories, image, date, tags } =
 // Reading time from the raw Markdown body.
 const reading_time = readingTime(post.body ?? "");
 
-// Multi-author support: use the `authors` array when present, otherwise
-// fall back to the single `author` field.
-const displayAuthors: string[] =
-  authors && authors.length > 0 ? authors : [author];
+// Authors resolved against the authors collection (file id first, legacy
+// display-name match as fallback). Unresolved names render as plain text
+// with no link — never a link to a 404 author page.
+const allAuthors = await getCollection("authors");
+const langAuthors = allAuthors.map((a) => ({
+  ...a,
+  id: a.id.split("/").slice(1).join("/"),
+}));
+const resolvedAuthors = resolveAuthors(
+  displayAuthorNames({ data: { author, authors } }),
+  langAuthors,
+);
+// Language-neutral id for the slug helpers (post.id is "english/post-1").
+const postId = post.id.split("/").slice(1).join("/");
+const postSlugValue = postSlug({ id: postId, data: post.data });
 ---
 
 <section class="section pt-7">
   <div class="container">
     <div class="row justify-center">
       <article class="lg:col-10">
+        <Breadcrumbs
+          items={[
+            { label: "Home", href: slugSelector("/", lang) },
+            { label: "Blog", href: slugSelector("/blog", lang) },
+            { label: title },
+          ]}
+        />
         {image && (
           <div class="mb-10">
             <ImageMod
@@ -55,19 +77,30 @@ const displayAuthors: string[] =
               fetchpriority="high"
               class="w-full rounded"
               format="webp"
+              sizes="(max-width: 768px) 100vw, 1200px"
+              widths={[640, 1024, 1200]}
             />
           </div>
         )}
-        <h1 set:html={markdownify(title)} class="h2 mb-4" />
+        <h1 class="h2 mb-4">
+          <span set:html={markdownify(title)} />
+        </h1>
         <ul class="mb-4">
           <li class="mr-4 inline-block">
-            {displayAuthors.map((name: string, index: number) => (
+            {resolvedAuthors.map((resolved, index: number) => (
               <>
-                <a href={slugSelector(`/authors/${slugify(name)}`, lang)}>
-                  <FaRegUserCircle className={"mr-2 -mt-1 inline-block"} />
-                  {humanize(name)}
-                </a>
-                {index !== displayAuthors.length - 1 && ", "}
+                {resolved.url ? (
+                  <a href={slugSelector(resolved.url, lang)}>
+                    <FaRegUserCircle className={"mr-2 -mt-1 inline-block"} />
+                    {humanize(resolved.name)}
+                  </a>
+                ) : (
+                  <span>
+                    <FaRegUserCircle className={"mr-2 -mt-1 inline-block"} />
+                    {humanize(resolved.name)}
+                  </span>
+                )}
+                {index !== resolvedAuthors.length - 1 && ", "}
               </>
             ))}
           </li>
@@ -112,15 +145,20 @@ const displayAuthors: string[] =
               className="social-icons"
               title={title}
               description={description}
-              slug={post.id}
+              slug={postSlugValue}
               url={canonicalFor(
-                slugSelector(`/blog/${post.id.split("/").pop()}`, lang),
+                slugSelector(`/blog/${postSlugValue}`, lang),
               )}
               image={image}
             />
           </div>
         </div>
-        <Disqus className="mt-20" client:only="react" />
+        {/* Gate the island on its enable flag: mounting it unconditionally
+          shipped the ~21 KB Disqus chunk on every post even while Disqus
+          was disabled (the component itself only rendered null). */}
+        {config.disqus.enable && (
+          <Disqus className="mt-20" client:only="react" />
+        )}
       </article>
     </div>
 
