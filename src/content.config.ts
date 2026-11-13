@@ -52,6 +52,8 @@ const authorsCollection = defineCollection({
     ...commonFields,
     email: z.string().optional(),
     image: z.string().optional(),
+    canonical: z.url().optional(),
+    noindex: z.boolean().optional(),
     social: z
       .array(
         z
