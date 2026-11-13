@@ -212,8 +212,7 @@ if (disabledLanguages.includes(lang)) {
     }
     const showIcon = nav.querySelector("#show-button");
     const hideIcon = nav.querySelector("#hide-button");
-    const isDesktop = () =>
-      window.matchMedia("(min-width: 1024px)").matches;
+    const isDesktop = () => window.matchMedia("(min-width: 1024px)").matches;
 
     const setMenuOpen = (open: boolean) => {
       toggle.setAttribute("aria-expanded", String(open));
@@ -261,10 +260,7 @@ if (disabledLanguages.includes(lang)) {
         button?.focus();
         return;
       }
-      if (
-        toggle.getAttribute("aria-expanded") === "true" &&
-        !isDesktop()
-      ) {
+      if (toggle.getAttribute("aria-expanded") === "true" && !isDesktop()) {
         setMenuOpen(false);
         toggle.focus();
       }

@@ -111,10 +111,7 @@ const SearchResult = ({
                 </p>
 
                 {result.groupItems.map((item) => (
-                  <div
-                    key={item.slug}
-                    className="search-result-item"
-                  >
+                  <div key={item.slug} className="search-result-item">
                     {item.frontmatter.image && (
                       <div className="search-result-item-image">
                         <img
