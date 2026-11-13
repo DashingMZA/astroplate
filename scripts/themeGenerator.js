@@ -146,7 +146,9 @@ function generateThemeCSS() {
     fs.writeFileSync(outputPath, cssLines.join("\n") + "\n");
     console.log("✅ Theme CSS generated successfully at:", outputPath);
   } catch (error) {
-    throw new Error(`Failed to generate theme CSS: ${error.message}`);
+    throw new Error(`Failed to generate theme CSS: ${error.message}`, {
+      cause: error,
+    });
   }
 }
 

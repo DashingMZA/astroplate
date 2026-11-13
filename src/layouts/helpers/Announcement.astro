@@ -1,0 +1,67 @@
+---
+import config from "@/config/config.json";
+import { markdownify } from "@/lib/utils/textConverter";
+
+// Announcement banner — dependency-free Astro component (previously a
+// React island, which pulled the ~213 KB React runtime onto every page
+// just for a static banner + a close button). Rendered server-side and
+// hidden by default; the inline script below shows it only when the
+// visitor has not dismissed it (cookie `announcement-close`).
+const { enable, content, expire_days } = config.announcement;
+---
+
+{enable && content && (
+  <div
+    id="announcement"
+    class="relative z-999 bg-body dark:bg-darkmode-body shadow-[1px_0_10px_7px_rgba(154,154,154,0.11)] px-4 py-4 pr-12 md:text-lg transition-all duration-300 w-full"
+    hidden
+  >
+    <p set:html={markdownify(content)} />
+    <button
+      type="button"
+      id="announcement-close"
+      class="absolute top-1/2 right-4 -translate-y-1/2 cursor-pointer flex items-center justify-center w-7 h-7 border border-border dark:border-darkmode-border rounded-full text-xl transition-colors duration-200"
+      aria-label="Close announcement"
+    >
+      &times;
+    </button>
+  </div>
+)}
+
+<script define:vars={{ expireDays: expire_days }}>
+  // Show the banner unless dismissed; the close button sets a dismissal
+  // cookie (SameSite=Lax; Secure only on HTTPS so local http dev still
+  // works — the cookie is a non-sensitive dismissal flag).
+  function initAnnouncement() {
+    const banner = document.getElementById("announcement");
+    if (!banner) {
+      return;
+    }
+    const dismissed = document.cookie
+      .split("; ")
+      .some((cookie) => cookie.startsWith("announcement-close="));
+    if (!dismissed) {
+      banner.hidden = false;
+    }
+    const closeButton = document.getElementById("announcement-close");
+    if (!closeButton || closeButton.hasAttribute("data-bound")) {
+      return;
+    }
+    closeButton.setAttribute("data-bound", "");
+    closeButton.addEventListener("click", () => {
+      const expires = new Date(
+        Date.now() + expireDays * 864e5,
+      ).toUTCString();
+      const secure =
+        window.location.protocol === "https:" ? "; Secure" : "";
+      document.cookie =
+        `announcement-close=true; expires=${expires}; path=/; ` +
+        `SameSite=Lax${secure}`;
+      banner.hidden = true;
+    });
+  }
+
+  initAnnouncement();
+  // Re-run after view-transition swaps (the banner is re-rendered).
+  document.addEventListener("astro:page-load", initAnnouncement);
+</script>
