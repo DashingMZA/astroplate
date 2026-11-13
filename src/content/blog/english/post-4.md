@@ -1,8 +1,15 @@
 ---
-title: "How to build an Application with modern Technology"
-meta_title: ""
-description: "this is meta description"
+<<<<<<< HEAD:src/content/blog/english/post-4.md
+title: "Designing Modern Application Architecture, from Silicon to Software"
+meta_title: "Designing Modern Application Architecture, from Silicon to Software"
+description: "A look at the architecture decisions behind modern applications, from hardware foundations to the software patterns that keep systems scalable."
 date: 2025-04-04T05:00:00Z
+=======
+title: "Designing Modern Application Architecture, from Silicon to Software"
+meta_title: "Designing Modern Application Architecture, from Silicon to Software"
+description: "A look at the architecture decisions behind modern applications, from hardware foundations to the software patterns that keep systems scalable."
+date: 2022-04-04T05:00:00Z
+>>>>>>> 08b7bf6 (content: extended validated schema, TOC, reading time, multi-author):src/content/blog/post-4.md
 image: "/images/image-placeholder.png"
 categories: ["Architecture"]
 author: "John Doe"

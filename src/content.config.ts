@@ -22,6 +22,23 @@ const blogCollection = defineCollection({
     date: z.coerce.date().optional(),
     image: z.string().optional(),
     author: z.string().default("Admin"),
+    // Short summary for cards/search; falls back to description/body at render.
+    excerpt: z.string().optional(),
+    // Custom URL slug (overrides the filename-derived id when routing supports it).
+    slug: z.string().optional(),
+    // Last-updated date; `lastmod` is the sitemap alias for the same value.
+    updated: z.coerce.date().optional(),
+    lastmod: z.coerce.date().optional(),
+    // Social-share image; falls back to `image` when unset.
+    og_image: z.string().optional(),
+    og_title: z.string().optional(),
+    og_description: z.string().optional(),
+    // Multi-author support; `author` above stays as the single-author fallback.
+    authors: z.array(z.string()).optional(),
+    featured: z.boolean().optional(),
+    canonical: z.url().optional(),
+    noindex: z.boolean().optional(),
+    // Use factory functions for mutable array defaults (Zod 4 best practice)
     categories: z.array(z.string()).default(() => ["others"]),
     tags: z.array(z.string()).default(() => ["others"]),
     draft: z.boolean().optional(),
@@ -46,6 +63,7 @@ const authorsCollection = defineCollection({
           .optional(),
       )
       .optional(),
+    draft: z.boolean().optional(),
   }),
 });
 
@@ -54,6 +72,7 @@ const pagesCollection = defineCollection({
   loader: glob({ pattern: "**/*.{md,mdx}", base: "src/content/pages" }),
   schema: z.object({
     ...commonFields,
+    draft: z.boolean().optional(),
   }),
 });
 

@@ -1,8 +1,15 @@
 ---
-title: "How to build an Application with modern Technology"
-meta_title: ""
-description: "this is meta description"
+<<<<<<< HEAD:src/content/blog/english/post-1.md
+title: "How to Build a Modern Application with Next.js and Tailwind CSS"
+meta_title: "How to Build a Modern Application with Next.js and Tailwind CSS"
+description: "A practical guide to building a modern web application with Next.js and Tailwind CSS, from project setup to a polished, responsive interface."
 date: 2025-04-04T05:00:00Z
+=======
+title: "How to Build a Modern Application with Next.js and Tailwind CSS"
+meta_title: "How to Build a Modern Application with Next.js and Tailwind CSS"
+description: "A practical guide to building a modern web application with Next.js and Tailwind CSS, from project setup to a polished, responsive interface."
+date: 2022-04-04T05:00:00Z
+>>>>>>> 08b7bf6 (content: extended validated schema, TOC, reading time, multi-author):src/content/blog/post-1.md
 image: "/images/image-placeholder.png"
 categories: ["Application", "Data"]
 author: "John Doe"

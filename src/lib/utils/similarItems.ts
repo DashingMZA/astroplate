@@ -13,25 +13,41 @@ const similarItems = (currentItem: any, allItems: any[]) => {
     tags = currentItem.data.tags;
   }
 
-  // filter by categories
-  const filterByCategories = allItems.filter((item: any) =>
-    categories.find((category) => item.data.categories.includes(category)),
-  );
+  // NaN-safe date: undated posts sort last.
+  const timeOf = (item: any): number => {
+    const time = new Date(item.data.date).valueOf();
+    return Number.isNaN(time) ? -Infinity : time;
+  };
 
-  // filter by tags
-  const filterByTags = allItems.filter((item: any) =>
-    tags.find((tag) => item.data.tags.includes(tag)),
-  );
+  // score candidates: shared categories first, then shared tags, then recency
+  const scored = allItems
+    .filter((item: any) => item.id !== currentItem.id)
+    .map((item: any) => {
+      const itemCategories: string[] = item.data.categories ?? [];
+      const itemTags: string[] = item.data.tags ?? [];
+      const sharedCategories = categories.filter((category) =>
+        itemCategories.includes(category),
+      ).length;
+      const sharedTags = tags.filter((tag) => itemTags.includes(tag)).length;
+      return { item, sharedCategories, sharedTags };
+    })
+    // only posts sharing at least one category or tag are related
+    .filter(
+      ({ sharedCategories, sharedTags }) =>
+        sharedCategories > 0 || sharedTags > 0,
+    )
+    .sort((a, b) => {
+      if (b.sharedCategories !== a.sharedCategories) {
+        return b.sharedCategories - a.sharedCategories;
+      }
+      if (b.sharedTags !== a.sharedTags) {
+        return b.sharedTags - a.sharedTags;
+      }
+      return timeOf(b.item) - timeOf(a.item);
+    });
 
-  // merged after filter
-  const mergedItems = [...new Set([...filterByCategories, ...filterByTags])];
-
-  // filter by slug
-  const filterBySlug = mergedItems.filter(
-    (product) => product.id !== currentItem.id,
-  );
-
-  return filterBySlug;
+  // cap related posts at 3
+  return scored.slice(0, 3).map(({ item }) => item);
 };
 
 export default similarItems;

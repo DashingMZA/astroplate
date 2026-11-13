@@ -2,32 +2,42 @@
 import BlogCard from "@/components/BlogCard.astro";
 import Share from "@/components/Share.astro";
 import config from "@/config/config.json";
+import TableOfContents from "@/components/TableOfContents.astro";
 import Disqus from "@/helpers/Disqus";
 import { getSinglePage } from "@/lib/contentParser.astro";
-import dateFormat from "@/lib/utils/dateFormat";
 import { slugSelector } from "@/lib/utils/languageParser";
+import dateFormat from "@/lib/utils/dateFormat";
+import readingTime from "@/lib/utils/readingTime";
+import { canonicalFor } from "@/lib/utils/seo";
 import similarItems from "@/lib/utils/similarItems";
 import { humanize, markdownify, slugify } from "@/lib/utils/textConverter";
 import { render } from "astro:content";
 import { FaRegClock, FaRegFolder, FaRegUserCircle } from "react-icons/fa";
 import ImageMod from "./components/ImageMod.astro";
-const { default_language } = config.settings;
 
 const COLLECTION_FOLDER = "blog";
 const { post } = Astro.props;
+const { default_language } = config.settings;
 let { lang } = Astro.params;
 
 if (!lang) {
   lang = default_language;
 }
 
-const posts = await getSinglePage(
-  COLLECTION_FOLDER,
-  lang
-);
-const similarPosts = similarItems(post, posts);
-const { Content } = await render(post);
-const { title, description, author, categories, image, date, tags } = post.data;
+const posts = await getSinglePage(COLLECTION_FOLDER, lang);
+// Ranked by shared categories, then shared tags, then recency; capped at 3.
+const similarPosts = similarItems(post, posts).slice(0, 3);
+const { Content, headings } = await render(post);
+const { title, description, author, authors, categories, image, date, tags } =
+  post.data;
+
+// Reading time from the raw Markdown body.
+const reading_time = readingTime(post.body ?? "");
+
+// Multi-author support: use the `authors` array when present, otherwise
+// fall back to the single `author` field.
+const displayAuthors: string[] =
+  authors && authors.length > 0 ? authors : [author];
 ---
 
 <section class="section pt-7">
@@ -42,6 +52,8 @@ const { title, description, author, categories, image, date, tags } = post.data;
                 height={500}
                 width={1200}
                 alt={title}
+                loading="eager"
+                fetchpriority="high"
                 class="w-full rounded"
                 format="webp"
               />
@@ -51,18 +63,23 @@ const { title, description, author, categories, image, date, tags } = post.data;
         <h1 set:html={markdownify(title)} class="h2 mb-4" />
         <ul class="mb-4">
           <li class="mr-4 inline-block">
-            <a href={slugSelector(`/authors/${slugify(author)}`, lang)}>
-              <FaRegUserCircle className={"mr-2 -mt-1 inline-block"} />
-              {humanize(author)}
-            </a>
+            {
+              displayAuthors.map((name: string, index: number) => (
+                <>
+                  <a href={slugSelector(`/authors/${slugify(name)}`, lang)}>
+                    <FaRegUserCircle className={"mr-2 -mt-1 inline-block"} />
+                    {humanize(name)}
+                  </a>
+                  {index !== displayAuthors.length - 1 && ", "}
+                </>
+              ))
+            }
           </li>
           <li class="mr-4 inline-block">
             <FaRegFolder className={"mr-2 -mt-1 inline-block"} />
             {
               categories.map((category: string, index: number) => (
-                <a
-                  href={slugSelector(`/categories/${slugify(category)}`, lang)}
-                >
+                <a href={slugSelector(`/categories/${slugify(category)}`, lang)}>
                   {humanize(category)}
                   {index !== categories.length - 1 && ","}
                 </a>
@@ -73,13 +90,15 @@ const { title, description, author, categories, image, date, tags } = post.data;
             <FaRegClock className={"mr-2 -mt-1 inline-block"} />
             {dateFormat(date)}
           </li>
+          <li class="mr-4 inline-block">{reading_time}</li>
         </ul>
+        <TableOfContents headings={headings} />
         <div class="content mb-10">
           <Content />
         </div>
         <div class="row items-start justify-between">
           <div class="mb-10 flex items-center lg:col-5 lg:mb-0">
-            <h5 class="mr-3">Tags :</h5>
+            <span class="h5 mr-3">Tags :</span>
             <ul>
               {
                 tags.map((tag: string) => (
@@ -96,12 +115,16 @@ const { title, description, author, categories, image, date, tags } = post.data;
             </ul>
           </div>
           <div class="flex items-center lg:col-4">
-            <h5 class="mr-3">Share :</h5>
+            <span class="h5 mr-3">Share :</span>
             <Share
               className="social-icons"
               title={title}
               description={description}
               slug={post.id}
+              url={canonicalFor(
+                slugSelector(`/blog/${post.id.split("/").pop()}`, lang),
+              )}
+              image={image}
             />
           </div>
         </div>

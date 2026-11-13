@@ -1,8 +1,15 @@
 ---
-title: "How to build an Application with modern Technology"
-meta_title: ""
-description: "this is meta description"
+<<<<<<< HEAD:src/content/blog/english/post-3.md
+title: "Building Better Software with Modern Tools and Tailwind CSS"
+meta_title: "Building Better Software with Modern Tools and Tailwind CSS"
+description: "How modern tooling and utility-first CSS with Tailwind help small teams ship better software faster, with less maintenance overhead."
 date: 2025-04-04T05:00:00Z
+=======
+title: "Building Better Software with Modern Tools and Tailwind CSS"
+meta_title: "Building Better Software with Modern Tools and Tailwind CSS"
+description: "How modern tooling and utility-first CSS with Tailwind help small teams ship better software faster, with less maintenance overhead."
+date: 2022-04-04T05:00:00Z
+>>>>>>> 08b7bf6 (content: extended validated schema, TOC, reading time, multi-author):src/content/blog/post-3.md
 image: "/images/image-placeholder.png"
 categories: ["Software"]
 author: "John Doe"
