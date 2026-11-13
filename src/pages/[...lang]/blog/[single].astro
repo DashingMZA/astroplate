@@ -2,7 +2,7 @@
 import config from "@/config/config.json";
 import Base from "@/layouts/Base.astro";
 import PostSingle from "@/layouts/PostSingle.astro";
-import { getSinglePage } from "@/lib/contentParser.astro";
+import { getSinglePage } from "@/lib/contentParser";
 import type { CollectionEntry } from "astro:content";
 import { absoluteUrl } from "@/lib/utils/seo";
 import { checkDuplicateSlugs, postSlug } from "@/lib/utils/slug";
