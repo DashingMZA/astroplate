@@ -1,0 +1,16 @@
+name: Greetings
+
+on: [pull_request_target, issues]
+
+jobs:
+  greeting:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/first-interaction@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          issue-message: "Thanks for opening your first issue on Astroplate! Please check that the bug report template is filled in (Astro / Node / pnpm versions and reproduction steps help a lot), and have a look at CONFIGURATION.md and CONTENT_SCHEMA.md — most setup questions are answered there."
+          pr-message: "Thanks for your first pull request to Astroplate! Please make sure `pnpm run check` and `pnpm run build` pass, and that the PR description covers what changed and how it was tested. See CONTRIBUTING.md for the full checklist."
