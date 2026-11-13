@@ -1,13 +1,13 @@
 ---
 import BlogCard from "@/components/BlogCard.astro";
 import Breadcrumbs from "@/components/Breadcrumbs.astro";
+import Mermaid from "@/components/Mermaid.astro";
 import Share from "@/components/Share.astro";
 import TableOfContents from "@/components/TableOfContents.astro";
 import config from "@/config/config.json";
 import Disqus from "@/helpers/Disqus";
 import { getSinglePage } from "@/lib/contentParser.astro";
 import { displayAuthorNames, resolveAuthors } from "@/lib/utils/authors";
-// Mermaid lands with 6336d61 (src/layouts/components/Mermaid.astro).
 import { getLangFromUrl, slugSelector } from "@/lib/utils/languageParser";
 import dateFormat from "@/lib/utils/dateFormat";
 import readingTime from "@/lib/utils/readingTime";
@@ -123,6 +123,7 @@ const postSlugValue = postSlug({ id: postId, data: post.data });
         <div class="content mb-10">
           <Content />
         </div>
+        <Mermaid content={post.body} />
         <div class="row items-start justify-between">
           <div class="mb-10 flex items-center lg:col-5 lg:mb-0">
             <span class="h5 mr-3">Tags :</span>

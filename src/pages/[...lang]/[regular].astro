@@ -1,4 +1,5 @@
 ---
+import Mermaid from "@/components/Mermaid.astro";
 import Base from "@/layouts/Base.astro";
 import { getSinglePage } from "@/lib/contentParser.astro";
 import { supportedLang } from "@/lib/utils/languageParser";
@@ -73,6 +74,7 @@ const { Content } = await render(page);
           <div class="content">
             <Content />
           </div>
+          <Mermaid content={page.body} />
         </div>
       </div>
     </div>
