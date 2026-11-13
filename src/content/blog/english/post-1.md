@@ -3,7 +3,8 @@ title: "How to Build a Modern Application with Next.js and Tailwind CSS"
 meta_title: "How to Build a Modern Application with Next.js and Tailwind CSS"
 description: "A practical guide to building a modern web application with Next.js and Tailwind CSS, from project setup to a polished, responsive interface."
 date: 2025-04-04T05:00:00Z
-image: "/images/image-placeholder.png"
+image: "/images/r2-example.jpg"
+og_image: "/images/r2-example-og.jpg"
 categories: ["Application", "Data"]
 author: "John Doe"
 tags: ["nextjs", "tailwind"]
