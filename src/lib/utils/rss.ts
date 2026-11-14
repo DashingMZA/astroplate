@@ -8,7 +8,6 @@ import { fileURLToPath } from "node:url";
 import sanitizeHtml from "sanitize-html";
 import sharp from "sharp";
 import config from "@/config/config.json";
-import type { ResolvedAuthor } from "@/lib/utils/authors";
 import { absoluteUrl, resolveOgImage } from "@/lib/utils/seo";
 
 /** Escape a value interpolated into raw `customData` XML. */
@@ -33,7 +32,18 @@ export function toRssLanguage(
   return raw.replace(/_/g, "-").toLowerCase() || "en";
 }
 
-/** MIME type for a media URL from its extension, or null when unknown. */
+/**
+ * BCP 47 language tag from the site locale/language, e.g. `en_US` ->
+ * `en-US`, `fr` -> `fr`. Unlike `toRssLanguage`, the region subtag keeps
+ * its case — Atom `xml:lang` and JSON Feed `language` are BCP 47 tags.
+ */
+export function toBcp47(
+  locale?: string | null,
+  language?: string | null,
+): string {
+  const raw = (locale ?? language ?? "en").trim();
+  return raw.replace(/_/g, "-") || "en";
+}
 export function mediaMimeType(url: string): string | null {
   const clean = url.split(/[?#]/, 1)[0];
   const ext = clean.split(".").pop()?.toLowerCase();
@@ -87,25 +97,27 @@ export function mediaTags(
 }
 
 /**
- * Dublin Core creator tags for a resolved author list. RSS 2.0 `<author>`
+ * Dublin Core creator tags for author display names. RSS 2.0 `<author>`
  * is an email address, so it is deliberately NOT emitted here: author
  * emails in a public feed are harvested by scrapers, and the display
  * name is already carried by `dc:creator` (emitting both duplicates the
- * author). Names are XML-escaped; several authors each get a tag.
+ * author). Names are trimmed and XML-escaped; several authors each get
+ * a tag.
  */
-export function dcCreatorTags(resolved: ResolvedAuthor[]): string {
-  return resolved
-    .map((a) => `<dc:creator>${escapeXml(a.name)}</dc:creator>`)
+export function dcCreatorTags(names: string[]): string {
+  return names
+    .map((name) => name.trim())
+    .filter(Boolean)
+    .map((name) => `<dc:creator>${escapeXml(name)}</dc:creator>`)
     .join("\n");
 }
 
 /**
- * Stable feed `lastBuildDate`: the newest post's most recent change
- * (`updated` else `lastmod` else `date`), so rebuilds do not make
- * readers think the feed changed. Falls back to build time when no
- * post carries a date.
+ * Newest change across posts (`updated` else `lastmod` else `date`) as
+ * a Date, so rebuilds do not make readers think the feed changed.
+ * Falls back to build time when no post carries a date.
  */
-export function feedLastBuildDate(
+export function latestChangeDate(
   posts: {
     data: {
       date?: Date | string | null;
@@ -114,7 +126,7 @@ export function feedLastBuildDate(
     };
   }[],
   now: Date,
-): string {
+): Date {
   let latest = 0;
   for (const post of posts) {
     const changed = post.data.updated ?? post.data.lastmod ?? post.data.date;
@@ -126,7 +138,7 @@ export function feedLastBuildDate(
       latest = time;
     }
   }
-  return new Date(latest || now.valueOf()).toUTCString();
+  return new Date(latest || now.valueOf());
 }
 
 /**

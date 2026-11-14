@@ -226,6 +226,22 @@ const jsonLdGraph = {
       href={absoluteUrl("/rss.xml")}
     />
 
+    <!-- atom feed -->
+    <link
+      rel="alternate"
+      type="application/atom+xml"
+      title={config.site.title}
+      href={absoluteUrl("/atom.xml")}
+    />
+
+    <!-- json feed -->
+    <link
+      rel="alternate"
+      type="application/feed+json"
+      title={config.site.title}
+      href={absoluteUrl("/feed.json")}
+    />
+
     <!-- noindex robots (only emitted when a page opts out; the default is index,follow) -->
     {noindex && <meta name="robots" content="noindex,follow" />}
 

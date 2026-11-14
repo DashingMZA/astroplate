@@ -1,4 +1,6 @@
 // RSS 2.0 feed with full article content and featured-image metadata.
+// Entries come from the shared pipeline (`src/lib/utils/feed-entries.ts`,
+// one render pass for all three feeds).
 //
 // Channel: Atom self-link, Dublin Core + Media RSS namespaces, feed
 // language from `config.site.locale`, `lastBuildDate` from the newest
@@ -11,80 +13,38 @@
 // dimensions when the image is a local file). Draft / noindex /
 // future-dated posts are excluded, exactly as the sitemap and search
 // index exclude them.
-import { experimental_AstroContainer as AstroContainer } from "astro/container";
 import config from "@/config/config.json";
 import rss, { type RSSFeedItem } from "@astrojs/rss";
-import { getCollection, render } from "astro:content";
 import type { APIRoute } from "astro";
-import { displayAuthorNames, resolveAuthors } from "@/lib/utils/authors";
-import {
-  dcCreatorTags,
-  escapeXml,
-  feedLastBuildDate,
-  localImageDimensions,
-  mediaTags,
-  sanitizeFeedHtml,
-  sortFeedPosts,
-  toRssLanguage,
-} from "@/lib/utils/rss";
-import { absoluteUrl, canonicalFor, resolveOgImage } from "@/lib/utils/seo";
-import { postUrl } from "@/lib/utils/slug";
+import { getFeedEntries } from "@/lib/utils/feed-entries";
+import { dcCreatorTags, escapeXml, toRssLanguage } from "@/lib/utils/rss";
+import { absoluteUrl } from "@/lib/utils/seo";
 
 const FEED_PATH = "/rss.xml";
 const FEED_TTL_MINUTES = 60;
-// A feed is a rolling window, not an archive: cap it so the file stays
-// small as the blog grows.
-const FEED_LIMIT = 50;
 
 export const GET: APIRoute = async (context) => {
-  const now = new Date();
   const site = context.site?.toString() ?? config.site.base_url;
   const feedUrl = absoluteUrl(FEED_PATH);
+  const { entries, updated } = await getFeedEntries();
 
-  const [posts, authors] = await Promise.all([
-    getCollection(
-      "blog",
-      ({ data, id }) =>
-        !data.draft &&
-        !data.noindex &&
-        !id.startsWith("-") &&
-        (!data.date || new Date(data.date) <= now),
-    ),
-    getCollection("authors"),
-  ]);
-
-  // Newest first, undated posts last, same-date posts by id (stable
-  // across builds); capped at FEED_LIMIT.
-  const sorted = sortFeedPosts(posts).slice(0, FEED_LIMIT);
-
-  // One container renders every post's markdown to the exact HTML the
-  // page serves (same remark/rehype pipeline, incl. syntax highlighting).
-  const container = await AstroContainer.create();
-
-  const items: RSSFeedItem[] = [];
-  for (const post of sorted) {
-    const { Content } = await render(post);
-    const content = sanitizeFeedHtml(await container.renderToString(Content));
-    const dcCreators = dcCreatorTags(
-      resolveAuthors(displayAuthorNames(post), authors),
-    );
-    const { url: imageUrl, isPageImage } = resolveOgImage(post.data);
-    const dimensions = isPageImage
-      ? await localImageDimensions(imageUrl)
-      : null;
-    const customData = [dcCreators, mediaTags(post.data, dimensions)]
+  const items: RSSFeedItem[] = entries.map((entry) => {
+    const customData = [
+      dcCreatorTags(entry.authors.map((a) => a.name)),
+      entry.mediaXml,
+    ]
       .filter(Boolean)
       .join("\n");
-    items.push({
-      title: post.data.title,
-      description: post.data.description ?? post.data.excerpt ?? "",
-      link: canonicalFor(postUrl(post)),
-      pubDate: post.data.date ? new Date(post.data.date) : undefined,
-      ...(content ? { content } : {}),
+    return {
+      title: entry.title,
+      description: entry.summary,
+      link: entry.url,
+      pubDate: entry.published,
+      ...(entry.contentHtml ? { content: entry.contentHtml } : {}),
       ...(customData ? { customData } : {}),
-      categories: post.data.categories,
-    });
-  }
+      categories: entry.categories,
+    };
+  });
 
   // Channel image: the site logo (no width/height — the logo is 150px
   // wide and the RSS spec caps the width element at 144, so the
@@ -111,7 +71,7 @@ export const GET: APIRoute = async (context) => {
     // and validation unambiguous; ttl gives feed readers a refresh hint.
     customData: [
       `<language>${toRssLanguage(config.site.locale, config.site.language)}</language>`,
-      `<lastBuildDate>${feedLastBuildDate(sorted, now)}</lastBuildDate>`,
+      `<lastBuildDate>${updated.toUTCString()}</lastBuildDate>`,
       `<generator>Astro</generator>`,
       `<docs>https://www.rssboard.org/rss-specification</docs>`,
       `<ttl>${FEED_TTL_MINUTES}</ttl>`,

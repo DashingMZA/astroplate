@@ -21,12 +21,13 @@ register("./json-hooks.mjs", import.meta.url);
 const rssHelpers = await import("../src/lib/utils/rss.ts");
 const {
   dcCreatorTags,
-  feedLastBuildDate,
+  latestChangeDate,
   localImageDimensions,
   mediaMimeType,
   mediaTags,
   sanitizeFeedHtml,
   sortFeedPosts,
+  toBcp47,
   toRssLanguage,
 } = rssHelpers;
 
@@ -38,6 +39,13 @@ test("toRssLanguage: locale wins, underscore becomes hyphen, lowercased", () => 
   assert.equal(toRssLanguage(null, "fr"), "fr");
   assert.equal(toRssLanguage(null, null), "en");
   assert.equal(toRssLanguage("EN_us", null), "en-us");
+});
+test("toBcp47: locale wins, underscore becomes hyphen, region keeps case", () => {
+  assert.equal(toBcp47("en_US", "en"), "en-US");
+  assert.equal(toBcp47("fr_FR", "fr"), "fr-FR");
+  assert.equal(toBcp47(null, "fr"), "fr");
+  assert.equal(toBcp47(null, null), "en");
+  assert.equal(toBcp47("EN_us", null), "EN-us");
 });
 
 // ─── Media MIME types ────────────────────────────────────────────────────
@@ -100,23 +108,16 @@ test("mediaTags: unknown extension omits type but keeps url + medium", () => {
 
 // ─── Creator tags (no <author> — emails are never exposed) ───────────────
 
-test("dcCreatorTags: each resolved author gets one dc:creator", () => {
+test("dcCreatorTags: each author name gets one dc:creator", () => {
   assert.equal(
-    dcCreatorTags([
-      {
-        name: "John Doe",
-        entry: { data: { email: "johndoe@email.com" } },
-        url: "/authors/john-doe",
-      },
-      { name: "Admin", entry: null, url: null },
-    ]),
+    dcCreatorTags(["John Doe", "Admin"]),
     "<dc:creator>John Doe</dc:creator>\n<dc:creator>Admin</dc:creator>",
   );
 });
 
-test("dcCreatorTags: names are XML-escaped, empty list gives empty string", () => {
+test("dcCreatorTags: names are trimmed and XML-escaped, empty list gives empty string", () => {
   assert.equal(
-    dcCreatorTags([{ name: "Tom & Jerry", entry: null, url: null }]),
+    dcCreatorTags(["  Tom & Jerry  ", ""]),
     "<dc:creator>Tom &amp; Jerry</dc:creator>",
   );
   assert.equal(dcCreatorTags([]), "");
@@ -124,10 +125,10 @@ test("dcCreatorTags: names are XML-escaped, empty list gives empty string", () =
 
 // ─── Stable lastBuildDate ──────────────────────────────────────────────────
 
-test("feedLastBuildDate: newest change wins (updated > lastmod > date)", () => {
+test("latestChangeDate: newest change wins (updated > lastmod > date)", () => {
   const now = new Date("2026-11-14T00:00:00Z");
   assert.equal(
-    feedLastBuildDate(
+    latestChangeDate(
       [
         { data: { date: new Date("2022-04-04T05:00:00Z") } },
         {
@@ -144,18 +145,24 @@ test("feedLastBuildDate: newest change wins (updated > lastmod > date)", () => {
         },
       ],
       now,
-    ),
+    ).toUTCString(),
     "Thu, 07 Apr 2022 05:00:00 GMT",
   );
 });
 
-test("feedLastBuildDate: undated posts fall back to build time", () => {
+test("latestChangeDate: undated posts fall back to build time", () => {
   const now = new Date("2026-11-14T00:00:00Z");
   assert.equal(
-    feedLastBuildDate([{ data: {} }, { data: { date: null } }], now),
+    latestChangeDate(
+      [{ data: {} }, { data: { date: null } }],
+      now,
+    ).toUTCString(),
     "Sat, 14 Nov 2026 00:00:00 GMT",
   );
-  assert.equal(feedLastBuildDate([], now), "Sat, 14 Nov 2026 00:00:00 GMT");
+  assert.equal(
+    latestChangeDate([], now).toUTCString(),
+    "Sat, 14 Nov 2026 00:00:00 GMT",
+  );
 });
 
 // ─── Stable sort ─────────────────────────────────────────────────────────
@@ -281,18 +288,11 @@ test("rss.xml.ts: renders real post HTML, sanitizes it, emits media + author met
     "utf8",
   );
   for (const marker of [
-    "experimental_AstroContainer",
-    "render(post)",
-    "renderToString(Content)",
-    "sanitizeFeedHtml",
-    "content",
-    "mediaTags(post.data, dimensions)",
-    "dcCreatorTags(",
-    "displayAuthorNames(post)",
-    "feedLastBuildDate(sorted, now)",
-    "sortFeedPosts(posts)",
-    "localImageDimensions(imageUrl)",
-    "FEED_LIMIT = 50",
+    "getFeedEntries()",
+    "dcCreatorTags(entry.authors.map((a) => a.name))",
+    "entry.mediaXml",
+    "entry.contentHtml",
+    "updated.toUTCString()",
     "toRssLanguage(config.site.locale",
     "absoluteUrl(FEED_PATH)",
     "trailingSlash: Boolean(config.site.trailing_slash)",
@@ -318,8 +318,12 @@ test("rss.xml.ts: no hard-coded domain, language, or <author> email", () => {
     "RSS <author> must not be emitted (emails stay private)",
   );
   assert.ok(
-    !src.includes("now.toUTCString()"),
-    "lastBuildDate must come from the newest post, not build time",
+    !src.includes("getCollection("),
+    "entries must come from the shared pipeline (getFeedEntries), not a second collection read",
+  );
+  assert.ok(
+    !src.includes("experimental_AstroContainer"),
+    "rendering must happen once in the shared pipeline, not per endpoint",
   );
   assert.ok(
     !src.includes("new URL(FEED_PATH"),

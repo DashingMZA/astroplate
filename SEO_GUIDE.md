@@ -130,40 +130,64 @@ automatically — change the domain in `config.json` and rebuild; there is
 no hard-coded copy to keep in sync. (The sitemap itself is Astro 7's
 `/sitemap-index.xml`, not `/sitemap.xml`.)
 
-### RSS
+### Feeds (RSS, Atom, JSON Feed)
 
-`src/pages/rss.xml.ts` serves `/rss.xml` (5 demo posts in the current
-build):
+The three feeds share one pipeline — `src/lib/utils/feed-entries.ts`
+(`getFeedEntries`, capped at the 50 newest posts) — so a published or
+edited post appears in all three on the next build, with no manual
+feed updates. Each endpoint only formats the shared entries into its
+own format:
+
+- `src/pages/rss.xml.ts` serves `/rss.xml` (RSS 2.0 via `@astrojs/rss`).
+- `src/pages/atom.xml.ts` serves `/atom.xml` (Atom 1.0, built by hand
+  with escaped interpolation — `@astrojs/rss` only produces RSS 2.0).
+- `src/pages/feed.json.ts` serves `/feed.json` (JSON Feed 1.1).
+- All three are advertised in the page head (`src/layouts/Base.astro`)
+  with `<link rel="alternate">` so readers discover them.
+
+Shared rules (all three feeds):
 
 - Title = site title; description = site `meta_description`;
   link = site `base_url`.
-- Channel: Atom self-link (`<atom:link rel="self">`), feed `<language>`
-  from `site.locale`, `<lastBuildDate>` from the newest post's change
-  (stable across rebuilds), `<ttl>60</ttl>`,
-  `<generator>Astro</generator>`, and an `<image>` with the site logo
-  (no width/height — the logo is 150px wide and the RSS spec caps the
-  width element at 144).
 - Items: title, description (else `excerpt`), link `/blog/<slug>`
   (custom slug when set, else filename — the same canonical URL as the
-  post page, no trailing slash), `pubDate`, categories.
-- Author: display names go to Dublin Core `<dc:creator>` only. RSS
-  `<author>` is never emitted — it is an email address, and author
-  emails in a public feed are harvested by scrapers.
-- Full content: every item carries `<content:encoded>` with the post's
-  rendered HTML (same remark/rehype pipeline as the page, sanitized,
-  relative image/link URLs made absolute). Pure helpers live in
+  post page, no trailing slash), `pubDate` / `published` /
+  `date_published`, categories / `tags`.
+- Author: display names only — RSS `dc:creator`, Atom `<author><name>`,
+  JSON Feed `authors` with the author-page URL. No emails anywhere:
+  RSS `<author>` is never emitted (it is an email address).
+- Full content: every item carries the post's rendered HTML
+  (`content:encoded` / `<content type="html">` / `content_html`) —
+  same remark/rehype pipeline as the page, sanitized, relative
+  image/link URLs made absolute. Pure helpers live in
   `src/lib/utils/rss.ts` and are unit-tested in `tests/rss.test.js`.
-- Featured image: `<media:content>` + `<media:thumbnail>` from the
-  post's own `og_image` (else `image`), with the MIME type from the
-  file extension and real pixel dimensions when the image is a local
-  file (read with `sharp` at build time). Remote images and posts
-  without their own image get no dimensions / no media tags —
-  dimensions are never invented, and the site-default OG image is
-  never passed off as a featured image.
+- Featured image: the post's own `og_image` (else `image`), with the
+  MIME type from the file extension and real pixel dimensions when the
+  image is a local file (read with `sharp` at build time). RSS/Atom
+  use `<media:content>` + `<media:thumbnail>`; JSON Feed uses the
+  `image` field. Remote images and posts without their own image get
+  no dimensions / no media tags — dimensions are never invented, and
+  the site-default OG image is never passed off as a featured image.
 - `noindex: true` posts are excluded, like drafts and future-dated
   posts.
 - Sorted newest first; same-date posts by id (stable across builds);
-  undated posts sort last. The feed is capped at the 50 newest posts.
+  undated posts sort last.
+
+Per-feed notes:
+
+- RSS channel: Atom self-link (`<atom:link rel="self">`), feed
+  `<language>` from `site.locale`, `<lastBuildDate>` from the newest
+  post's change (stable across rebuilds), `<ttl>60</ttl>`,
+  `<generator>Astro</generator>`, and an `<image>` with the site logo
+  (no width/height — the logo is 150px wide and the RSS spec caps the
+  width element at 144).
+- Atom feed: `xml:lang` from `site.locale` (BCP 47, e.g. `en-US`),
+  `<updated>` from the newest post's change, per-entry `<updated>`
+  from the post's own change (feed date as fallback — `<updated>` is
+  required), `<icon>` (favicon) and `<logo>` (site logo).
+- JSON Feed: `language` in BCP 47 form, `icon` (logo) and `favicon`,
+  `date_modified` per item when the post carries a change date. JSON
+  Feed 1.1 has no top-level `description` field, so none is emitted.
 
 ## Setting per-post SEO
 
