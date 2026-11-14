@@ -429,6 +429,30 @@ function isNoindexHtml(html) {
   return /(^|,)\s*noindex(\s|,|$)/i.test(robotsContent);
 }
 
+/**
+ * Rewrites site-root-relative URLs in generated Markdown to absolute URLs,
+ * e.g. `![alt](/_astro/x.webp)` → `![alt](https://astroplate.jadoo.bond/_astro/x.webp)`.
+ * LLMs reading llms-full.txt and the per-page .md files have no base URL to
+ * resolve relative paths against, so relative links and images are dead
+ * ends for them. Absolute http(s) URLs are untouched (the pattern only
+ * matches destinations starting with `/`); `new URL()` resolves
+ * protocol-relative (`//cdn…`) URLs against the base, and returns
+ * `data:`, `mailto:` and other non-hierarchical URLs unchanged.
+ * A link title after the URL (`[text](/u "title")`) is preserved: the
+ * match stops at the first whitespace.
+ */
+export function absolutiseMarkdownUrls(markdown, siteUrl) {
+  if (!markdown || !siteUrl) return markdown;
+  return markdown.replace(/\]\(\/[^)\s]*/g, (match) => {
+    const url = match.slice(2); // strip "]("
+    try {
+      return `](${new URL(url, siteUrl).href}`;
+    } catch {
+      return match;
+    }
+  });
+}
+
 function normaliseHrefPath(href) {
   if (!href) return "";
   let p = href.split("#")[0].split("?")[0];
@@ -442,7 +466,12 @@ function normaliseHrefPath(href) {
   return p;
 }
 
-async function processHtml(html, llmsConfig, noindexPaths = new Set()) {
+async function processHtml(
+  html,
+  llmsConfig,
+  noindexPaths = new Set(),
+  siteUrl = "",
+) {
   const root = parse(html);
 
   // A page that opts out of indexing (`noindex,follow`) must not leak into
@@ -486,21 +515,35 @@ async function processHtml(html, llmsConfig, noindexPaths = new Set()) {
     });
 
     content = turndownService.turndown(contentElement.innerHTML);
+
+    // The generated Markdown is read by LLMs with no base URL, so every
+    // site-relative link/image must be absolute (see absolutiseMarkdownUrls).
+    content = absolutiseMarkdownUrls(content, siteUrl);
   }
 
   return { title, description, content, noindex };
 }
 
-async function processHtmlFile(filePath, llmsConfig, noindexPaths) {
+async function processHtmlFile(
+  filePath,
+  llmsConfig,
+  noindexPaths,
+  siteUrl = "",
+) {
   const html = fs.readFileSync(filePath, "utf8");
-  return processHtml(html, llmsConfig, noindexPaths);
+  return processHtml(html, llmsConfig, noindexPaths, siteUrl);
 }
 
 /**
  * Fetches a page from a server and processes it as HTML.
  * Returns null if the fetch fails or the page returns an error status.
  */
-async function fetchAndProcessPage(url, llmsConfig, noindexPaths) {
+async function fetchAndProcessPage(
+  url,
+  llmsConfig,
+  noindexPaths,
+  siteUrl = "",
+) {
   try {
     const response = await fetch(url, {
       headers: { Accept: "text/html" },
@@ -510,7 +553,7 @@ async function fetchAndProcessPage(url, llmsConfig, noindexPaths) {
     if (!response.ok) return null;
 
     const html = await response.text();
-    return processHtml(html, llmsConfig, noindexPaths);
+    return processHtml(html, llmsConfig, noindexPaths, siteUrl);
   } catch {
     return null;
   }
@@ -870,7 +913,7 @@ async function generateLlmsFiles() {
       if (seenPaths.has(urlPath)) continue;
       seenPaths.add(urlPath);
 
-      const pageData = await processHtmlFile(file, llms, noindexPaths);
+      const pageData = await processHtmlFile(file, llms, noindexPaths, siteUrl);
 
       if (pageData.noindex) {
         console.log(`   ⤷ Skipping noindex page: ${urlPath}`);
@@ -940,7 +983,12 @@ async function generateLlmsFiles() {
           const url = `${fetchBase}${route}`;
           process.stdout.write(`   ⤷ Fetching ${route} ... `);
 
-          const pageData = await fetchAndProcessPage(url, llms, noindexPaths);
+          const pageData = await fetchAndProcessPage(
+            url,
+            llms,
+            noindexPaths,
+            siteUrl,
+          );
 
           if (!pageData) {
             console.log("❌ failed");
@@ -1092,7 +1140,15 @@ async function generateLlmsFiles() {
   }
 }
 
-generateLlmsFiles().catch((error) => {
-  console.error("❌ Error:", error.message);
-  process.exit(1);
-});
+// Only run the generator when executed directly (`node scripts/llmsGenerator.js`).
+// Importing this module (e.g. from tests/llms.test.js) must not start a run.
+const isMainModule =
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (isMainModule) {
+  generateLlmsFiles().catch((error) => {
+    console.error("❌ Error:", error.message);
+    process.exit(1);
+  });
+}
