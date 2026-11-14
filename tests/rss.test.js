@@ -20,10 +20,13 @@ const repoRoot = path.resolve(
 register("./json-hooks.mjs", import.meta.url);
 const rssHelpers = await import("../src/lib/utils/rss.ts");
 const {
-  authorElements,
+  dcCreatorTags,
+  feedLastBuildDate,
+  localImageDimensions,
   mediaMimeType,
   mediaTags,
   sanitizeFeedHtml,
+  sortFeedPosts,
   toRssLanguage,
 } = rssHelpers;
 
@@ -95,56 +98,141 @@ test("mediaTags: unknown extension omits type but keeps url + medium", () => {
   assert.doesNotMatch(tags, /type=/);
 });
 
-// ─── Author elements ─────────────────────────────────────────────────────
+// ─── Creator tags (no <author> — emails are never exposed) ───────────────
 
-test("authorElements: email author gets <author>, name gets dc:creator", () => {
-  const result = authorElements([
-    {
-      name: "John Doe",
-      entry: { data: { email: "johndoe@email.com" } },
-      url: "/authors/john-doe",
-    },
-  ]);
-  assert.equal(result.author, "johndoe@email.com (John Doe)");
-  assert.equal(result.dcCreators, "<dc:creator>John Doe</dc:creator>");
-});
-
-test("authorElements: no email means no <author>, dc:creator still emitted", () => {
-  const result = authorElements([{ name: "Admin", entry: null, url: null }]);
-  assert.equal("author" in result, false);
-  assert.equal(result.dcCreators, "<dc:creator>Admin</dc:creator>");
-});
-
-test("authorElements: several authors, first email wins <author>", () => {
-  const result = authorElements([
-    { name: "Admin", entry: null, url: null },
-    {
-      name: "John Doe",
-      entry: { data: { email: "johndoe@email.com" } },
-      url: "/authors/john-doe",
-    },
-    {
-      name: "Sam Wilson",
-      entry: { data: { email: "sam@email.com" } },
-      url: "/authors/sam-wilson",
-    },
-  ]);
-  assert.equal(result.author, "johndoe@email.com (John Doe)");
+test("dcCreatorTags: each resolved author gets one dc:creator", () => {
   assert.equal(
-    result.dcCreators,
-    [
-      "<dc:creator>Admin</dc:creator>",
-      "<dc:creator>John Doe</dc:creator>",
-      "<dc:creator>Sam Wilson</dc:creator>",
-    ].join("\n"),
+    dcCreatorTags([
+      {
+        name: "John Doe",
+        entry: { data: { email: "johndoe@email.com" } },
+        url: "/authors/john-doe",
+      },
+      { name: "Admin", entry: null, url: null },
+    ]),
+    "<dc:creator>John Doe</dc:creator>\n<dc:creator>Admin</dc:creator>",
   );
 });
 
-test("authorElements: names are XML-escaped", () => {
-  const result = authorElements([
-    { name: "Tom & Jerry", entry: null, url: null },
-  ]);
-  assert.equal(result.dcCreators, "<dc:creator>Tom &amp; Jerry</dc:creator>");
+test("dcCreatorTags: names are XML-escaped, empty list gives empty string", () => {
+  assert.equal(
+    dcCreatorTags([{ name: "Tom & Jerry", entry: null, url: null }]),
+    "<dc:creator>Tom &amp; Jerry</dc:creator>",
+  );
+  assert.equal(dcCreatorTags([]), "");
+});
+
+// ─── Stable lastBuildDate ──────────────────────────────────────────────────
+
+test("feedLastBuildDate: newest change wins (updated > lastmod > date)", () => {
+  const now = new Date("2026-11-14T00:00:00Z");
+  assert.equal(
+    feedLastBuildDate(
+      [
+        { data: { date: new Date("2022-04-04T05:00:00Z") } },
+        {
+          data: {
+            date: new Date("2022-04-05T05:00:00Z"),
+            updated: new Date("2022-04-06T05:00:00Z"),
+          },
+        },
+        {
+          data: {
+            date: new Date("2022-04-03T05:00:00Z"),
+            lastmod: new Date("2022-04-07T05:00:00Z"),
+          },
+        },
+      ],
+      now,
+    ),
+    "Thu, 07 Apr 2022 05:00:00 GMT",
+  );
+});
+
+test("feedLastBuildDate: undated posts fall back to build time", () => {
+  const now = new Date("2026-11-14T00:00:00Z");
+  assert.equal(
+    feedLastBuildDate([{ data: {} }, { data: { date: null } }], now),
+    "Sat, 14 Nov 2026 00:00:00 GMT",
+  );
+  assert.equal(feedLastBuildDate([], now), "Sat, 14 Nov 2026 00:00:00 GMT");
+});
+
+// ─── Stable sort ─────────────────────────────────────────────────────────
+
+test("sortFeedPosts: newest first, same date by id, undated last, input untouched", () => {
+  const a = {
+    id: "post-2.md",
+    data: { date: new Date("2022-04-04T05:00:00Z") },
+  };
+  const b = {
+    id: "post-1.md",
+    data: { date: new Date("2022-04-04T05:00:00Z") },
+  };
+  const c = {
+    id: "post-r2-example.md",
+    data: { date: new Date("2022-04-05T05:00:00Z") },
+  };
+  const d = { id: "undated.md", data: { date: null } };
+  const input = [a, b, c, d];
+  const sorted = sortFeedPosts(input);
+  assert.deepEqual(
+    sorted.map((p) => p.id),
+    ["post-r2-example.md", "post-1.md", "post-2.md", "undated.md"],
+  );
+  assert.deepEqual(
+    input.map((p) => p.id),
+    ["post-2.md", "post-1.md", "post-r2-example.md", "undated.md"],
+  );
+});
+
+// ─── Local image dimensions ──────────────────────────────────────────────
+
+test("localImageDimensions: real local file returns real pixels", async () => {
+  assert.deepEqual(
+    await localImageDimensions("/images/image-placeholder.png"),
+    {
+      width: 1096,
+      height: 480,
+    },
+  );
+  assert.deepEqual(
+    await localImageDimensions(
+      "https://astroplate.jadoo.bond/images/r2-example-og.jpg",
+    ),
+    { width: 2192, height: 1152 },
+  );
+});
+
+test("localImageDimensions: remote, protocol-relative and missing files return null", async () => {
+  assert.equal(
+    await localImageDimensions("https://media.csofts.tech/images/x.jpg"),
+    null,
+  );
+  assert.equal(
+    await localImageDimensions("//media.csofts.tech/images/x.jpg"),
+    null,
+  );
+  assert.equal(await localImageDimensions("/images/does-not-exist.png"), null);
+});
+
+// ─── Media tags with dimensions ───────────────────────────────────────────
+
+test("mediaTags: dimensions add width/height to both tags", () => {
+  const tags = mediaTags(
+    { image: "/images/image-placeholder.png" },
+    { width: 1096, height: 480 },
+  );
+  assert.match(
+    tags,
+    /media:content url="[^"]+" medium="image" type="image\/png" width="1096" height="480"/,
+  );
+  assert.match(tags, /media:thumbnail url="[^"]+" width="1096" height="480"/);
+});
+
+test("mediaTags: no dimensions means no width/height attributes", () => {
+  const tags = mediaTags({ image: "/images/image-placeholder.png" });
+  assert.doesNotMatch(tags, /width=|height=/);
 });
 
 // ─── Feed HTML sanitization ──────────────────────────────────────────────
@@ -198,22 +286,27 @@ test("rss.xml.ts: renders real post HTML, sanitizes it, emits media + author met
     "renderToString(Content)",
     "sanitizeFeedHtml",
     "content",
-    "mediaTags(post.data)",
-    "authorElements(",
+    "mediaTags(post.data, dimensions)",
+    "dcCreatorTags(",
     "displayAuthorNames(post)",
+    "feedLastBuildDate(sorted, now)",
+    "sortFeedPosts(posts)",
+    "localImageDimensions(imageUrl)",
+    "FEED_LIMIT = 50",
     "toRssLanguage(config.site.locale",
     "absoluteUrl(FEED_PATH)",
     "trailingSlash: Boolean(config.site.trailing_slash)",
     "<lastBuildDate>",
     "<ttl>",
     "<atom:link",
+    "<image>",
     'media: "http://search.yahoo.com/mrss/"',
   ]) {
     assert.ok(src.includes(marker), `rss.xml.ts must contain: ${marker}`);
   }
 });
 
-test("rss.xml.ts: no hard-coded domain, language, or invalid author", () => {
+test("rss.xml.ts: no hard-coded domain, language, or <author> email", () => {
   const src = fs.readFileSync(
     path.join(repoRoot, "src/pages/rss.xml.ts"),
     "utf8",
@@ -221,8 +314,12 @@ test("rss.xml.ts: no hard-coded domain, language, or invalid author", () => {
   assert.ok(!src.includes("jadoo.bond"), "must not hard-code the domain");
   assert.ok(!src.includes('"en-us"'), "language must come from config");
   assert.ok(
-    !src.includes("author: post.data.author"),
-    "display names must not go into RSS <author>",
+    !src.includes("{ author }"),
+    "RSS <author> must not be emitted (emails stay private)",
+  );
+  assert.ok(
+    !src.includes("now.toUTCString()"),
+    "lastBuildDate must come from the newest post, not build time",
   );
   assert.ok(
     !src.includes("new URL(FEED_PATH"),

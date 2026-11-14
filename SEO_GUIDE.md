@@ -138,25 +138,32 @@ build):
 - Title = site title; description = site `meta_description`;
   link = site `base_url`.
 - Channel: Atom self-link (`<atom:link rel="self">`), feed `<language>`
-  from `site.locale`, `<lastBuildDate>` (build time), `<ttl>60</ttl>`,
-  `<generator>Astro</generator>`.
+  from `site.locale`, `<lastBuildDate>` from the newest post's change
+  (stable across rebuilds), `<ttl>60</ttl>`,
+  `<generator>Astro</generator>`, and an `<image>` with the site logo
+  (no width/height — the logo is 150px wide and the RSS spec caps the
+  width element at 144).
 - Items: title, description (else `excerpt`), link `/blog/<slug>`
   (custom slug when set, else filename — the same canonical URL as the
   post page, no trailing slash), `pubDate`, categories.
-- Author: display names go to Dublin Core `<dc:creator>`; RSS `<author>`
-  is only emitted when a resolved author has an email
-  (`email (Name)`). A display name is never put in `<author>`.
+- Author: display names go to Dublin Core `<dc:creator>` only. RSS
+  `<author>` is never emitted — it is an email address, and author
+  emails in a public feed are harvested by scrapers.
 - Full content: every item carries `<content:encoded>` with the post's
   rendered HTML (same remark/rehype pipeline as the page, sanitized,
   relative image/link URLs made absolute). Pure helpers live in
   `src/lib/utils/rss.ts` and are unit-tested in `tests/rss.test.js`.
 - Featured image: `<media:content>` + `<media:thumbnail>` from the
   post's own `og_image` (else `image`), with the MIME type from the
-  file extension. Posts without their own image get no media tags —
-  the site-default OG image is never passed off as a featured image.
+  file extension and real pixel dimensions when the image is a local
+  file (read with `sharp` at build time). Remote images and posts
+  without their own image get no dimensions / no media tags —
+  dimensions are never invented, and the site-default OG image is
+  never passed off as a featured image.
 - `noindex: true` posts are excluded, like drafts and future-dated
   posts.
-- Sorted newest first; undated posts sort last.
+- Sorted newest first; same-date posts by id (stable across builds);
+  undated posts sort last. The feed is capped at the 50 newest posts.
 
 ## Setting per-post SEO
 
