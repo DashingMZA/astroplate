@@ -9,6 +9,11 @@
       "url": "/about"
     },
     {
+      "name": "Blog",
+      "url": "/Blog",
+      "children": []
+    },
+    {
       "name": "Elements",
       "url": "/elements"
     },
@@ -20,10 +25,6 @@
         {
           "name": "Contact",
           "url": "/contact"
-        },
-        {
-          "name": "Blog",
-          "url": "/blog"
         },
         {
           "name": "Authors",
