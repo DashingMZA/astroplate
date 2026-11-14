@@ -52,6 +52,22 @@
     {
       "name": "Privacy Policy",
       "url": "/privacy-policy"
+    },
+    {
+      "name": "Terms of Service",
+      "url": "/terms-of-service"
+    },
+    {
+      "name": "Disclaimer",
+      "url": "/disclaimer"
+    },
+    {
+      "name": "Cookie Policy",
+      "url": "/cookie-policy"
+    },
+    {
+      "name": "Contact",
+      "url": "/contact"
     }
   ]
 }

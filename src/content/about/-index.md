@@ -1,19 +1,15 @@
 ---
-title: "Hey, I am John Doe!"
-meta_title: "About"
-description: "Learn more about Astroplate and the person behind it."
+title: "Hey, I'm Muhammad Zaheer Ahmad!"
+meta_title: "About Muhammad Zaheer Ahmad"
+description: "Muhammad Zaheer Ahmad builds Astroplate and writes practical guides on Astro, web performance, SEO, and modern frontend engineering."
 image: "/images/image-placeholder.png"
 draft: false
 ---
 
-Lorem ipsum dolor sit amet consectetur adipisicing elit. Corporis illum nesciunt commodi vel nisi ut alias excepturi ipsum, totam, labore tempora, odit ex iste tempore sed. Fugit voluptatibus perspiciatis assumenda nulla ad nihil, omnis vel, doloremque sit quam autem optio maiores, illum eius facilis et quo consectetur provident dolor similique! Enim voluptatem dicta expedita veritatis repellat dolorum impedit, provident quasi at.
+I'm Muhammad Zaheer Ahmad. I build fast websites and write about how they're made.
 
-### This is a title
+This site, Astroplate, is my corner of the web. It's a fast, SEO-friendly publishing site built with Astro, and it's where I share what I learn while building for the web — practical guides on Astro, Core Web Vitals, technical SEO, responsive design, and modern frontend engineering. Everything here comes from work I've actually done, not theory.
 
-- Lorem ipsum, dolor sit amet
-- Enim voluptatem dicta expedita veritatis
-- Fugit voluptatibus perspiciatis assumenda
-- Enim voluptatem dicta expedita
-- Corporis illum nesciunt commodi vel
+I maintain Astroplate as an Astro theme, and I build web apps and tools alongside it — including PowerAI, an Astro theme for AI and SaaS sites, Sketivo, a visual pinboard app, and Quran Studio, a tool for creating Quran videos. You can see more of my work on [GitHub](https://github.com/DashingMZA).
 
-Lorem ipsum dolor sit amet consectetur adipisicing elit. Corporis illum nesciunt commodi vel nisi ut alias excepturi ipsum, totam, labore tempora, odit ex iste tempore sed. Fugit voluptatibus perspiciatis assumenda nulla ad nihil, omnis vel, doloremque sit quam autem optio maiores, illum eius facilis et quo consectetur provident dolor similique! Enim voluptatem dicta expedita veritatis repellat dolorum impedit, provident quasi at. Lorem ipsum dolor sit amet consectetur adipisicing elit. Corporis illum nesciunt commodi vel nisi ut alias excepturi ipsum, totam, labore tempora, odit ex iste tempore sed. Fugit voluptatibus perspiciatis assumenda nulla ad nihil, omnis vel, doloremque sit quam autem optio maiores, illum eius facilis et quo consectetur provident dolor similique! Enim voluptatem dicta expedita veritatis repellat dolorum impedit, provident quasi at.
+If you have a question, a correction, or an idea for an article, I'd like to hear it — reach out through the [contact page](/contact), or find me on [X](https://x.com/Dashing_ZB) and [LinkedIn](https://www.linkedin.com/in/mzaheera/).
