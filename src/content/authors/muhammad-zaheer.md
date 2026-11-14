@@ -25,5 +25,6 @@ social:
     link: https://www.tiktok.com/@dashing.mza
 canonical: https://astroplate.csofts.tech/authors/muhammad-zaheer
 draft: false
+noindex: true
 ---
 Muhammad Zaheer Ahmad maintains Astroplate, an Astro theme for fast, SEO-friendly publishing.
