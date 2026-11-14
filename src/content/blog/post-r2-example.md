@@ -1,16 +1,18 @@
 ---
 title: "Serving Blog Images from R2: A Remote Image Example"
 meta_title: "Serving Blog Images from R2: A Remote Image Example"
-description: "A demo post showing how Astroplate handles blog images hosted remotely on R2, with a separate social share image for Open Graph."
-date: 2022-04-05T05:00:00Z
-image: "https://media.csofts.tech/images/r2-example.jpg"
-og_image: "https://media.csofts.tech/images/r2-example-og.jpg"
-categories: ["Technology"]
+description: "A demo post showing how Astroplate handles blog images hosted
+  remotely on R2, with a separate social share image for Open Graph."
+date: 2022-04-05T05:00:00.000Z
+image: "/images/r2-example.jpg"
+og_image: "/images/r2-example-og.jpg"
+categories:
+  - Technology
 author: "John Doe"
-tags: ["technology"]
+tags:
+  - technology
 draft: false
 ---
-
 <!-- Test fixture: demonstrates absolute remote (R2-style) images.
      The `image` and `og_image` above are absolute https:// URLs served from
      media.csoft.tech (R2) instead of local files under public/images/.
@@ -26,3 +28,5 @@ Hosting images on R2 keeps the repository small and lets the CDN serve media dir
 ## What to check
 
 Open this post after a build and confirm the hero image renders, the page metadata uses the separate `og_image` for sharing, and the table of contents above lists both headings on this page.
+
+![R2 Example](/images/r2-example-og.jpg)
