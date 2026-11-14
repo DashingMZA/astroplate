@@ -1,6 +1,5 @@
 {
   "file": "src/content/blog/post-1.md",
-  "name": "blog",
   "fileType": "md",
   "fmType": "yaml",
   "template": [
@@ -9,82 +8,79 @@
       "label": "Title",
       "type": "string",
       "value": "",
+      "isIgnored": false,
       "isRequired": true
     },
     {
       "name": "meta_title",
       "label": "Meta Title",
       "type": "string",
-      "value": ""
+      "value": "",
+      "isIgnored": false
     },
     {
       "name": "description",
       "label": "Description",
       "type": "string",
-      "value": ""
+      "value": "",
+      "isIgnored": false
     },
     {
       "name": "excerpt",
       "label": "Excerpt",
       "type": "string",
-      "value": ""
+      "value": "",
+      "isIgnored": false
     },
     {
       "name": "slug",
       "label": "Custom Slug",
       "type": "string",
-      "value": ""
+      "value": "",
+      "isIgnored": false
     },
     {
       "name": "date",
       "label": "Date",
       "type": "Date",
       "value": "",
-      "alwaysUseCurrentDate": false
-    },
-    {
-      "name": "updated",
-      "label": "Updated Date",
-      "type": "Date",
-      "value": "",
-      "alwaysUseCurrentDate": false
-    },
-    {
-      "name": "lastmod",
-      "label": "Last Modified Date",
-      "type": "Date",
-      "value": "",
+      "isIgnored": false,
       "alwaysUseCurrentDate": false
     },
     {
       "name": "image",
       "label": "Image",
       "type": "media",
-      "value": ""
+      "value": "",
+      "isIgnored": false
     },
     {
       "name": "og_image",
       "label": "Social Share Image (OG Image)",
       "type": "media",
-      "value": ""
+      "value": "",
+      "isIgnored": false
     },
     {
       "name": "og_title",
       "label": "Social Share Title (OG Title)",
       "type": "string",
-      "value": ""
+      "value": "",
+      "isIgnored": false
     },
     {
       "name": "og_description",
       "label": "Social Share Description (OG Description)",
       "type": "string",
-      "value": ""
+      "value": "",
+      "isIgnored": false
     },
     {
       "name": "author",
       "label": "Author",
       "type": "string",
       "value": "Admin",
+      "isIgnored": false,
       "isDropdown": true,
       "referenceType": "folder",
       "referencePath": "src/content/authors",
@@ -96,8 +92,9 @@
       "name": "authors",
       "label": "Authors",
       "type": "Array",
-      "subType": "string",
       "value": [],
+      "isIgnored": false,
+      "subType": "string",
       "isDropdown": true,
       "referenceType": "folder",
       "referencePath": "src/content/authors",
@@ -109,39 +106,45 @@
       "name": "categories",
       "label": "Categories",
       "type": "Array",
-      "subType": "string",
-      "value": []
+      "value": [],
+      "isIgnored": false,
+      "subType": "string"
     },
     {
       "name": "tags",
       "label": "Tags",
       "type": "Array",
-      "subType": "string",
-      "value": []
+      "value": [],
+      "isIgnored": false,
+      "subType": "string"
     },
     {
       "name": "featured",
       "label": "Featured",
       "type": "boolean",
-      "value": false
+      "value": false,
+      "isIgnored": false
     },
     {
       "name": "canonical",
       "label": "Canonical URL",
       "type": "string",
-      "value": ""
+      "value": "",
+      "isIgnored": false
     },
     {
       "name": "noindex",
       "label": "Noindex",
       "type": "boolean",
-      "value": false
+      "value": false,
+      "isIgnored": false
     },
     {
       "name": "draft",
       "label": "Draft",
       "type": "boolean",
-      "value": false
+      "value": false,
+      "isIgnored": false
     }
   ]
 }
