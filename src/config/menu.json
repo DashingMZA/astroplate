@@ -46,11 +46,11 @@
   ],
   "footer": [
     {
-      "name": "Privacy Policy",
+      "name": "Privacy",
       "url": "/privacy-policy"
     },
     {
-      "name": "Terms of Service",
+      "name": "Terms",
       "url": "/terms-of-service"
     },
     {
@@ -65,5 +65,6 @@
       "name": "Contact",
       "url": "/contact"
     }
-  ]
+  ],
+  "draft": false
 }
