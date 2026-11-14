@@ -73,7 +73,9 @@ test("atom.xml.ts: no hard-coded domain, no emails, no second render", () => {
 test("feed-entries.ts: one render pass, capped, authors resolved, no default image", () => {
   const src = read("src/lib/utils/feed-entries.ts");
   for (const marker of [
-    "export const FEED_LIMIT = 20",
+    "export const FEED_LIMIT",
+    "config.feeds?.limit",
+    "Number.isInteger(configuredLimit) && configuredLimit > 0",
     "getFeedEntries()",
     "sortFeedPosts(posts).slice(0, FEED_LIMIT)",
     "latestChangeDate(sorted, now)",

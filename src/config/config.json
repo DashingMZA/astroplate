@@ -86,5 +86,9 @@
     "show_categories": false,
     "show_authors": false,
     "show_pagination": false
+  },
+
+  "feeds": {
+    "limit": 20
   }
 }

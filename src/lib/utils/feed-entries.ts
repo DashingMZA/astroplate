@@ -7,6 +7,7 @@
 // all three feeds, with no manual feed updates.
 import { experimental_AstroContainer as AstroContainer } from "astro/container";
 import { getCollection, render } from "astro:content";
+import config from "@/config/config.json";
 import { displayAuthorNames, resolveAuthors } from "@/lib/utils/authors";
 import {
   latestChangeDate,
@@ -19,10 +20,16 @@ import { absoluteUrl, canonicalFor, resolveOgImage } from "@/lib/utils/seo";
 import { postUrl } from "@/lib/utils/slug";
 
 // A feed is a rolling window, not an archive: cap it so the files stay
-// small as the blog grows. 20 items keeps even full-content feeds under
-// a megabyte; readers fetch the rest from the site. All three endpoints
-// use getFeedEntries, so this is the single cap.
-export const FEED_LIMIT = 20;
+// small as the blog grows. The cap lives in config.json (`feeds.limit`,
+// default 20) so it can be changed without touching code — 20 items keeps
+// even full-content feeds under a megabyte; readers fetch the rest from
+// the site. All three endpoints use getFeedEntries, so this is the
+// single cap.
+const configuredLimit = Number(config.feeds?.limit ?? 20);
+export const FEED_LIMIT =
+  Number.isInteger(configuredLimit) && configuredLimit > 0
+    ? configuredLimit
+    : 20;
 
 export interface FeedAuthor {
   name: string;
