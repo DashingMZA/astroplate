@@ -137,9 +137,23 @@ build):
 
 - Title = site title; description = site `meta_description`;
   link = site `base_url`.
-- Items: title, description, link `/blog/<slug>` (custom slug when
-  set, else filename — the same canonical URL as the post page, no
-  trailing slash), `pubDate`, author, categories.
+- Channel: Atom self-link (`<atom:link rel="self">`), feed `<language>`
+  from `site.locale`, `<lastBuildDate>` (build time), `<ttl>60</ttl>`,
+  `<generator>Astro</generator>`.
+- Items: title, description (else `excerpt`), link `/blog/<slug>`
+  (custom slug when set, else filename — the same canonical URL as the
+  post page, no trailing slash), `pubDate`, categories.
+- Author: display names go to Dublin Core `<dc:creator>`; RSS `<author>`
+  is only emitted when a resolved author has an email
+  (`email (Name)`). A display name is never put in `<author>`.
+- Full content: every item carries `<content:encoded>` with the post's
+  rendered HTML (same remark/rehype pipeline as the page, sanitized,
+  relative image/link URLs made absolute). Pure helpers live in
+  `src/lib/utils/rss.ts` and are unit-tested in `tests/rss.test.js`.
+- Featured image: `<media:content>` + `<media:thumbnail>` from the
+  post's own `og_image` (else `image`), with the MIME type from the
+  file extension. Posts without their own image get no media tags —
+  the site-default OG image is never passed off as a featured image.
 - `noindex: true` posts are excluded, like drafts and future-dated
   posts.
 - Sorted newest first; undated posts sort last.
