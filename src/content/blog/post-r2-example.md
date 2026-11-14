@@ -13,6 +13,7 @@ tags:
   - technology
 draft: false
 ---
+
 <!-- Test fixture: demonstrates absolute remote (R2-style) images.
      The `image` and `og_image` above are absolute https:// URLs served from
      media.csoft.tech (R2) instead of local files under public/images/.
