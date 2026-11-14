@@ -23,6 +23,5 @@ social:
   - name: tiktok
     icon: FaTiktok
     link: https://www.tiktok.com/@dashing.mza
-draft: false
 ---
 Muhammad Zaheer Ahmad maintains Astroplate, an Astro theme for fast, SEO-friendly publishing.
