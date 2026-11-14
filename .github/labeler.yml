@@ -27,7 +27,7 @@ seo:
       - any-glob-to-any-file: 'src/layouts/components/JsonLd.astro'
       - any-glob-to-any-file: 'src/lib/utils/seo.ts'
       - any-glob-to-any-file: 'src/pages/rss.xml.ts'
-      - any-glob-to-any-file: 'public/robots.txt'
+      - any-glob-to-any-file: 'src/pages/robots.txt.ts'
       - any-glob-to-any-file: 'src/content.config.ts'
 
 images:

@@ -491,3 +491,46 @@ test("jsonGenerator: duplicate public slugs fail the run", () => {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
+
+// ─── Dynamic robots.txt ──────────────────────────────────────────────────
+
+test("robots.txt: dynamic endpoint, no hard-coded domain, no public copy", () => {
+  const src = fs.readFileSync(
+    path.join(repoRoot, "src/pages/robots.txt.ts"),
+    "utf8",
+  );
+  assert.ok(
+    src.includes('absoluteUrl("/sitemap-index.xml")'),
+    "robots.txt must build its Sitemap line with absoluteUrl()",
+  );
+  assert.ok(
+    !src.includes("jadoo.bond"),
+    "robots.txt must not hard-code the domain",
+  );
+  assert.ok(!src.includes("https://"), "robots.txt must not hard-code any URL");
+  assert.ok(
+    !fs.existsSync(path.join(repoRoot, "public/robots.txt")),
+    "public/robots.txt must be gone — it would shadow the endpoint in dist/",
+  );
+});
+
+test("robots.txt: GET renders a config-driven robots file", async () => {
+  const { GET } = await import("../src/pages/robots.txt.ts");
+  const res = await GET();
+  assert.equal(res.status, 200);
+  assert.match(res.headers.get("content-type"), /text\/plain/);
+  const body = await res.text();
+  const config = JSON.parse(
+    fs.readFileSync(path.join(repoRoot, "src/config/config.json"), "utf8"),
+  );
+  const base = String(config.site.base_url).replace(/\/+$/, "");
+  assert.ok(body.startsWith("User-agent: *\nAllow: /\n"));
+  assert.ok(
+    body.includes(`Sitemap: ${base}/sitemap-index.xml`),
+    `Sitemap line must follow config.site.base_url, got: ${body}`,
+  );
+  assert.ok(
+    !body.includes("/sitemap.xml"),
+    "sitemap must be /sitemap-index.xml, not /sitemap.xml",
+  );
+});

@@ -175,13 +175,11 @@ on it.
     the page renders a disabled form until a real provider
     endpoint is configured (see [CONFIGURATION.md](CONFIGURATION.md)).
 - `site.base_url` **must** be the production domain before
-  building for release. Canonical URLs, sitemap, RSS, and OG URLs
-  are all baked in at build time; deploying the same `dist/` to a
-  different domain serves wrong canonicals. Rebuild after any
-  `base_url` change.
-- The same applies to `public/robots.txt`: its `Sitemap:` line
-  names the domain explicitly and is not generated from
-  `config.json` — keep the two in sync.
+  building for release. Canonical URLs, sitemap, RSS, OG URLs and
+  the `robots.txt` `Sitemap:` line are all baked in at build time
+  from `config.json`; deploying the same `dist/` to a different
+  domain serves wrong canonicals. Rebuild after any `base_url`
+  change.
 
 ## Sandbox EPERM note (sandbox only, not a product requirement)
 
