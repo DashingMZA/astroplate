@@ -24,28 +24,22 @@ if (!buildDrafts && aboutIndex.data.draft) {
   <section class="section-sm">
     <div class="container">
       <div class="row justify-center">
-        <div class="lg:col-10">
-          <div class="row items-start">
-            <div class="md:col-5">
-              {image && (
-                <ImageMod
-                  class="mb-6 w-full rounded"
-                  src={image}
-                  width={600}
-                  height={200}
-                  alt={title}
-                  format="webp"
-                />
-              )}
-            </div>
-            <div class="md:col-7">
-              <h1 class="h3 mb-6">
-                <span set:html={markdownify(title)} />
-              </h1>
-              <div class="content">
-                <Content />
-              </div>
-            </div>
+        <div class="md:col-10 lg:col-8">
+          {
+            image && (
+              <ImageMod
+                class="mx-auto mb-6 rounded"
+                src={image}
+                width={1200}
+                height={600}
+                alt={title}
+                format="webp"
+              />
+            )
+          }
+          <h2 set:html={markdownify(title)} class="h3 mb-6" />
+          <div class="content">
+            <Content />
           </div>
         </div>
       </div>
