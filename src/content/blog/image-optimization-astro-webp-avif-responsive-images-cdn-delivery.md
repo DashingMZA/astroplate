@@ -3,8 +3,8 @@ title: "Image Optimization for Astro: WebP, AVIF, Responsive Images and CDN Deli
 meta_title: "Image Optimization for Astro: WebP & AVIF Guide"
 description: "Learn image optimization for Astro: WebP and AVIF formats, responsive srcset images, lazy loading, and CDN delivery that cut page weight and speed up LCP."
 date: 2026-11-11T05:00:00Z
-image: "/images/image-optimization-astro-webp-avif-responsive-images-cdn-delivery-feature.jpg"
-og_image: "/images/image-optimization-astro-webp-avif-responsive-images-cdn-delivery-og.jpg"
+image: "/images/blog/image-optimization-astro-webp-avif-responsive-images-cdn-delivery-feature.jpg"
+og_image: "/images/blog/image-optimization-astro-webp-avif-responsive-images-cdn-delivery-og.jpg"
 og_title: "Image Optimization for Astro: WebP, AVIF & CDN"
 og_description: "A practical Astro guide to WebP and AVIF, responsive images, lazy loading, and CDN delivery — smaller files, faster pages, better Core Web Vitals."
 categories: ["Performance"]
@@ -75,7 +75,7 @@ Remote images need explicit authorization: Astro only optimizes remote images fr
 
 In Markdown, standard `![alt](src)` syntax works for local images in `src/` and for remote images, and those images are processed and optimized. `<Image />` and `<Picture />` are not available in plain `.md` files; for their props in Markdown content, use MDX. On this site, the blog hero is handled by the post layout, which is why the frontmatter `image` field points at a file in `public/images/`.
 
-![The Astro image pipeline: a source image in src/ is imported, transformed by Sharp at build time, and emitted as hashed WebP and AVIF files with width and height in the markup.](/images/image-optimization-astro-webp-avif-responsive-images-cdn-delivery-diagram-1.png)
+![The Astro image pipeline: a source image in src/ is imported, transformed by Sharp at build time, and emitted as hashed WebP and AVIF files with width and height in the markup.](/images/blog/image-optimization-astro-webp-avif-responsive-images-cdn-delivery-diagram-1.png)
 
 ## Responsive images: srcset, sizes, and layout
 
@@ -112,7 +112,7 @@ The `sizes` value mirrors the grid: full width on a phone, half the viewport on 
 
 Art direction — a different crop per breakpoint, via `<source>` elements with `media` queries — is a separate case. Most images only need different widths of the same crop; a second crop doubles the files you must produce and check.
 
-![How the browser picks a responsive image: srcset lists candidate widths, sizes describes the displayed width at each breakpoint, and the browser combines them with viewport size and pixel density to choose the smallest fitting file.](/images/image-optimization-astro-webp-avif-responsive-images-cdn-delivery-diagram-2.png)
+![How the browser picks a responsive image: srcset lists candidate widths, sizes describes the displayed width at each breakpoint, and the browser combines them with viewport size and pixel density to choose the smallest fitting file.](/images/blog/image-optimization-astro-webp-avif-responsive-images-cdn-delivery-diagram-2.png)
 
 ## Loading, priority, and layout stability
 

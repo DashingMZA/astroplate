@@ -3,8 +3,8 @@ title: "Building Responsive Websites with Tailwind CSS: A Practical Guide"
 meta_title: "Responsive Websites with Tailwind CSS Guide"
 description: "Learn to build responsive websites with Tailwind CSS: mobile-first breakpoints, fluid grids and type, container queries, and an Astro setup for every screen."
 date: 2026-11-09T05:00:00Z
-image: "/images/building-responsive-websites-tailwind-css-practical-guide-feature.jpg"
-og_image: "/images/building-responsive-websites-tailwind-css-practical-guide-og.jpg"
+image: "/images/blog/building-responsive-websites-tailwind-css-practical-guide-feature.jpg"
+og_image: "/images/blog/building-responsive-websites-tailwind-css-practical-guide-og.jpg"
 og_title: "Responsive Websites with Tailwind CSS"
 og_description: "A practical guide to responsive websites with Tailwind CSS — breakpoints, fluid layouts, container queries and testing, with real Astro code examples."
 categories: ["CSS"]
@@ -59,7 +59,7 @@ Tailwind ships five breakpoints, each a minimum width expressed in `rem` in Tail
 
 Because the system is mobile-first, `md:grid-cols-2` means "two columns from 768px up", and it stays in effect until another prefixed class overrides it. To confine a style to a single range, stack a breakpoint variant with a `max-*` variant: `md:max-lg:flex` applies only between the `md` and `lg` breakpoints. For a one-off size, use an arbitrary variant such as `min-[900px]:grid-cols-3` — but if you write the same arbitrary width twice, promote it to a real breakpoint.
 
-![How Tailwind's mobile-first breakpoints cascade from small screens to large screens](/images/building-responsive-websites-tailwind-css-practical-guide-diagram-1.png)
+![How Tailwind's mobile-first breakpoints cascade from small screens to large screens](/images/blog/building-responsive-websites-tailwind-css-practical-guide-diagram-1.png)
 
 Reserve breakpoints for genuine layout changes: a column count, a navigation pattern, a sidebar appearing or disappearing. If a heading only needs to be slightly larger on desktop, that is a job for fluid type (covered below), not a breakpoint.
 
@@ -169,7 +169,7 @@ Tailwind v4 supports container queries natively, with no plugin. Mark the parent
 
 Here the article stacks vertically by default and switches to a horizontal row when its container — not the viewport — reaches the `@md` container size. Note the scale differs from viewport breakpoints: container sizes run from `@3xs` (16rem / 256px) to `@7xl` (80rem / 1280px), and `@md` is 28rem (448px), not the 48rem of the `md:` viewport breakpoint. Like viewport variants, container queries are mobile-first: `@md:flex-row` applies at `@md` and above, and `@max-md:` applies below a size. You can name containers with `@container/main` and target them with `@sm/main:` when several are nested.
 
-![A card component switching from a stacked layout to a horizontal layout when its container widens, independent of the viewport width](/images/building-responsive-websites-tailwind-css-practical-guide-diagram-2.png)
+![A card component switching from a stacked layout to a horizontal layout when its container widens, independent of the viewport width](/images/blog/building-responsive-websites-tailwind-css-practical-guide-diagram-2.png)
 
 Container queries shine in design systems, where the same component is reused in different slots: a card written once with container queries works in a sidebar, a modal and a full-width grid without a single viewport breakpoint. If you are standardising components across a site, read [how to build a scalable design system with Astro and Tailwind CSS](/blog/build-scalable-website-design-system-astro-tailwind-css) next — container queries are the mechanism that makes those components genuinely portable.
 

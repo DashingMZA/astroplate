@@ -3,8 +3,8 @@ title: "Astro Content Collections: A Complete Guide to Managing Blog Content"
 meta_title: "Astro Content Collections: Complete Guide"
 description: "Learn how Astro Content Collections work: define schemas with Zod, load content with glob, query with getCollection, and render blog posts with type safety."
 date: 2026-11-14T05:00:00Z
-image: "/images/astro-content-collections-complete-guide-managing-blog-content-feature.jpg"
-og_image: "/images/astro-content-collections-complete-guide-managing-blog-content-og.jpg"
+image: "/images/blog/astro-content-collections-complete-guide-managing-blog-content-feature.jpg"
+og_image: "/images/blog/astro-content-collections-complete-guide-managing-blog-content-og.jpg"
 og_title: "Astro Content Collections: Complete Guide"
 og_description: "Define, validate, query and render blog content in Astro with type-safe content collections — loaders, Zod schemas, references and routes explained."
 categories: ["Astro"]
@@ -31,7 +31,7 @@ Define a collection when your content has a repeated shape. A blog is the classi
 
 A collection has three moving parts: a loader, a schema, and the query API. The loader fetches raw entries from wherever they live. The schema validates each entry's data and gives it a TypeScript type. Astro stores the validated entries in a data store during the build, and your pages query that store with `getCollection()` or `getEntry()`. For Markdown and MDX entries, `render()` turns an entry's body into a component you can place in a layout, and returns its headings as well — useful for a table of contents.
 
-![How Astro content collections work: a loader fetches files, a Zod schema validates them, Astro stores the entries, and pages query them with getCollection and render](/images/astro-content-collections-complete-guide-managing-blog-content-diagram-1.png)
+![How Astro content collections work: a loader fetches files, a Zod schema validates them, Astro stores the entries, and pages query them with getCollection and render](/images/blog/astro-content-collections-complete-guide-managing-blog-content-diagram-1.png)
 
 Two details catch people out. First, `getCollection()` does not guarantee the order of the entries it returns, so always sort the result yourself, usually by date, before rendering a list. Second, an entry's identifier is `id`, derived from the file path relative to the loader's base directory, without the extension. In Astro 5 and later, `entry.slug` no longer exists.
 
@@ -210,7 +210,7 @@ Most errors fall into a handful of patterns. **"Frontmatter does not match colle
 
 Publishing a post is a short, repeatable sequence. First, add the file — `src/content/blog/my-new-post.md` — with frontmatter matching the schema. Second, let the build validate it; a schema error here is the system working. Third, check the listing and the page: the blog index picks the post up through `getCollection()`, and the dynamic route generates its page through `getStaticPaths()`, with no routing code changes needed. Fourth, check the outputs that read the same collection — the sitemap, feeds, and search index all derive from the same entries, and on this site they are generated automatically. Fifth, mind the SEO fields: the description, image, and Open Graph fields are what search engines and social platforms display, so keep them specific to the post. For the full picture, see [technical SEO for Astro websites: sitemaps, canonicals and structured data](/blog/technical-seo-astro-websites-sitemaps-canonicals-structured-data).
 
-![Querying and rendering a collection: getCollection lists entries, getEntry loads one, render turns its body into a component, and getStaticPaths maps entries to pages](/images/astro-content-collections-complete-guide-managing-blog-content-diagram-2.png)
+![Querying and rendering a collection: getCollection lists entries, getEntry loads one, render turns its body into a component, and getStaticPaths maps entries to pages](/images/blog/astro-content-collections-complete-guide-managing-blog-content-diagram-2.png)
 
 ## Frequently asked questions
 
