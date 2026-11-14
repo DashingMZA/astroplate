@@ -7,8 +7,8 @@ image: "/images/astro-content-collections-complete-guide-managing-blog-content-f
 og_image: "/images/astro-content-collections-complete-guide-managing-blog-content-og.jpg"
 og_title: "Astro Content Collections: Complete Guide"
 og_description: "Define, validate, query and render blog content in Astro with type-safe content collections — loaders, Zod schemas, references and routes explained."
-categories: ["Technology"]
-author: "John Doe"
+categories: ["Astro"]
+author: "Muhammad Zaheer Ahmad"
 tags: ["astro", "content-collections", "blogging"]
 draft: false
 ---

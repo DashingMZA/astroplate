@@ -19,9 +19,10 @@ import { absoluteUrl, canonicalFor, resolveOgImage } from "@/lib/utils/seo";
 import { postUrl } from "@/lib/utils/slug";
 
 // A feed is a rolling window, not an archive: cap it so the files stay
-// small as the blog grows. All three endpoints use getFeedEntries, so
-// this is the single cap.
-export const FEED_LIMIT = 50;
+// small as the blog grows. 20 items keeps even full-content feeds under
+// a megabyte; readers fetch the rest from the site. All three endpoints
+// use getFeedEntries, so this is the single cap.
+export const FEED_LIMIT = 20;
 
 export interface FeedAuthor {
   name: string;

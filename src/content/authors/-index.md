@@ -1,7 +1,7 @@
 ---
 title: "Authors"
 meta_title: ""
-description: "this is meta description"
+description: "Meet the authors who write for Astroplate."
 image: ""
 draft: false
 ---

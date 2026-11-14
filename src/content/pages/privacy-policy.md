@@ -1,7 +1,7 @@
 ---
 title: "Privacy"
 meta_title: ""
-description: "this is meta description"
+description: "How Astroplate collects, uses, and protects your information."
 draft: false
 ---
 

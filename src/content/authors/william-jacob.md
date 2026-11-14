@@ -2,7 +2,7 @@
 title: William Jacob
 email: williamjacob@email.com
 image: "/images/avatar.png"
-description: this is meta description
+description: "William Jacob is a contributor to Astroplate."
 social:
   - name: github
     icon: FaGithub

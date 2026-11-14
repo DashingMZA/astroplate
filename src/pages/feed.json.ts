@@ -16,7 +16,9 @@ export const GET: APIRoute = async () => {
   const feed = {
     version: "https://jsonfeed.org/version/1.1",
     title: config.site.title,
-    home_page_url: absoluteUrl("/"),
+    // Home URL without a trailing slash, matching the RSS channel link
+    // and the Atom alternate link (trailing_slash is false for this site).
+    home_page_url: absoluteUrl("/").replace(/\/+$/, ""),
     feed_url: absoluteUrl(FEED_PATH),
     language: toBcp47(config.site.locale, config.site.language),
     ...(config.site.logo ? { icon: absoluteUrl(config.site.logo) } : {}),

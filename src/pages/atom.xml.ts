@@ -12,7 +12,9 @@ import { absoluteUrl } from "@/lib/utils/seo";
 const FEED_PATH = "/atom.xml";
 
 export const GET: APIRoute = async () => {
-  const homeUrl = absoluteUrl("/");
+  // Home URL without a trailing slash, matching the RSS channel link
+  // (trailing_slash is false for this site).
+  const homeUrl = absoluteUrl("/").replace(/\/+$/, "");
   const feedUrl = absoluteUrl(FEED_PATH);
   const language = toBcp47(config.site.locale, config.site.language);
   const { entries, updated } = await getFeedEntries();

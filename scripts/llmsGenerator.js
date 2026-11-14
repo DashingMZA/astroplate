@@ -1,4 +1,5 @@
 import { glob } from "glob";
+import matter from "gray-matter";
 import { parse } from "node-html-parser";
 import { spawn } from "node:child_process";
 import fs from "node:fs";
@@ -27,6 +28,159 @@ const API_ROUTE_PREFIXES = ["/api/", "/_", "/cdn-cgi/"];
 
 function isApiRoute(urlPath) {
   return API_ROUTE_PREFIXES.some((prefix) => urlPath.startsWith(prefix));
+}
+
+// ─── Taxonomy display names ──────────────────────────────────────────────────
+
+// Tag/category pages title themselves from the taxonomy slug ("Css"),
+// which reads wrong for acronyms. Map the whole title (case-insensitive)
+// to its canonical casing; anything not listed keeps its title.
+const ACRONYM_TITLES = {
+  css: "CSS",
+  seo: "SEO",
+  rss: "RSS",
+  "json feed": "JSON Feed",
+  a11y: "A11y",
+  html: "HTML",
+  api: "API",
+  js: "JS",
+  ts: "TS",
+  ui: "UI",
+  ux: "UX",
+  ai: "AI",
+  json: "JSON",
+  xml: "XML",
+  svg: "SVG",
+  cdn: "CDN",
+  cms: "CMS",
+  http: "HTTP",
+  url: "URL",
+  dom: "DOM",
+};
+
+/** Fix the display name of a tag/category page in place (page-data level). */
+function normaliseTaxonomyTitle(page) {
+  if (
+    !page.urlPath.startsWith("/tags/") &&
+    !page.urlPath.startsWith("/categories/")
+  ) {
+    return;
+  }
+  const mapped = ACRONYM_TITLES[page.title.trim().toLowerCase()];
+  if (mapped) page.title = mapped;
+}
+
+/** True for a single blog post page: /blog/<slug> (not the index, not a page/N). */
+function isBlogPostPage(urlPath) {
+  return (
+    urlPath.startsWith("/blog/") &&
+    urlPath.split("/").filter(Boolean).length === 2
+  );
+}
+
+/** True for a pagination page: any path with a "page" segment (/blog/page/2, ...). */
+function isPaginationPage(urlPath) {
+  const parts = urlPath.split("/").filter(Boolean);
+  return parts.some((part, i) => part === "page" && i < parts.length - 1);
+}
+
+/**
+ * Applies the llms.show_* config flags to the collected pages.
+ * Runs ONCE, after the sort and before any output is written, so
+ * llms.txt, llms-full.txt and the per-page .md files stay consistent.
+ * A flag that is not explicitly `true` excludes its section.
+ */
+function filterLlmsPages(pages, llmsConfig) {
+  return pages.filter((page) => {
+    const firstSegment = page.urlPath.split("/").filter(Boolean)[0];
+
+    if (!llmsConfig.show_pagination && isPaginationPage(page.urlPath)) {
+      return false;
+    }
+    if (!llmsConfig.show_tags && firstSegment === "tags") return false;
+    if (!llmsConfig.show_categories && firstSegment === "categories") {
+      return false;
+    }
+    if (!llmsConfig.show_authors && firstSegment === "authors") return false;
+    return true;
+  });
+}
+
+/**
+ * Reads each blog post's publish date from its source frontmatter.
+ * Returns a Map from blog URL path ("/blog/<slug>") to a Date, or null
+ * when the post has no parseable date. A frontmatter `slug` wins over
+ * the filename, mirroring src/lib/utils/slug.ts; "-index.md" is the
+ * blog listing, not a post.
+ */
+function getBlogPostDates() {
+  const blogDir = path.join(__dirname, "../src/content/blog");
+  const dates = new Map();
+
+  if (!fs.existsSync(blogDir)) return dates;
+
+  for (const file of fs.readdirSync(blogDir)) {
+    if (!/\.mdx?$/.test(file) || file.startsWith("-")) continue;
+    try {
+      const { data } = matter(
+        fs.readFileSync(path.join(blogDir, file), "utf8"),
+      );
+      const stem = file.replace(/\.mdx?$/, "");
+      const slug =
+        typeof data.slug === "string" && data.slug.trim()
+          ? data.slug
+              .trim()
+              .replace(/^blog\//, "")
+              .toLowerCase()
+          : stem;
+      const parsed = data.date ? new Date(data.date) : null;
+      dates.set(
+        `/blog/${slug}`,
+        parsed && !Number.isNaN(parsed.getTime()) ? parsed : null,
+      );
+    } catch {
+      // Unreadable frontmatter: the post sorts as undated.
+    }
+  }
+
+  return dates;
+}
+
+/**
+ * Orders pages for output: Home first, About second, blog posts
+ * newest-first (dates from source frontmatter; undated posts sort last,
+ * ties break by slug), then everything else alphabetically by URL.
+ */
+function orderLlmsPages(pages, postDates) {
+  const home = [];
+  const about = [];
+  const posts = [];
+  const rest = [];
+
+  for (const page of pages) {
+    if (page.urlPath === "/") home.push(page);
+    else if (page.urlPath === "/about") about.push(page);
+    else if (isBlogPostPage(page.urlPath)) posts.push(page);
+    else rest.push(page);
+  }
+
+  posts.sort((a, b) => {
+    const dateA = postDates.get(a.urlPath);
+    const dateB = postDates.get(b.urlPath);
+    if (dateA && dateB) {
+      const diff = dateB.getTime() - dateA.getTime();
+      if (diff !== 0) return diff;
+    } else if (dateA) {
+      return -1;
+    } else if (dateB) {
+      return 1;
+    }
+    return a.urlPath.localeCompare(b.urlPath);
+  });
+
+  rest.sort((a, b) => a.urlPath.localeCompare(b.urlPath));
+
+  return [...home, ...about, ...posts, ...rest];
 }
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -559,26 +713,30 @@ function generateLlmsTxtContent(
   content +=
     "This file helps language models discover the most useful content on this site.\n\n";
 
-  const grouped = {};
+  // Pages arrive pre-ordered: Home, About, blog posts newest-first, then
+  // everything else. The first three groups get their own section; the
+  // rest goes under a single "Optional" section (no per-folder headings,
+  // so e.g. the privacy page is just titled "Privacy").
+  const sections = [
+    { heading: "Home", pages: [] },
+    { heading: "About", pages: [] },
+    { heading: "Blog", pages: [] },
+    { heading: "Optional", pages: [] },
+  ];
+
   pages.forEach((page) => {
-    const parts = page.urlPath.split("/").filter(Boolean);
-    const group = parts.length === 0 ? "Home" : parts[0];
-
-    if (!grouped[group]) grouped[group] = [];
-    grouped[group].push(page);
+    if (page.urlPath === "/") sections[0].pages.push(page);
+    else if (page.urlPath === "/about") sections[1].pages.push(page);
+    else if (isBlogPostPage(page.urlPath)) sections[2].pages.push(page);
+    else sections[3].pages.push(page);
   });
 
-  const sortedGroups = Object.keys(grouped).sort((a, b) => {
-    if (a === "Home") return -1;
-    if (b === "Home") return 1;
-    return a.localeCompare(b);
-  });
+  sections.forEach(({ heading, pages: sectionPages }) => {
+    if (sectionPages.length === 0) return;
 
-  sortedGroups.forEach((group) => {
-    const groupName = group.charAt(0).toUpperCase() + group.slice(1);
-    content += `## ${groupName}\n\n`;
+    content += `## ${heading}\n\n`;
 
-    grouped[group].forEach((page) => {
+    sectionPages.forEach((page) => {
       let linkUrl;
       if (generateIndividualMd) {
         const mdPath =
@@ -667,7 +825,7 @@ async function generateLlmsFiles() {
   );
   console.log(`   Found ${htmlFiles.length} pre-rendered HTML files`);
 
-  const pages = [];
+  let pages = [];
   const seenPaths = new Set();
 
   // Pre-pass: collect the URL paths of every noindex page first, so links
@@ -820,6 +978,22 @@ async function generateLlmsFiles() {
     if (b.urlPath === "/") return 1;
     return a.urlPath.localeCompare(b.urlPath);
   });
+
+  // Apply the llms.show_* flags ONCE, so llms.txt, llms-full.txt and the
+  // per-page .md files all agree on the page set.
+  const unfilteredCount = pages.length;
+  pages = filterLlmsPages(pages, llms);
+  if (pages.length < unfilteredCount) {
+    console.log(
+      `   Filtered out ${unfilteredCount - pages.length} page(s) via llms.show_* flags`,
+    );
+  }
+
+  // Canonical display names for tag/category pages (CSS, SEO, ...).
+  pages.forEach(normaliseTaxonomyTitle);
+
+  // Order for output: Home, About, blog posts newest-first, then the rest.
+  pages = orderLlmsPages(pages, getBlogPostDates());
 
   console.log(`\n   ✅ Total pages processed: ${pages.length}\n`);
 

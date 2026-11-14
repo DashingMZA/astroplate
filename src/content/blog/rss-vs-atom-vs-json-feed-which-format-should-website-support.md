@@ -2,13 +2,13 @@
 title: "RSS vs Atom vs JSON Feed: Which Format Should Your Website Support?"
 meta_title: "RSS vs Atom vs JSON Feed: Which to Support?"
 description: "Compare RSS 2.0, Atom and JSON Feed: required fields, dates, content rules and reader support, and decide which feed formats your website should publish."
-date: 2026-11-14T05:00:00Z
+date: 2026-11-07T05:00:00Z
 image: "/images/rss-vs-atom-vs-json-feed-which-format-should-website-support-feature.jpg"
 og_image: "/images/rss-vs-atom-vs-json-feed-which-format-should-website-support-og.jpg"
 og_title: "RSS vs Atom vs JSON Feed: Which Format to Support?"
 og_description: "RSS, Atom and JSON Feed compared field by field, with a real three-format example and a practical decision guide for your site."
-categories: ["Technology", "Data"]
-author: "John Doe"
+categories: ["SEO"]
+author: "Muhammad Zaheer Ahmad"
 tags: ["rss", "atom", "json-feed"]
 draft: false
 ---

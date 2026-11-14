@@ -1,7 +1,7 @@
 ---
 title: "Hey, I am John Doe!"
 meta_title: "About"
-description: "this is meta description"
+description: "Learn more about Astroplate and the person behind it."
 image: "/images/image-placeholder.png"
 draft: false
 ---

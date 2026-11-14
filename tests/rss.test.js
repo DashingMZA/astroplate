@@ -27,6 +27,7 @@ const {
   mediaTags,
   sanitizeFeedHtml,
   sortFeedPosts,
+  stripCodeHighlighting,
   toBcp47,
   toRssLanguage,
 } = rssHelpers;
@@ -260,6 +261,54 @@ test("sanitizeFeedHtml: markup, code classes and heading ids survive", () => {
   assert.match(out, /<h2 id="creative-design">Creative Design<\/h2>/);
   assert.match(out, /<code class="language-js">/);
   assert.match(out, /<blockquote>quoted<\/blockquote>/);
+});
+
+// ─── Code highlighting is slimmed out of feeds ───────────────────────────
+
+test("stripCodeHighlighting: Shiki block becomes plain <pre><code>text</code></pre>", () => {
+  const out = stripCodeHighlighting(
+    '<pre class="astro-code one-dark-pro" style="background-color:#0f172a" tabindex="0" data-language="ts"><code>' +
+      '<span class="line"><span style="color:#f8fafc">const x = 1 &lt; 2 &amp;&amp; y;</span></span>' +
+      '<span class="line"><span style="color:#7dd3fc">console.log(x);</span></span>' +
+      "</code></pre>",
+  );
+  assert.equal(
+    out,
+    "<pre><code>const x = 1 &lt; 2 &amp;&amp; y;console.log(x);</code></pre>",
+  );
+  // A bare astro-code class (no theme suffix) is slimmed the same way.
+  assert.equal(
+    stripCodeHighlighting(
+      '<pre class="astro-code"><code><span class="line">a</span></code></pre>',
+    ),
+    "<pre><code>a</code></pre>",
+  );
+});
+
+test("stripCodeHighlighting: only astro-code blocks change, the rest passes through", () => {
+  const out = stripCodeHighlighting(
+    '<p>Intro with <span class="katex">math</span></p>' +
+      '<pre class="astro-code"><code><span class="line">a</span></code></pre>' +
+      '<pre><code class="language-js">const b = 1;</code></pre>' +
+      '<pre class="astro-code"><code></code></pre>',
+  );
+  assert.match(out, /<p>Intro with <span class="katex">math<\/span><\/p>/);
+  assert.match(out, /<pre><code>a<\/code><\/pre>/);
+  assert.match(
+    out,
+    /<pre><code class="language-js">const b = 1;<\/code><\/pre>/,
+  );
+  assert.match(out, /<pre><code><\/code><\/pre>/);
+  assert.doesNotMatch(out, /astro-code|class="line"/);
+});
+
+test("sanitizeFeedHtml: highlighted code is slimmed to plain text", () => {
+  const out = sanitizeFeedHtml(
+    '<p>Example</p><pre class="astro-code"><code><span class="line"><span>npm run build</span></span></code></pre>',
+  );
+  assert.match(out, /<p>Example<\/p>/);
+  assert.match(out, /<pre><code>npm run build<\/code><\/pre>/);
+  assert.doesNotMatch(out, /astro-code|<span/);
 });
 
 test("sanitizeFeedHtml: relative image/link URLs become absolute", () => {

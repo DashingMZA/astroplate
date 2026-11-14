@@ -1,7 +1,7 @@
 ---
 title: "Blog Posts"
 meta_title: ""
-description: "this is meta description"
+description: "Articles and guides on Astro, web performance, SEO, and modern frontend engineering."
 image: ""
 draft: false
 ---

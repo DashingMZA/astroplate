@@ -2,7 +2,7 @@
 title: Sam Wilson
 email: samwilson@email.com
 image: "/images/avatar.png"
-description: this is meta description
+description: "Sam Wilson is a contributor to Astroplate."
 social:
   - name: github
     icon: FaGithub

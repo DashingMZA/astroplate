@@ -2,13 +2,13 @@
 title: "Deploying Astro Websites to Cloudflare Workers: A Step-by-Step Guide"
 meta_title: "Deploy Astro to Cloudflare Workers: Guide"
 description: "Learn how to deploy Astro websites to Cloudflare Workers step by step: static assets, the Cloudflare adapter, custom domains, headers, secrets and CI/CD."
-date: 2026-11-14T05:00:00Z
+date: 2026-11-08T05:00:00Z
 image: "/images/deploying-astro-websites-cloudflare-workers-step-by-step-guide-feature.jpg"
 og_image: "/images/deploying-astro-websites-cloudflare-workers-step-by-step-guide-og.jpg"
 og_title: "Deploy Astro to Cloudflare Workers"
 og_description: "A step-by-step guide to deploying Astro sites to Cloudflare Workers — static assets, on-demand rendering, domains and CI/CD."
-categories: ["Technology"]
-author: "John Doe"
+categories: ["Deployment"]
+author: "Muhammad Zaheer Ahmad"
 tags: ["astro", "cloudflare", "deployment"]
 draft: false
 ---

@@ -81,6 +81,10 @@
     "generate_llms_full_txt": true,
     "generate_individual_md": true,
     "include": [],
-    "exclude": []
+    "exclude": [],
+    "show_tags": false,
+    "show_categories": false,
+    "show_authors": false,
+    "show_pagination": false
   }
 }

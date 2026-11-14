@@ -2,13 +2,13 @@
 title: "How to Build a Scalable Website Design System with Astro and Tailwind CSS"
 meta_title: "Design System with Astro and Tailwind CSS"
 description: "Learn how to build a scalable design system with Astro and Tailwind CSS: design tokens, reusable components, theming and governance that grow with your site."
-date: 2026-11-14T05:00:00Z
+date: 2026-11-05T05:00:00Z
 image: "/images/build-scalable-website-design-system-astro-tailwind-css-feature.jpg"
 og_image: "/images/build-scalable-website-design-system-astro-tailwind-css-og.jpg"
 og_title: "Scalable Design System with Astro + Tailwind"
 og_description: "Build a scalable design system with Astro and Tailwind CSS — tokens, components, layouts and theming, explained step by step."
-categories: ["Technology", "Architecture"]
-author: "John Doe"
+categories: ["Design Systems"]
+author: "Muhammad Zaheer Ahmad"
 tags: ["astro", "tailwind", "design-system"]
 draft: false
 ---

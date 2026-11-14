@@ -207,14 +207,38 @@ export async function localImageDimensions(
 }
 
 /**
+ * Shiki highlights code as
+ * `<pre class="astro-code one-dark-pro"><code><span class="line"><span ...>...`
+ * — a span per token, per line (the second class is the Shiki theme name,
+ * so the match is on the `astro-code` prefix, not the whole attribute).
+ * Feed readers do not render those colours, so the spans are pure weight
+ * (a feed with full posts runs to megabytes). Replace each highlighted
+ * block with plain `<pre><code>text</code></pre>`: the inner tags are
+ * stripped and the code text is kept exactly as Shiki escaped it
+ * (entities like `&lt;` are already escaped, so nothing is re-escaped
+ * and nothing is lost). A `<pre>` without the astro-code class is left
+ * alone, and a block that does not match the Shiki shape passes through
+ * untouched — this never drops content, it only fails to slim.
+ */
+export function stripCodeHighlighting(html: string): string {
+  return html.replace(
+    /<pre[^>]*class="astro-code[^"]*"[^>]*><code>([\s\S]*?)<\/code><\/pre>/g,
+    (_match, inner: string) =>
+      `<pre><code>${inner.replace(/<[^>]+>/g, "")}</code></pre>`,
+  );
+}
+
+/**
  * Sanitize rendered post HTML for `content:encoded`: strips scripts,
  * event handlers and `javascript:` links, keeps semantic markup and
  * code-highlighting classes (and heading ids, so in-content anchor links
  * keep working), and absolutizes relative image/link URLs so feed
- * readers — which have no site base — can resolve them.
+ * readers — which have no site base — can resolve them. Code blocks are
+ * slimmed to plain text first (see `stripCodeHighlighting`): readers
+ * ignore Shiki's colours, so the spans only add weight.
  */
 export function sanitizeFeedHtml(html: string): string {
-  return sanitizeHtml(html, {
+  return sanitizeHtml(stripCodeHighlighting(html), {
     allowedTags: sanitizeHtml.defaults.allowedTags.concat([
       "img",
       "math",

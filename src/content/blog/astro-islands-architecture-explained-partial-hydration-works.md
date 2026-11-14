@@ -2,13 +2,13 @@
 title: "Astro Islands Architecture Explained: How Partial Hydration Works"
 meta_title: "Astro Islands Architecture: Partial Hydration Explained"
 description: "Learn how Astro islands architecture works: partial hydration, client directives, server islands, and shipping zero JavaScript by default on content sites."
-date: 2026-11-14T05:00:00Z
+date: 2026-11-13T05:00:00Z
 image: "/images/astro-islands-architecture-explained-partial-hydration-works-feature.jpg"
 og_image: "/images/astro-islands-architecture-explained-partial-hydration-works-og.jpg"
 og_title: "Astro Islands Architecture Explained"
 og_description: "How Astro islands architecture and partial hydration work — client directives, server islands, and zero JavaScript by default."
-categories: ["Technology", "Architecture"]
-author: "John Doe"
+categories: ["Astro", "Performance"]
+author: "Muhammad Zaheer Ahmad"
 tags: ["astro", "islands", "performance"]
 draft: false
 ---
