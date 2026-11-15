@@ -2,8 +2,9 @@
 import Mermaid from "@/components/Mermaid.astro";
 import Base from "@/layouts/Base.astro";
 import { getSinglePage } from "@/lib/contentParser";
-import { buildBreadcrumbJsonLd, buildWebPageJsonLd } from "@/lib/utils/jsonld";
+import dateFormat from "@/lib/utils/dateFormat";
 import { lastChangeDate, resolveContentDates, toIso } from "@/lib/utils/dates";
+import { buildBreadcrumbJsonLd, buildWebPageJsonLd } from "@/lib/utils/jsonld";
 import { buildCanonical, canonicalFor } from "@/lib/utils/seo";
 import { checkDuplicateSlugs, pageSlug, pageUrl } from "@/lib/utils/slug";
 import PageHeader from "@/partials/PageHeader.astro";
@@ -47,13 +48,14 @@ const { Content } = await render(page);
 
 const pageCanonical = buildCanonical(canonical, pageUrl(page));
 const dates = resolveContentDates({ dateCreated, datePublished, dateModified });
+const updatedDate = lastChangeDate(dates);
 const pageJsonLd = buildWebPageJsonLd({
   name: title,
   url: pageCanonical,
   description: description ?? undefined,
   dateCreated: toIso(dates.dateCreated),
   datePublished: toIso(dates.datePublished),
-  dateModified: toIso(lastChangeDate(dates)),
+  dateModified: toIso(updatedDate),
 });
 const breadcrumbJsonLd = buildBreadcrumbJsonLd([
   { name: "Home", url: canonicalFor("/") },
@@ -81,6 +83,14 @@ const breadcrumbJsonLd = buildBreadcrumbJsonLd([
           <div class="content">
             <Content />
           </div>
+          {updatedDate && (
+            <p class="mt-6 text-sm">
+              Last updated:{" "}
+              <time datetime={toIso(updatedDate)}>
+                {dateFormat(updatedDate)}
+              </time>
+            </p>
+          )}
           <Mermaid content={page.body} />
         </div>
       </div>

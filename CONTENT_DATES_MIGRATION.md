@@ -96,10 +96,13 @@ URL, no sitemap filename. After correcting, run
 `pnpm dates:check` to confirm the values are consistent
 (`datePublished >= dateCreated`, `dateModified >= datePublished`).
 
-Note: the 4 legal pages still carry hardcoded body lines
-"_Last updated: November 14, 2026_". Those lines predate this
-migration and were left untouched; they will be removed once the
-regular page template renders `dateModified` from frontmatter.
+Note: the 4 legal pages used to carry hardcoded body lines
+"_Last updated: November 14, 2026_". Those lines were removed in a
+follow-up (commit after the migration) and the regular page template
+now renders "Last updated" from `dateModified` instead — see
+CONTENT_DATES.md. The prose sentences "Any changes will be posted on
+this page with a revised 'Last updated' date" remain; they are now
+true by construction.
 
 ## Untouched files (5) — dateless by design
 

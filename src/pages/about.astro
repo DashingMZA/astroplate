@@ -2,8 +2,9 @@
 import ImageMod from "@/components/ImageMod.astro";
 import Base from "@/layouts/Base.astro";
 import { getListPage } from "@/lib/contentParser";
-import { buildWebPageJsonLd } from "@/lib/utils/jsonld";
+import dateFormat from "@/lib/utils/dateFormat";
 import { lastChangeDate, resolveContentDates, toIso } from "@/lib/utils/dates";
+import { buildWebPageJsonLd } from "@/lib/utils/jsonld";
 import { canonicalFor } from "@/lib/utils/seo";
 import { markdownify } from "@/lib/utils/textConverter";
 import { render } from "astro:content";
@@ -12,13 +13,14 @@ const aboutIndex = await getListPage("about", "-index");
 const { Content } = await render(aboutIndex);
 const { title, description, meta_title, image } = aboutIndex.data;
 const dates = resolveContentDates(aboutIndex.data);
+const updatedDate = lastChangeDate(dates);
 const pageJsonLd = buildWebPageJsonLd({
   name: title,
   url: canonicalFor("/about"),
   description: description ?? undefined,
   dateCreated: toIso(dates.dateCreated),
   datePublished: toIso(dates.datePublished),
-  dateModified: toIso(lastChangeDate(dates)),
+  dateModified: toIso(updatedDate),
 });
 
 const buildDrafts = process.argv.includes("--buildDrafts");
@@ -54,6 +56,14 @@ if (!buildDrafts && aboutIndex.data.draft) {
           <div class="content">
             <Content />
           </div>
+          {updatedDate && (
+            <p class="mt-6 text-sm">
+              Last updated:{" "}
+              <time datetime={toIso(updatedDate)}>
+                {dateFormat(updatedDate)}
+              </time>
+            </p>
+          )}
         </div>
       </div>
     </div>

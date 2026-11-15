@@ -5,10 +5,8 @@ description: "How Astroplate collects, uses, and protects your information, incl
 draft: false
 dateCreated: 2026-11-15T19:04:03Z
 datePublished: 2026-11-15T19:04:03Z
-dateModified: 2026-11-15T19:04:03Z
+dateModified: 2026-11-15T19:31:04Z
 ---
-
-_Last updated: November 14, 2026_
 
 #### Introduction
 

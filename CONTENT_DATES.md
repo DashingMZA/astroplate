@@ -44,6 +44,7 @@ published", which is not a change to the category itself).
 | Surface | Value |
 | --- | --- |
 | Article page display | `datePublished`; "Updated <date>" only when `dateModified` differs from `datePublished` |
+| Regular / about / contact page display | "Last updated: <date>" from `dateModified` (`dateModified ?? datePublished`), rendered by the page template — never a hardcoded line in the body |
 | Blog cards | `datePublished` |
 | JSON-LD `BlogPosting` | `dateCreated`, `datePublished`, `dateModified` (`dateModified` falls back to `datePublished`) |
 | JSON-LD `WebPage` (regular/about/contact pages) | Same three fields |
@@ -173,13 +174,28 @@ workflow (including this one), and the job does not run for pushes by
 `github-actions[bot]`. An all-zeros base (first push / force-push)
 falls back to plain write mode against HEAD.
 
-### Prebuild check (`prebuild` script)
+### Prebuild: stamp, then check (`prebuild` script)
 
-`pnpm build` runs `node scripts/manage-content-dates.mjs --check`
-before the WebP converter. On a clean tree (Vercel / CI fresh clone)
-the check is pure validation — it never writes, so a build can never
-rewrite historical dates. A build fails loudly on a missing, invalid,
-or inconsistent required date instead of publishing a dateless page.
+`pnpm build` runs the script in write mode first, then `--check`,
+before the WebP converter:
+
+```bash
+node scripts/manage-content-dates.mjs && node scripts/manage-content-dates.mjs --check && node scripts/convert-images-to-webp.mjs
+```
+
+The write pass fills anything missing (a new file gets its dates,
+an edited file gets its `dateModified` bump) so the build itself
+never publishes a dateless page; the check pass then fails the build
+loudly on anything still invalid or inconsistent (for example a
+`datePublished` earlier than `dateCreated`, which no automatic stamp
+can fix). On a clean tree the write pass is a no-op — bodies match
+HEAD, so nothing is rewritten and historical dates are never
+touched. Build-time stamps are NOT committed back: on Vercel/CI the
+stamped values live only in that build. A file whose date could not
+be recovered from git gets the build time as its stamp, so commit
+the stamped result (or fix it manually) before production — during
+development a provisional build-time stamp is acceptable and is
+exactly what the migration did for the 4 provisional records.
 
 ## Workflows covered
 
@@ -194,6 +210,8 @@ or inconsistent required date instead of publishing a dateless page.
   files; the same rules apply.
 - `pnpm dev`: does not run `prebuild`, so dates stamp at commit or
   build time, not while editing in dev.
+- `pnpm build`: fills any missing dates first, then validates — a
+  build never publishes a dateless page (see "Prebuild" above).
 
 ## Limitations (honest)
 
@@ -215,19 +233,23 @@ or inconsistent required date instead of publishing a dateless page.
   frontmatter dates; their sitemap entries carry no `lastmod` and
   their archive pages show no dates. A separate derived listing
   timestamp (newest post in the category) is not tracked.
-- The 4 legal pages still carry hardcoded body lines
-  "_Last updated: November 14, 2026_". They stay until the regular
-  page template renders `dateModified` from frontmatter.
+- Regular, about, and contact pages render a "Last updated"
+  line from `dateModified` (`lastChangeDate`), so no page body
+  carries a hardcoded date. The only dates left in article bodies
+  are prose facts (e.g. "RSS 2.0 published 30 March 2009") and code
+  samples — content, not page metadata — and they stay as written.
 - `date-fns` was removed: display formatting is now the UTC
   formatter in `dates.ts`. Only the `dd MMM, yyyy` pattern (and
   `MM`/`yy` variants) is supported.
 
 ## Tests
 
-`tests/content-dates.test.js` (16 tests): the utility, frontmatter
-surgery, exemptions/validation, `computeChanges` rules, and CLI
+`tests/content-dates.test.js` (18 tests): the utility, frontmatter
+surgery, exemptions/validation, `computeChanges` rules, CLI
 end-to-end runs in throwaway git repos (migration, write-mode
-idempotency, `--since`, `--check` failure, `--dry-run`). Updated
+idempotency, `--since`, `--check` failure, `--dry-run`), and the
+rendered "Last updated" line (no hardcoded date line remains in any
+legal page; the three page templates render `dateModified`). Updated
 suites: `tests/sitemap.test.js` (lastmod priority, author lastmod),
 `tests/rss.test.js` (no build-time fallback), `tests/atom.test.js`
 (markers), `tests/seo.test.js` (JSON-LD dates, search-index fixtures).

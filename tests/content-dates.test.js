@@ -549,3 +549,33 @@ test("CLI: --check fails on a dateless published file; --dry-run changes nothing
     before,
   );
 });
+
+test("rendered Last updated: no hardcoded date line in any legal page", () => {
+  for (const file of [
+    "privacy-policy.md",
+    "cookie-policy.md",
+    "disclaimer.md",
+    "terms-of-service.md",
+  ]) {
+    const body = fs.readFileSync(
+      path.join(repoRoot, "src", "content", "pages", file),
+      "utf8",
+    );
+    assert.doesNotMatch(body, /_Last updated:/, `${file} still hardcodes a date`);
+  }
+});
+
+test("rendered Last updated: page templates show dateModified", () => {
+  for (const file of ["[regular].astro", "about.astro", "contact.astro"]) {
+    const source = fs.readFileSync(
+      path.join(repoRoot, "src", "pages", file),
+      "utf8",
+    );
+    assert.ok(source.includes("Last updated"), `${file} has no Last updated line`);
+    assert.ok(
+      source.includes("lastChangeDate(dates)"),
+      `${file} does not derive the line from dateModified`,
+    );
+    assert.ok(source.includes("<time"), `${file} does not render a <time> element`);
+  }
+});
