@@ -56,11 +56,13 @@ const isRemote =
   src.startsWith("//") ||
   src.startsWith("data:");
 
-// Glob pattern to load images from the /public/images folder.
-// Includes webp/avif sources (call sites request format="webp" and CMS
-// uploads may already be webp/avif) as well as the legacy formats.
+// Glob pattern to load images from anywhere under /public —
+// content images under /public/images/** as well as root-level
+// files such as the site logo (/logo.png). Includes webp/avif
+// sources (call sites request format="webp" and CMS uploads may
+// already be webp/avif) as well as the legacy formats.
 const images = import.meta.glob(
-  "/public/images/**/*.{jpeg,jpg,png,gif,svg,webp,avif}",
+  "/public/**/*.{jpeg,jpg,png,gif,svg,webp,avif}",
 );
 
 // Resolve a local src to a glob key. Call sites pass paths with or
@@ -89,7 +91,7 @@ if (!isRemote) {
 const isValidPath = isRemote || Boolean(localKey);
 if (!isValidPath) {
   console.error(
-    `\x1b[31mImage not found - ${src}.\x1b[0m Make sure the image is in the /public/images folder.`,
+    `\x1b[31mImage not found - ${src}.\x1b[0m Make sure the image is in the /public folder (content images under /public/images/).`,
   );
 }
 // Already-optimized sources (webp/avif) are served verbatim as a plain
@@ -116,7 +118,7 @@ const isAlreadyOptimized =
     sizes={sizes}
     class={className}
     style={style}
-    data-image-fallback="/images/image-placeholder.png"
+    data-image-fallback="/images/image-placeholder.webp"
   />
 ) : isValidPath ? (
   <Image
@@ -136,7 +138,7 @@ const isAlreadyOptimized =
   />
 ) : (
   <img
-    src="/images/image-placeholder.png"
+    src="/images/image-placeholder.webp"
     alt={alt}
     width={width}
     height={height}

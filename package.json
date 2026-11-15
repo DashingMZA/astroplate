@@ -12,6 +12,8 @@
   "scripts": {
     "dev": "concurrently \"node scripts/themeGenerator.js --watch\" \"node scripts/jsonGenerator.js && astro dev\"",
     "build": "node scripts/themeGenerator.js && node scripts/jsonGenerator.js && astro build && node scripts/llmsGenerator.js",
+    "prebuild": "node scripts/convert-images-to-webp.mjs",
+    "images": "node scripts/convert-images-to-webp.mjs",
     "preview": "astro preview",
     "check": "node scripts/jsonGenerator.js && astro check",
     "lint": "eslint .",

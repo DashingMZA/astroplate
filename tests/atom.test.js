@@ -91,8 +91,8 @@ test("atom.xml.ts: feed icon/logo come from config.feeds, not site.logo", () => 
 test("config.json + images: Atom logo is 2:1, feed icon is square", async () => {
   const sharp = (await import("sharp")).default;
   const cfg = JSON.parse(read("src/config/config.json"));
-  assert.equal(cfg.feeds.atom_logo, "/images/atom-logo.png");
-  assert.equal(cfg.feeds.icon, "/images/feed-icon.png");
+  assert.equal(cfg.feeds.atom_logo, "/atom-logo.png");
+  assert.equal(cfg.feeds.icon, "/feed-icon.png");
   const logoPath = path.join(
     repoRoot,
     "public",

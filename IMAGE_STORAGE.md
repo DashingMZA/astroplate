@@ -4,11 +4,26 @@
 
 | Kind | Location | Example |
 | --- | --- | --- |
-| Local images | `public/images/` | `/images/logo.png`, `/images/image-placeholder.png` |
+| Originals (source of truth) | `assets/images/` | `assets/images/blog/<slug>-feature.jpg` → `public/images/blog/<slug>-feature.webp` |
+| Local images | `public/images/` | `/images/image-placeholder.webp`, `/images/og-image.webp` |
+| Avatars / profile images | `assets/images/avatars/` → `public/images/avatars/` | `/images/avatars/profile.webp` |
+| Testimonial avatars | `assets/images/testimonials/` → `public/images/testimonials/` | `/images/testimonials/avatar-sm.webp` |
 | Remote images | Any public URL (R2, S3, CDN, …) | `https://media.csofts.tech/images/r2-example.jpg` |
-| Favicons / logos / OG defaults | `public/images/` (paths in `config.json`) | `favicon.png`, `logo.png`, `og-image.jpg` |
+| Icons + site logo | `public/` (paths in `config.json`) | `favicon.png`, `feed-icon.png`, `atom-logo.png`, `logo.png`, `logo-darkmode.png` |
+| OG defaults | `public/images/` (paths in `config.json`) | `og-image.webp` |
 
-`public/` is served as-is at the site root: `public/images/foo.png`
+The image pipeline (`scripts/convert-images-to-webp.mjs`) only
+operates under `assets/images/` ↔ `public/images/` — it never
+reads, moves, converts, or deletes anything elsewhere under
+`public/`. Every `.jpg` / `.jpeg` / `.png` under `images/` becomes
+`.webp` (JPG quality 82, PNG lossless, same dimensions); files
+dropped straight into `public/images/` are adopted first (moved to
+`assets/images/`, references rewritten to `.webp`). Icon files
+and the site logo belong at the `public/` root, not under
+`images/`, so they are never converted. See "Automatic WebP" in
+[README.md](README.md#images).
+
+`public/` is served as-is at the site root: `public/images/foo.webp`
 is reachable at `/images/foo.png`. Local images are also the only
 ones that go through Astro's image optimization (see below).
 
@@ -51,7 +66,7 @@ configured in `astro.config.mjs`):
   order.
 - If a local image is not found, `ImageMod` logs a red
   `Image not found - <src>` error at build time and renders the
-  bundled placeholder (`/images/image-placeholder.png`) at the
+  bundled placeholder (`/images/image-placeholder.webp`) at the
   requested dimensions, with the `alt` text — the layout does not
   collapse and no broken image is shown. Remote images never hit
   this branch; a dead remote URL instead falls back to the same
@@ -74,14 +89,16 @@ use the hero image. See [SEO_GUIDE.md](SEO_GUIDE.md).
 - **OG / share images:** 1200×630 px. No `og:image:width` /
   `og:image:height` is emitted — dimensions are not known at render
   time and the old hardcoded 1200×630 was wrong for most images.
-  The default OG image is `/images/og-image.jpg` (1200×630 JPEG,
-  quality 80, 45,694 B), resized from the old 3600×2400 PNG
-  (460,475 B) with no visible quality loss.
+  The default OG image is `/images/og-image.webp` (1200×630 webp,
+  27,446 B), converted from the 1200×630 JPEG (quality 80, 45,694 B),
+  which was resized from the old 3600×2400 PNG (460,475 B) with no
+  visible quality loss.
 - **Post hero:** rendered at 1200×500 (`PostSingle.astro`).
 - **Logo:** configured in `config.json` (`logo_width` / `logo_height`,
-  currently 150×30). Supply both `logo.png` and `logo-darkmode.png`.
+  currently 150×30). Supply both `logo.png` and `logo-darkmode.png`
+  at the `public/` root — the logo is never converted to webp.
 - **Avatars:** square images; author avatars live in
-  `public/images/` (e.g. `avatar.png`).
+  `public/images/` (e.g. `avatar.webp`).
 - **Formats:** prefer `webp` (or `avif`) for photos; `png` for logos
   and graphics needing transparency; `svg` for icons. `ImageMod`
   accepts all of them for local files.
@@ -126,14 +143,14 @@ default.
 
 ## Missing-image fallback
 
-Two paths, both landing on `/images/image-placeholder.png`
+Two paths, both landing on `/images/image-placeholder.webp`
 (a bundled 4,881 B PNG):
 
 - **Local image not found at build time:** `ImageMod` logs the red
   `Image not found` error and renders the placeholder at the
   requested width/height, with the `alt` text.
 - **Remote image fails at runtime** (dead R2/CDN URL): the `<img>`
-  carries `data-image-fallback="/images/image-placeholder.png"`,
+  carries `data-image-fallback="/images/image-placeholder.webp"`,
   and a single delegated capture-phase `error` listener (in
   `ImageMod.astro`, guarded against double-binding across
   view-transition swaps) swaps the `src` to the placeholder. No
@@ -189,6 +206,11 @@ is implemented; do not treat it as a working feature.**
   `ImageMod` and the SEO helpers render verbatim; and every upload
   records width/height so call sites can keep passing both props.
 
-Until such an integration ships, images are added by committing
-files to `public/images/` (local) or pasting a full URL into
-frontmatter (remote).
+Until such an integration ships, local images are added by
+committing the original (JPG/PNG) to `assets/images/` — the build
+converts it to `.webp` in `public/images/` automatically (see
+"Automatic WebP" in [README.md](README.md#images) and
+`scripts/convert-images-to-webp.mjs`) — by dropping the original
+into `public/images/` (the build adopts it into `assets/images/`
+and rewrites its references to `.webp`) — or by pasting a full URL
+into frontmatter (remote).

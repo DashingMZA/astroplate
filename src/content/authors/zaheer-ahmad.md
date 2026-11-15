@@ -1,7 +1,7 @@
 ---
 title: Muhammad Zaheer Ahmad
 email: zaheer@jadoo.bond
-image: "/images/avatar.png"
+image: "/images/avatars/avatar.webp"
 description: "Muhammad Zaheer Ahmad maintains Astroplate and writes about Astro, web performance, SEO, and modern frontend engineering."
 social:
   - name: github

@@ -6,9 +6,9 @@
     "trailing_slash": false,
     "language": "en",
     "locale": "en_US",
-    "favicon": "/images/favicon.png",
-    "logo": "/images/logo.png",
-    "logo_darkmode": "/images/logo-darkmode.png",
+    "favicon": "/favicon.png",
+    "logo": "/logo.png",
+    "logo_darkmode": "/logo-darkmode.png",
     "logo_width": "150",
     "logo_height": "30",
     "logo_text": "Astroplate"
@@ -17,7 +17,7 @@
   "publisher": {
     "name": "Astroplate",
     "type": "Organization",
-    "logo": "/images/logo.png",
+    "logo": "/logo.png",
     "url": "https://astroplate.jadoo.bond"
   },
 
@@ -71,7 +71,7 @@
 
   "metadata": {
     "meta_author": "cSofts",
-    "meta_image": "/images/og-image.jpg",
+    "meta_image": "/images/og-image.webp",
     "meta_image_alt": "Astroplate",
     "meta_description": "Astro and Tailwind boilerplate"
   },
@@ -90,7 +90,7 @@
 
   "feeds": {
     "limit": 20,
-    "atom_logo": "/images/atom-logo.png",
-    "icon": "/images/feed-icon.png"
+    "atom_logo": "/atom-logo.png",
+    "icon": "/feed-icon.png"
   }
 }

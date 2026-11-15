@@ -199,15 +199,15 @@ test("resolveOgImage: R2 https URLs pass through unchanged; local paths get the 
   });
   assert.equal(r2.url, "https://media.csofts.tech/images/r2-example-og.jpg");
   assert.equal(r2.isPageImage, true);
-  const local = seo.resolveOgImage({ image: "/images/image-placeholder.png" });
+  const local = seo.resolveOgImage({ image: "/images/image-placeholder.webp" });
   assert.equal(
     local.url,
-    "https://astroplate.jadoo.bond/images/image-placeholder.png",
+    "https://astroplate.jadoo.bond/images/image-placeholder.webp",
   );
   const fallback = seo.resolveOgImage({});
   assert.equal(
     fallback.url,
-    "https://astroplate.jadoo.bond/images/og-image.jpg",
+    "https://astroplate.jadoo.bond/images/og-image.webp",
   );
   assert.equal(fallback.isPageImage, false);
 });
@@ -239,7 +239,7 @@ test("BlogPosting JSON-LD: url + mainEntityOfPage are the canonical URL, authors
       publisher: {
         name: "Astroplate",
         type: "Organization",
-        logo: "https://astroplate.jadoo.bond/images/logo.png",
+        logo: "https://astroplate.jadoo.bond/logo.png",
         url: "https://astroplate.jadoo.bond",
       },
       url: "https://astroplate.jadoo.bond/blog/my-guide",

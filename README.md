@@ -137,6 +137,33 @@ URLs are rendered verbatim as plain `<img>` — never rewritten or
 prefixed — so images hosted on R2/S3/a CDN work by pasting the full
 URL. Missing images fall back to a bundled placeholder instead of
 rendering nothing or a broken-image icon.
+
+**Automatic WebP:** originals (JPG/PNG) live in `assets/images/`,
+mirroring `public/images/`, and are converted to `.webp` at the same
+dimensions on every build (`prebuild` step) or on demand with
+`pnpm images` — JPG at quality 82, PNG lossless, SVG/GIF untouched.
+The original stays in the repo; only the `.webp` is served. Add a
+file to `assets/images/blog/`, build, and its `.webp` appears in
+`public/images/blog/` (and in `dist/`). A file dropped straight into
+`public/images/` is adopted first (moved to `assets/images/`, its
+references rewritten to `.webp`).
+
+**Where files live:** the pipeline only operates under
+`assets/images/` ↔ `public/images/` — it never touches anything
+elsewhere under `public/`. Icon files and the site logo belong at
+the `public/` root (`public/favicon.png`, `public/feed-icon.png`,
+`public/atom-logo.png`, `public/logo.png`,
+`public/logo-darkmode.png`) — they stay in their original PNG
+format and are never converted; every other image lives under
+`images/` and is served as `.webp`. Profile images live in
+`images/avatars/` and testimonial avatars in
+`images/testimonials/` — originals in `assets/images/avatars/` /
+`assets/images/testimonials/`, served as
+`public/images/avatars/*.webp` /
+`public/images/testimonials/*.webp` — so many users' images don't
+mix in one folder. Blog images live in `images/blog/`; everything
+else goes straight under `assets/images/` and is mirrored to
+`public/images/`.
 Details: [IMAGE_STORAGE.md](IMAGE_STORAGE.md).
 
 ## Deployment
@@ -154,6 +181,7 @@ post-deploy smoke checks: [DEPLOYMENT.md](DEPLOYMENT.md).
 | Command | What it does |
 | --- | --- |
 | `pnpm dev` | Theme generator (watch) + search-index generator + Astro dev server |
+| `pnpm images` | Adopt uploads from `public/images/` into `assets/images/`, rewrite their references to `.webp`, and convert originals to `.webp` in `public/images/` (also runs automatically before every build) |
 | `pnpm build` | Theme generator + search-index generator + Astro build + LLM docs generator |
 | `pnpm preview` | Serve `dist/` locally |
 | `pnpm check` | `astro check` — type checking, 0 errors expected |

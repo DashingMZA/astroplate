@@ -57,26 +57,41 @@ test("OG image priority is og_image > image > site default", () => {
     isPageImage: true,
   });
   const fallback = resolveOgImage({});
-  assert.equal(fallback.url, `${SITE}/images/og-image.jpg`);
+  assert.equal(fallback.url, `${SITE}/images/og-image.webp`);
   assert.equal(fallback.isPageImage, false);
 });
 
 test("missing image input falls back to the site default OG image", () => {
-  assert.equal(resolveImage(undefined), `${SITE}/images/og-image.jpg`);
-  assert.equal(resolveImage(null), `${SITE}/images/og-image.jpg`);
-  assert.equal(resolveImage(""), `${SITE}/images/og-image.jpg`);
+  assert.equal(resolveImage(undefined), `${SITE}/images/og-image.webp`);
+  assert.equal(resolveImage(null), `${SITE}/images/og-image.webp`);
+  assert.equal(resolveImage(""), `${SITE}/images/og-image.webp`);
 });
 
-test("the shipped default OG image is the small JPEG, not the old PNG", () => {
-  const jpg = path.join(repoRoot, "public/images/og-image.jpg");
-  const png = path.join(repoRoot, "public/images/og-image.png");
-  assert.ok(fs.existsSync(jpg), "public/images/og-image.jpg must exist");
-  assert.ok(!fs.existsSync(png), "the old 460 KB og-image.png must be gone");
-  const bytes = fs.statSync(jpg).size;
-  assert.ok(bytes < 100_000, `og-image.jpg is ${bytes} B, expected < 100 KB`);
+test("the shipped default OG image is webp (original kept in assets/)", async () => {
+  const sharp = (await import("sharp")).default;
+  const webp = path.join(repoRoot, "public/images/og-image.webp");
+  assert.ok(fs.existsSync(webp), "public/images/og-image.webp must exist");
+  assert.ok(
+    !fs.existsSync(path.join(repoRoot, "public/images/og-image.jpg")),
+    "the public og-image.jpg original must be gone (adopted into assets/)",
+  );
+  assert.ok(
+    fs.existsSync(path.join(repoRoot, "assets/images/og-image.jpg")),
+    "the og-image.jpg original must live in assets/images/",
+  );
+  const meta = await sharp(webp).metadata();
+  assert.equal(meta.format, "webp");
+  assert.ok(
+    fs.statSync(webp).size < 100_000,
+    `og-image.webp is ${fs.statSync(webp).size} B, expected < 100 KB`,
+  );
   // The missing-image placeholder exists too (ImageMod fallback).
   assert.ok(
-    fs.existsSync(path.join(repoRoot, "public/images/image-placeholder.png")),
+    fs.existsSync(path.join(repoRoot, "public/images/image-placeholder.webp")),
+  );
+  assert.ok(
+    !fs.existsSync(path.join(repoRoot, "public/images/image-placeholder.png")),
+    "the public image-placeholder.png original must be gone (adopted)",
   );
 });
 

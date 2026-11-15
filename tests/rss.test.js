@@ -71,16 +71,16 @@ test("mediaMimeType: query/fragment ignored, unknown types return null", () => {
 
 test("mediaTags: og_image wins, absolutized, with type + thumbnail", () => {
   const tags = mediaTags({
-    og_image: "/images/r2-example-og.jpg",
-    image: "/images/r2-example.jpg",
+    og_image: "/images/r2-example-og.webp",
+    image: "/images/r2-example.webp",
   });
   assert.match(
     tags,
-    /media:content url="https:\/\/astroplate\.jadoo\.bond\/images\/r2-example-og\.jpg" medium="image" type="image\/jpeg"/,
+    /media:content url="https:\/\/astroplate\.jadoo\.bond\/images\/r2-example-og\.webp" medium="image" type="image\/webp"/,
   );
   assert.match(
     tags,
-    /media:thumbnail url="https:\/\/astroplate\.jadoo\.bond\/images\/r2-example-og\.jpg"/,
+    /media:thumbnail url="https:\/\/astroplate\.jadoo\.bond\/images\/r2-example-og\.webp"/,
   );
 });
 
@@ -215,7 +215,7 @@ test("sortFeedPosts: newest first, same date by id, undated last, input untouche
 
 test("localImageDimensions: real local file returns real pixels", async () => {
   assert.deepEqual(
-    await localImageDimensions("/images/image-placeholder.png"),
+    await localImageDimensions("/images/image-placeholder.webp"),
     {
       width: 1096,
       height: 480,
@@ -223,7 +223,7 @@ test("localImageDimensions: real local file returns real pixels", async () => {
   );
   assert.deepEqual(
     await localImageDimensions(
-      "https://astroplate.jadoo.bond/images/r2-example-og.jpg",
+      "https://astroplate.jadoo.bond/images/r2-example-og.webp",
     ),
     { width: 2192, height: 1152 },
   );
@@ -245,18 +245,18 @@ test("localImageDimensions: remote, protocol-relative and missing files return n
 
 test("mediaTags: dimensions add width/height to both tags", () => {
   const tags = mediaTags(
-    { image: "/images/image-placeholder.png" },
+    { image: "/images/image-placeholder.webp" },
     { width: 1096, height: 480 },
   );
   assert.match(
     tags,
-    /media:content url="[^"]+" medium="image" type="image\/png" width="1096" height="480"/,
+    /media:content url="[^"]+" medium="image" type="image\/webp" width="1096" height="480"/,
   );
   assert.match(tags, /media:thumbnail url="[^"]+" width="1096" height="480"/);
 });
 
 test("mediaTags: no dimensions means no width/height attributes", () => {
-  const tags = mediaTags({ image: "/images/image-placeholder.png" });
+  const tags = mediaTags({ image: "/images/image-placeholder.webp" });
   assert.doesNotMatch(tags, /width=|height=/);
 });
 
@@ -330,11 +330,11 @@ test("sanitizeFeedHtml: highlighted code is slimmed to plain text", () => {
 
 test("sanitizeFeedHtml: relative image/link URLs become absolute", () => {
   const out = sanitizeFeedHtml(
-    '<p><img src="/images/r2-example.jpg" alt="demo" /><a href="/blog/post-1">post</a></p>',
+    '<p><img src="/images/r2-example.webp" alt="demo" /><a href="/blog/post-1">post</a></p>',
   );
   assert.match(
     out,
-    /src="https:\/\/astroplate\.jadoo\.bond\/images\/r2-example\.jpg"/,
+    /src="https:\/\/astroplate\.jadoo\.bond\/images\/r2-example\.webp"/,
   );
   assert.match(out, /href="https:\/\/astroplate\.jadoo\.bond\/blog\/post-1"/);
 });
