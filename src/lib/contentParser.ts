@@ -15,7 +15,9 @@ type PageData = {
   description?: string;
   image?: string;
   draft?: boolean;
-  date?: string | Date;
+  dateCreated?: string | Date;
+  datePublished?: string | Date;
+  dateModified?: string | Date;
 };
 
 export const getSinglePage = async <C extends CollectionKey>(
@@ -30,7 +32,10 @@ export const getSinglePage = async <C extends CollectionKey>(
       return false;
     }
     if (!buildFuture) {
-      const date = (data as PageData)?.date;
+      // Future-dated content stays unpublished until its publication
+      // date (creation only as a fallback) is reached.
+      const date =
+        (data as PageData)?.datePublished ?? (data as PageData)?.dateCreated;
       if (date) {
         const postDate = new Date(date);
         if (postDate > now) {

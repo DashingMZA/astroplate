@@ -2,12 +2,24 @@
 import ImageMod from "@/components/ImageMod.astro";
 import Base from "@/layouts/Base.astro";
 import { getListPage } from "@/lib/contentParser";
+import { buildWebPageJsonLd } from "@/lib/utils/jsonld";
+import { lastChangeDate, resolveContentDates, toIso } from "@/lib/utils/dates";
+import { canonicalFor } from "@/lib/utils/seo";
 import { markdownify } from "@/lib/utils/textConverter";
 import { render } from "astro:content";
 
 const aboutIndex = await getListPage("about", "-index");
 const { Content } = await render(aboutIndex);
 const { title, description, meta_title, image } = aboutIndex.data;
+const dates = resolveContentDates(aboutIndex.data);
+const pageJsonLd = buildWebPageJsonLd({
+  name: title,
+  url: canonicalFor("/about"),
+  description: description ?? undefined,
+  dateCreated: toIso(dates.dateCreated),
+  datePublished: toIso(dates.datePublished),
+  dateModified: toIso(lastChangeDate(dates)),
+});
 
 const buildDrafts = process.argv.includes("--buildDrafts");
 if (!buildDrafts && aboutIndex.data.draft) {
@@ -20,6 +32,7 @@ if (!buildDrafts && aboutIndex.data.draft) {
   meta_title={meta_title}
   description={description}
   image={image}
+  jsonLd={[pageJsonLd]}
 >
   <section class="section-sm">
     <div class="container">

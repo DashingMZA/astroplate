@@ -2,7 +2,6 @@
 title: "Technical SEO for Astro Websites: Sitemaps, Canonicals and Structured Data"
 meta_title: "Technical SEO for Astro Websites"
 description: "Technical SEO for Astro websites: automatic sitemaps, self-referencing canonical URLs, robots.txt and JSON-LD structured data, with working Astro 7 examples."
-date: 2026-11-12T05:00:00Z
 image: "/images/blog/technical-seo-astro-websites-sitemaps-canonicals-structured-data-feature.webp"
 og_image: "/images/blog/technical-seo-astro-websites-sitemaps-canonicals-structured-data-og.webp"
 og_title: "Technical SEO for Astro Websites"
@@ -11,6 +10,9 @@ categories: ["SEO"]
 author: "Muhammad Zaheer Ahmad"
 tags: ["astro", "seo", "technical-seo"]
 draft: false
+dateCreated: 2026-11-12T05:00:00Z
+datePublished: 2026-11-12T05:00:00Z
+dateModified: 2026-11-12T05:00:00Z
 ---
 
 Astro already does a lot of the hard work for search engines: pages are prerendered to plain HTML at build time, so a crawler gets the full content without running JavaScript. But that head start only pays off if the technical plumbing around the pages is right. This guide covers the three pillars of technical SEO for an Astro site — sitemaps, canonical URLs and structured data — plus robots.txt and meta tags.

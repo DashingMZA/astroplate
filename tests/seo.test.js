@@ -18,24 +18,27 @@ import {
   postUrl,
   publicSlug,
 } from "../src/lib/utils/slug.ts";
-import {
-  buildBlogPostingJsonLd,
-  buildBreadcrumbJsonLd,
-  buildOrganizationJsonLd,
-  buildWebsiteJsonLd,
-} from "../src/lib/utils/jsonld.ts";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "..",
 );
 
-// seo.ts / authors.ts import `@/` aliases and JSON — the loader hooks
-// (./json-hooks.mjs) resolve those for plain Node, as in astro-config.test.js.
+// seo.ts / authors.ts / jsonld.ts import `@/` aliases and JSON — the
+// loader hooks (./json-hooks.mjs) resolve those for plain Node, as in
+// astro-config.test.js. (jsonld.ts is dynamic for the same reason:
+// a static import resolves before register() runs.)
 register("./json-hooks.mjs", import.meta.url);
 const seo = await import("../src/lib/utils/seo.ts");
 const authorsMod = await import("../src/lib/utils/authors.ts");
 const { displayAuthorNames, resolveAuthors, postBelongsToAuthor } = authorsMod;
+const {
+  buildBlogPostingJsonLd,
+  buildBreadcrumbJsonLd,
+  buildOrganizationJsonLd,
+  buildWebPageJsonLd,
+  buildWebsiteJsonLd,
+} = await import("../src/lib/utils/jsonld.ts");
 
 // ─── Slug normalisation ────────────────────────────────────────────────────
 
@@ -226,6 +229,7 @@ test("BlogPosting JSON-LD: url + mainEntityOfPage are the canonical URL, authors
       headline: "My Guide",
       description: "Desc",
       image: "https://astroplate.jadoo.bond/images/x.png",
+      dateCreated: "2022-04-03T05:00:00.000Z",
       datePublished: "2022-04-04T05:00:00.000Z",
       dateModified: "2022-04-05T05:00:00.000Z",
       authors: [
@@ -260,6 +264,10 @@ test("BlogPosting JSON-LD: url + mainEntityOfPage are the canonical URL, authors
     { "@type": "Person", name: "Ghost Writer" },
   ]);
   assert.equal(block.publisher.name, "Astroplate");
+  // All three content dates, never invented: created < published < modified.
+  assert.equal(block.dateCreated, "2022-04-03T05:00:00.000Z");
+  assert.equal(block.datePublished, "2022-04-04T05:00:00.000Z");
+  assert.equal(block.dateModified, "2022-04-05T05:00:00.000Z");
   // Round-trips through JSON with hostile characters intact.
   const tricky = buildBlogPostingJsonLd(
     {
@@ -274,6 +282,30 @@ test("BlogPosting JSON-LD: url + mainEntityOfPage are the canonical URL, authors
     JSON.parse(JSON.stringify(tricky)).headline,
     'Quote "test" </script> & <b>bold</b>',
   );
+});
+
+test("WebPage JSON-LD: static pages carry the three dates, no article fields", () => {
+  const block = buildWebPageJsonLd({
+    name: "Privacy Policy",
+    url: "https://astroplate.jadoo.bond/privacy-policy",
+    description: "How Astroplate handles data.",
+    dateCreated: "2026-11-15T19:04:03.000Z",
+    datePublished: "2026-11-15T19:04:03.000Z",
+    dateModified: "2026-11-15T19:04:03.000Z",
+  });
+  assert.equal(block["@type"], "WebPage");
+  assert.equal(block.name, "Privacy Policy");
+  assert.equal(block.dateCreated, "2026-11-15T19:04:03.000Z");
+  assert.equal(block.datePublished, "2026-11-15T19:04:03.000Z");
+  assert.equal(block.dateModified, "2026-11-15T19:04:03.000Z");
+  // Missing dates are omitted, never null or fabricated.
+  const undated = buildWebPageJsonLd({
+    name: "Draft",
+    url: "https://astroplate.jadoo.bond/draft",
+  });
+  assert.ok(!("dateCreated" in undated));
+  assert.ok(!("datePublished" in undated));
+  assert.ok(!("dateModified" in undated));
 });
 
 test("WebSite JSON-LD has no SearchAction (no search results page exists)", () => {
@@ -383,22 +415,22 @@ test("jsonGenerator: emits public-slug links, drops noindex/future/draft posts",
     writeMd(
       tmp,
       "src/content/blog/with-slug.md",
-      'title: With Slug\ndate: 2022-04-04T05:00:00Z\nslug: "My Guide!"',
+      'title: With Slug\ndatePublished: 2022-04-04T05:00:00Z\nslug: "My Guide!"',
     );
     writeMd(
       tmp,
       "src/content/blog/plain.md",
-      "title: Plain\ndate: 2022-04-04T05:00:00Z",
+      "title: Plain\ndatePublished: 2022-04-04T05:00:00Z",
     );
     writeMd(
       tmp,
       "src/content/blog/hidden.md",
-      "title: Hidden\ndate: 2022-04-04T05:00:00Z\nnoindex: true",
+      "title: Hidden\ndatePublished: 2022-04-04T05:00:00Z\nnoindex: true",
     );
     writeMd(
       tmp,
       "src/content/blog/future.md",
-      "title: Future\ndate: 2999-01-01T00:00:00Z",
+      "title: Future\ndatePublished: 2999-01-01T00:00:00Z",
     );
     writeMd(tmp, "src/content/blog/draft.md", "title: Draft\ndraft: true");
 
@@ -425,12 +457,12 @@ test("jsonGenerator: duplicate public slugs fail the run", () => {
     writeMd(
       tmp,
       "src/content/blog/a.md",
-      'title: A\ndate: 2022-04-04T05:00:00Z\nslug: "same"',
+      'title: A\ndatePublished: 2022-04-04T05:00:00Z\nslug: "same"',
     );
     writeMd(
       tmp,
       "src/content/blog/same.md",
-      "title: Same\ndate: 2022-04-04T05:00:00Z",
+      "title: Same\ndatePublished: 2022-04-04T05:00:00Z",
     );
     const run = spawnSync(
       process.execPath,

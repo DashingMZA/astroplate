@@ -33,6 +33,7 @@ import { Font } from "astro:assets";
 import { ClientRouter } from "astro:transitions";
 import Announcement from "./helpers/Announcement.astro";
 import SearchModal from "./helpers/SearchModal";
+import { toIso } from "@/lib/utils/dates";
 
 // font families - extract font names for Font component (filter out type keys)
 const fontEntries = Object.entries(theme.fonts.font_family).filter(
@@ -132,11 +133,6 @@ const ogImageAlt = isPageImage
   : config.metadata.meta_image_alt;
 const twitterHandles = resolveTwitterHandles();
 
-const toIsoDate = (value?: string | Date) => {
-  if (!value) return undefined;
-  const date = value instanceof Date ? value : new Date(value);
-  return Number.isNaN(date.valueOf()) ? undefined : date.toISOString();
-};
 const articleAuthors = article?.author
   ? Array.isArray(article.author)
     ? article.author
@@ -262,16 +258,16 @@ const jsonLdGraph = {
     <meta property="og:locale" content={config.site.locale ?? "en_US"} />
     {resolvedOgType === "article" && article && (
       <>
-        {toIsoDate(article.publishedTime) && (
+        {toIso(article.publishedTime) && (
           <meta
             property="article:published_time"
-            content={toIsoDate(article.publishedTime)}
+            content={toIso(article.publishedTime)}
           />
         )}
-        {toIsoDate(article.modifiedTime) && (
+        {toIso(article.modifiedTime) && (
           <meta
             property="article:modified_time"
-            content={toIsoDate(article.modifiedTime)}
+            content={toIso(article.modifiedTime)}
           />
         )}
         {articleAuthors.map((author: string) => (

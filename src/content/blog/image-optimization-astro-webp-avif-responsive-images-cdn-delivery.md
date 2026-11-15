@@ -2,7 +2,6 @@
 title: "Image Optimization for Astro: WebP, AVIF, Responsive Images and CDN Delivery"
 meta_title: "Image Optimization for Astro: WebP & AVIF Guide"
 description: "Learn image optimization for Astro: WebP and AVIF formats, responsive srcset images, lazy loading, and CDN delivery that cut page weight and speed up LCP."
-date: 2026-11-11T05:00:00Z
 image: "/images/blog/image-optimization-astro-webp-avif-responsive-images-cdn-delivery-feature.webp"
 og_image: "/images/blog/image-optimization-astro-webp-avif-responsive-images-cdn-delivery-og.webp"
 og_title: "Image Optimization for Astro: WebP, AVIF & CDN"
@@ -11,6 +10,9 @@ categories: ["Performance"]
 author: "Muhammad Zaheer Ahmad"
 tags: ["astro", "images", "performance"]
 draft: false
+dateCreated: 2026-11-11T05:00:00Z
+datePublished: 2026-11-11T05:00:00Z
+dateModified: 2026-11-11T05:00:00Z
 ---
 
 Images are usually the heaviest part of a web page. A single uncompressed hero photograph can outweigh the HTML, CSS, and JavaScript combined. Image optimization for Astro is therefore one of the highest-value performance jobs on an Astro site, and Astro does most of it at build time, before a single visitor arrives.

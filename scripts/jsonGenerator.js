@@ -55,15 +55,17 @@ const getData = (folder, groupDepth) => {
   });
 
   const now = new Date();
-  return getPaths.filter(
-    (page) =>
-      page &&
-      // Same visibility rules as the router (getSinglePage) and RSS:
-      // no drafts, no noindex pages, no future-dated posts.
-      !page.frontmatter?.draft &&
-      !page.frontmatter?.noindex &&
-      (!page.frontmatter?.date || new Date(page.frontmatter.date) <= now),
-  );
+  return getPaths.filter((page) => {
+    // Same visibility rules as the router (getSinglePage) and RSS:
+    // no drafts, no noindex pages, no future-dated posts (publication
+    // date, creation only as a fallback).
+    if (!page || page.frontmatter?.draft || page.frontmatter?.noindex) {
+      return false;
+    }
+    const pub =
+      page.frontmatter?.datePublished ?? page.frontmatter?.dateCreated;
+    return !pub || new Date(pub) <= now;
+  });
 };
 
 try {

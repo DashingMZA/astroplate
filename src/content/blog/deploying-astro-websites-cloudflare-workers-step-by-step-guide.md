@@ -2,7 +2,6 @@
 title: "Deploying Astro Websites to Cloudflare Workers: A Step-by-Step Guide"
 meta_title: "Deploy Astro to Cloudflare Workers: Guide"
 description: "Learn how to deploy Astro websites to Cloudflare Workers step by step: static assets, the Cloudflare adapter, custom domains, headers, secrets and CI/CD."
-date: 2026-11-08T05:00:00Z
 image: "/images/blog/deploying-astro-websites-cloudflare-workers-step-by-step-guide-feature.webp"
 og_image: "/images/blog/deploying-astro-websites-cloudflare-workers-step-by-step-guide-og.webp"
 og_title: "Deploy Astro to Cloudflare Workers"
@@ -11,6 +10,9 @@ categories: ["Deployment"]
 author: "Muhammad Zaheer Ahmad"
 tags: ["astro", "cloudflare", "deployment"]
 draft: false
+dateCreated: 2026-11-08T05:00:00Z
+datePublished: 2026-11-08T05:00:00Z
+dateModified: 2026-11-08T05:00:00Z
 ---
 
 Cloudflare Workers is now the recommended home for Astro sites on Cloudflare. A static Astro build can be served as Workers Static Assets with no server code at all, and the same project can grow into on-demand rendering, API routes and platform bindings without changing hosts. This guide walks through both paths, using the commands and configuration files from the official Astro and Cloudflare documentation as published on 14 November 2026.

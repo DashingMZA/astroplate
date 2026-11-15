@@ -1,9 +1,17 @@
 // NaN-safe date value: undated (or invalid-dated) posts sort last
 // instead of producing NaN comparisons with unstable ordering.
-type DatedEntry = { data: { date?: string | Date | null } };
+// Publication date is the sort key (creation only as a fallback).
+type DatedEntry = {
+  data: {
+    datePublished?: string | Date | null;
+    dateCreated?: string | Date | null;
+  };
+};
 
 const timeOf = (item: DatedEntry): number => {
-  const time = new Date(item.data.date ?? "").valueOf();
+  const time = new Date(
+    item.data.datePublished ?? item.data.dateCreated ?? "",
+  ).valueOf();
   return Number.isNaN(time) ? -Infinity : time;
 };
 

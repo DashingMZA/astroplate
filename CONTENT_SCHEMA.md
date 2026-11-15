@@ -33,9 +33,9 @@ any entry whose id starts with `-`.
 | `og_title` | string | no | — | Social-share title. Priority: `og_title` > `meta_title` > `title` for `og:title` / `twitter:title` |
 | `description` | string | no | site `meta_description` | `<meta name="description">`, OG/Twitter description, RSS item description, JSON-LD description |
 | `excerpt` | string | no | `description`/body | Short summary for cards and search; falls back to description/body at render |
-| `date` | date | no | — | Publication date. Accepts a Date or ISO string (`z.coerce.date()`). Future dates are excluded from the build (see below) |
-| `updated` | date | no | — | Last-updated date; drives `article:modified_time` and JSON-LD `dateModified` |
-| `lastmod` | date | no | — | Sitemap alias for the same value; used only if `updated` is unset |
+| `dateCreated` | date | yes* | — | Creation date, set once, never changes. Accepts a Date or ISO string (`z.coerce.date()`). See [CONTENT_DATES.md](CONTENT_DATES.md) |
+| `datePublished` | date | yes* | — | First publication date, set once, never changes. Drafts have none. Future dates are excluded from the build (see below) |
+| `dateModified` | date | yes* | — | Latest meaningful modification; drives `article:modified_time`, JSON-LD `dateModified`, sitemap `<lastmod>` and the feeds |
 | `image` | string | no | site `meta_image` | Hero image. Local path (`/images/….png`) or absolute URL (see [IMAGE_STORAGE.md](IMAGE_STORAGE.md)) |
 | `og_image` | string | no | `image` | Social-share image. Wins over `image` for OG/Twitter; also used in JSON-LD |
 | `og_description` | string | no | `description` | Social-share description. Priority: `og_description` > `description` > `excerpt` > site default for `og:description` / `twitter:description` |
@@ -54,8 +54,13 @@ Validation notes:
 - `canonical` accepts an absolute `https://…` URL or a site-relative
   path (`"/blog/my-post"`); relative values are resolved against
   `base_url` at render time. Anything else fails validation.
-- `date`, `updated`, and `lastmod` accept ISO strings
-  (`2022-04-04T05:00:00Z`) or YAML dates; both coerce to `Date`.
+- `dateCreated`, `datePublished`, and `dateModified` accept ISO
+  strings (`2022-04-04T05:00:00Z`) or YAML dates; both coerce to
+  `Date`. *They are optional in the Zod schema (listing files share
+  the same schemas and must stay dateless) and required for published
+  content — enforced by `pnpm dates:check`, which runs in `prebuild`
+  and fails the build on missing/invalid/inconsistent dates. See
+  [CONTENT_DATES.md](CONTENT_DATES.md).
 - `categories` and `tags` default to `["others"]` when omitted.
 - `author` defaults to `"Admin"` when omitted. There is no `admin.md`
   author file, so a post that relies on the default links to no author
@@ -93,7 +98,7 @@ mismatched link.
 `src/lib/contentParser.ts` (`getSinglePage`) excludes, by default:
 
 - any entry with `draft: true`;
-- any entry whose `date` is in the future;
+- any entry whose `datePublished` is in the future;
 - any entry whose id starts with `-`.
 
 Escape hatches (build flags, for previewing only — not for production):
@@ -134,8 +139,9 @@ og_title: "Build a Modern App with Next.js + Tailwind"
 og_description: "A hands-on Next.js + Tailwind guide, from setup to a polished interface."
 description: "A practical guide to building a modern web application with Next.js and Tailwind CSS."
 excerpt: "From project setup to a polished, responsive interface."
-date: 2022-04-04T05:00:00Z
-updated: 2022-04-10T05:00:00Z
+dateCreated: 2022-04-04T05:00:00Z
+datePublished: 2022-04-04T05:00:00Z
+dateModified: 2022-04-10T05:00:00Z
 slug: "build-modern-app-nextjs-tailwind"
 image: "/images/image-placeholder.png"
 og_image: "/images/og-image.jpg"
@@ -151,7 +157,7 @@ draft: false
 Post body…
 ```
 
-Notes on this example: `updated` (not `lastmod`) drives the modified
+Notes on this example: `dateModified` drives the modified
 date; `og_image` is what social shares show; `og_title` /
 `og_description` override the plain title/description for social
 shares only; `slug` publishes this post at
@@ -165,7 +171,9 @@ effect (no featured UI exists).
 ---
 title: "A Post by Two Authors"
 description: "Written together."
-date: 2022-04-04T05:00:00Z
+dateCreated: 2022-04-04T05:00:00Z
+datePublished: 2022-04-04T05:00:00Z
+dateModified: 2022-04-04T05:00:00Z
 author: "John Doe"
 authors: ["John Doe", "Sam Wilson"]
 categories: ["Technology"]
@@ -189,7 +197,7 @@ renders as plain text, never as a link to a 404 author page.
 ---
 title: "Work in Progress"
 description: "Not ready yet."
-date: 2022-04-04T05:00:00Z
+dateCreated: 2022-04-04T05:00:00Z
 author: "John Doe"
 draft: true
 ---
@@ -207,7 +215,9 @@ the blog listing. It only appears with `--buildDrafts`.
 title: "Serving Blog Images from R2: A Remote Image Example"
 meta_title: "Serving Blog Images from R2: A Remote Image Example"
 description: "A demo post showing how Astroplate handles blog images hosted remotely on R2, with a separate social share image for Open Graph."
-date: 2022-04-05T05:00:00Z
+dateCreated: 2022-04-05T05:00:00Z
+datePublished: 2022-04-05T05:00:00Z
+dateModified: 2022-04-05T05:00:00Z
 image: "https://media.csofts.tech/images/r2-example.jpg"
 og_image: "https://media.csofts.tech/images/r2-example-og.jpg"
 categories: ["Technology"]
@@ -226,8 +236,8 @@ local copy is needed.
 
 ## Authors (`authors`)
 
-Shared base fields (`title`, `description`, `meta_title`, `date`,
-`image`, `draft`) plus:
+Shared base fields (`title`, `description`, `meta_title`,
+`dateCreated`, `datePublished`, `dateModified`, `image`, `draft`) plus:
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |

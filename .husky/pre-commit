@@ -1,0 +1,9 @@
+# Stamp content dates on staged Markdown/MDX edits, then re-stage
+# the files the script touched (new dateCreated / datePublished /
+# dateModified values belong in the same commit as the edit).
+#
+# The script only touches files whose body changed against HEAD, so a
+# commit with no content edits is a no-op. Note: `git add` stages the
+# whole touched file — if a content file has unstaged hunks you meant
+# to keep out of this commit, unstage them after this hook runs.
+node scripts/manage-content-dates.mjs --stage

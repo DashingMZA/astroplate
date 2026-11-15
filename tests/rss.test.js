@@ -143,44 +143,33 @@ test("dcCreatorTags: names are trimmed and XML-escaped, empty list gives empty s
 
 // ─── Stable lastBuildDate ──────────────────────────────────────────────────
 
-test("latestChangeDate: newest change wins (updated > lastmod > date)", () => {
-  const now = new Date("2026-11-14T00:00:00Z");
+test("latestChangeDate: newest change wins (dateModified > datePublished)", () => {
   assert.equal(
-    latestChangeDate(
-      [
-        { data: { date: new Date("2022-04-04T05:00:00Z") } },
-        {
-          data: {
-            date: new Date("2022-04-05T05:00:00Z"),
-            updated: new Date("2022-04-06T05:00:00Z"),
-          },
+    latestChangeDate([
+      { data: { datePublished: new Date("2022-04-04T05:00:00Z") } },
+      {
+        data: {
+          datePublished: new Date("2022-04-05T05:00:00Z"),
+          dateModified: new Date("2022-04-06T05:00:00Z"),
         },
-        {
-          data: {
-            date: new Date("2022-04-03T05:00:00Z"),
-            lastmod: new Date("2022-04-07T05:00:00Z"),
-          },
+      },
+      {
+        data: {
+          datePublished: new Date("2022-04-03T05:00:00Z"),
+          dateModified: new Date("2022-04-07T05:00:00Z"),
         },
-      ],
-      now,
-    ).toUTCString(),
+      },
+    ]).toUTCString(),
     "Thu, 07 Apr 2022 05:00:00 GMT",
   );
 });
 
-test("latestChangeDate: undated posts fall back to build time", () => {
-  const now = new Date("2026-11-14T00:00:00Z");
+test("latestChangeDate: undated posts yield undefined (never the build time)", () => {
   assert.equal(
-    latestChangeDate(
-      [{ data: {} }, { data: { date: null } }],
-      now,
-    ).toUTCString(),
-    "Sat, 14 Nov 2026 00:00:00 GMT",
+    latestChangeDate([{ data: {} }, { data: { datePublished: null } }]),
+    undefined,
   );
-  assert.equal(
-    latestChangeDate([], now).toUTCString(),
-    "Sat, 14 Nov 2026 00:00:00 GMT",
-  );
+  assert.equal(latestChangeDate([]), undefined);
 });
 
 // ─── Stable sort ─────────────────────────────────────────────────────────
@@ -188,17 +177,17 @@ test("latestChangeDate: undated posts fall back to build time", () => {
 test("sortFeedPosts: newest first, same date by id, undated last, input untouched", () => {
   const a = {
     id: "post-2.md",
-    data: { date: new Date("2022-04-04T05:00:00Z") },
+    data: { datePublished: new Date("2022-04-04T05:00:00Z") },
   };
   const b = {
     id: "post-1.md",
-    data: { date: new Date("2022-04-04T05:00:00Z") },
+    data: { datePublished: new Date("2022-04-04T05:00:00Z") },
   };
   const c = {
     id: "post-r2-example.md",
-    data: { date: new Date("2022-04-05T05:00:00Z") },
+    data: { datePublished: new Date("2022-04-05T05:00:00Z") },
   };
-  const d = { id: "undated.md", data: { date: null } };
+  const d = { id: "undated.md", data: { datePublished: null } };
   const input = [a, b, c, d];
   const sorted = sortFeedPosts(input);
   assert.deepEqual(

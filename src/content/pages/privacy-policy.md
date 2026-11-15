@@ -3,6 +3,9 @@ title: "Privacy Policy"
 meta_title: "Privacy Policy"
 description: "How Astroplate collects, uses, and protects your information, including cookies and advertising."
 draft: false
+dateCreated: 2026-11-15T19:04:03Z
+datePublished: 2026-11-15T19:04:03Z
+dateModified: 2026-11-15T19:04:03Z
 ---
 
 _Last updated: November 14, 2026_

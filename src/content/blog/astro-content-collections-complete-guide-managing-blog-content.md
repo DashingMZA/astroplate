@@ -2,7 +2,6 @@
 title: "Astro Content Collections: A Complete Guide to Managing Blog Content"
 meta_title: "Astro Content Collections: Complete Guide"
 description: "Learn how Astro Content Collections work: define schemas with Zod, load content with glob, query with getCollection, and render blog posts with type safety."
-date: 2026-11-14T05:00:00Z
 image: "/images/blog/astro-content-collections-complete-guide-managing-blog-content-feature.webp"
 og_image: "/images/blog/astro-content-collections-complete-guide-managing-blog-content-og.webp"
 og_title: "Astro Content Collections: Complete Guide"
@@ -11,6 +10,9 @@ categories: ["Astro"]
 author: "Muhammad Zaheer Ahmad"
 tags: ["astro", "content-collections", "blogging"]
 draft: false
+dateCreated: 2026-11-14T05:00:00Z
+datePublished: 2026-11-14T05:00:00Z
+dateModified: 2026-11-14T05:00:00Z
 ---
 
 A blog that lives in a folder of Markdown files is easy to start and easy to break. One post is missing a date, another spells a tag differently, a third forgets its description, and nothing complains until a reader — or a search engine — finds the gap. Astro Content Collections fix that problem at the source: they turn a folder of files into a typed, validated, queryable content API, so a mistake in frontmatter becomes a build error instead of a broken page.

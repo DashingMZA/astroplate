@@ -2,7 +2,6 @@
 title: "How to Improve Core Web Vitals in Astro Websites"
 meta_title: "Core Web Vitals in Astro: Improve LCP, INP, CLS"
 description: "Learn how to improve Core Web Vitals in Astro: fix LCP with priority images, cut INP with lazy hydration, and stop CLS with reserved space and metric fonts."
-date: 2026-11-10T05:00:00Z
 image: "/images/blog/improve-core-web-vitals-astro-websites-feature.webp"
 og_image: "/images/blog/improve-core-web-vitals-astro-websites-og.webp"
 og_title: "Core Web Vitals in Astro: A Practical Guide"
@@ -11,6 +10,9 @@ categories: ["Performance"]
 author: "Muhammad Zaheer Ahmad"
 tags: ["astro", "core-web-vitals", "performance"]
 draft: false
+dateCreated: 2026-11-10T05:00:00Z
+datePublished: 2026-11-10T05:00:00Z
+dateModified: 2026-11-10T05:00:00Z
 ---
 
 Core Web Vitals are the three numbers Google uses to judge how a page feels in real use: how fast its main content appears, how quickly it answers a tap or click, and how still it stays while it loads. Astro gives you a head start, because it ships static HTML with no client-side JavaScript unless you explicitly ask for it — but the images, fonts, islands and third-party scripts you add can still push a fast site over the line.

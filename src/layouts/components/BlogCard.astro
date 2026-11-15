@@ -1,6 +1,7 @@
 ---
 import config from "@/config/config.json";
 import dateFormat from "@/lib/utils/dateFormat";
+import { resolveContentDates, toIso } from "@/lib/utils/dates";
 import { displayAuthorNames, resolveAuthors } from "@/lib/utils/authors";
 import { postUrl } from "@/lib/utils/slug";
 import { humanize, plainify, slugify } from "@/lib/utils/textConverter";
@@ -10,16 +11,9 @@ import ImageMod from "./ImageMod.astro";
 
 const { summary_length }: { summary_length: number } = config.settings;
 const { data } = Astro.props;
-const {
-  title,
-  image,
-  date,
-  author,
-  authors,
-  categories,
-  excerpt,
-  description,
-} = data.data;
+const { title, image, author, authors, categories, excerpt, description } =
+  data.data;
+const dates = resolveContentDates(data.data);
 
 // Card text: excerpt > description > raw-body slice. The old code sliced
 // the raw Markdown body, which could cut mid-syntax and ignored the
@@ -85,7 +79,13 @@ const resolvedAuthors = resolveAuthors(
         </a>
       ))}
     </li>
-    {date && <li class="inline-block">{dateFormat(date)}</li>}
+    {dates.datePublished && (
+      <li class="inline-block">
+        <time datetime={toIso(dates.datePublished)}>
+          {dateFormat(dates.datePublished)}
+        </time>
+      </li>
+    )}
   </ul>
   <p class="mb-6">{cardText}</p>
   <a class="btn btn-outline-primary btn-sm" href={postUrl(data)}>

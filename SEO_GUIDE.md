@@ -38,8 +38,8 @@ URL helpers live in `src/lib/utils/seo.ts`.
 | Tag | Value / rule |
 | --- | --- |
 | `og:type` | `"article"` |
-| `article:published_time` | Post `date` (ISO) |
-| `article:modified_time` | `updated`, else `lastmod`, else `date` (ISO) |
+| `article:published_time` | Post `datePublished` (ISO) |
+| `article:modified_time` | `dateModified`, else `datePublished` (ISO) |
 | `article:author` | One tag per author (`authors` array, else `author`) |
 | `article:section` | First category |
 | `article:tag` | One tag per tag |
@@ -74,6 +74,7 @@ authors resolved via `src/lib/utils/authors.ts`):
       "image": ["<absolute image URL>"],
       "url": "<canonical post URL>",
       "mainEntityOfPage": "<canonical post URL>",
+      "dateCreated": "<ISO date>",
       "datePublished": "<ISO date>",
       "dateModified": "<ISO date>",
       "author": [{ "@type": "Person", "name": "<author>", "url": "<author page URL>" }],
@@ -116,9 +117,11 @@ second; the index uses an underscore):
   posts and posts with an external canonical URL. Duplicate public
   URLs (two posts, same slug) fail the build instead of publishing a
   colliding sitemap.
-- Entries carry `lastmod` from `updated ?? lastmod ?? date` when a
-  date exists — never the build date. Index entries carry the newest
-  genuine `lastmod` inside that file.
+- Entries carry `lastmod` from `dateModified ?? datePublished`
+  (authors: `dateModified ?? dateCreated`) when a date exists —
+  never the build date. Index entries carry the newest genuine
+  `lastmod` inside that file. Category/tag archive entries carry no
+  `lastmod` (taxonomy pages have no content dates of their own).
 - Image embedding (Yoast / Rank Math style): each post URL in
   `post-sitemap.xml` carries `<image:image>` blocks (`<image:loc>`
   only, no title) for its featured image, OG image and the images
@@ -220,14 +223,16 @@ Per-feed notes:
 
 - RSS channel: Atom self-link (`<atom:link rel="self">`), feed
   `<language>` from `site.locale`, `<lastBuildDate>` from the newest
-  post's change (stable across rebuilds), `<ttl>60</ttl>`,
+  post's change (stable across rebuilds; omitted when no post carries
+  a date — never the build time), `<ttl>60</ttl>`,
   `<generator>Astro</generator>`, and an `<image>` with the site logo
   (no width/height — the logo is 150px wide and the RSS spec caps the
   width element at 144).
 - Atom feed: `xml:lang` from `site.locale` (BCP 47, e.g. `en-US`),
   `<updated>` from the newest post's change, per-entry `<updated>`
-  from the post's own change (feed date as fallback — `<updated>` is
-  required), `<icon>` (favicon) and `<logo>` (site logo).
+  from the post's own change (`dateModified ?? datePublished`, feed
+  date as fallback — `<updated>` is required), `<icon>` (favicon)
+  and `<logo>` (site logo).
 - JSON Feed: `language` in BCP 47 form, `icon` (logo) and `favicon`,
   `date_modified` per item when the post carries a change date. JSON
   Feed 1.1 has no top-level `description` field, so none is emitted.
@@ -244,8 +249,9 @@ og_title: "Build a Modern App with Next.js + Tailwind"
 description: "A practical guide to building a modern web application with Next.js and Tailwind CSS."
 image: "/images/image-placeholder.png"
 og_image: "/images/og-image.jpg"
-date: 2022-04-04T05:00:00Z
-updated: 2022-04-10T05:00:00Z
+dateCreated: 2022-04-04T05:00:00Z
+datePublished: 2022-04-04T05:00:00Z
+dateModified: 2022-04-10T05:00:00Z
 author: "John Doe"
 authors: ["John Doe", "Sam Wilson"]
 categories: ["Application", "Data"]
@@ -284,9 +290,14 @@ Rules:
   the site — `noindex` only asks search engines not to index it.
   `noindex` exists on blog posts and on the page-like collections
   (`pages`, `about`, `contact`).
-- **`updated` / `lastmod`** set the modified date for
-  `article:modified_time` and JSON-LD `dateModified`. `updated`
-  wins when both are set.
+- **`dateCreated` / `datePublished` / `dateModified`** are the only
+  date fields (see [CONTENT_DATES.md](CONTENT_DATES.md)). `dateCreated`
+  is set once and never changes; `datePublished` is set on first
+  publication (drafts have none); `dateModified` is updated on
+  meaningful edits and feeds `article:modified_time`, JSON-LD
+  `dateModified`, sitemap `<lastmod>` and the feeds. All three are
+  ISO 8601 UTC (`…Z`); display dates render in UTC so local and
+  Vercel builds agree.
 
 Site-wide fallbacks live in `config.json` → `metadata`
 (`meta_author`, `meta_image`, `meta_image_alt`,
@@ -299,7 +310,7 @@ A post is excluded from the build, the blog listing, the sitemap,
 and the RSS feed when any of these hold:
 
 - `draft: true` in frontmatter;
-- `date` is in the future at build time;
+- `datePublished` is in the future at build time;
 - the filename starts with `-`.
 
 Preview them only with build flags (never for production):

@@ -133,7 +133,8 @@ function getBlogPostDates() {
               .replace(/^blog\//, "")
               .toLowerCase()
           : stem;
-      const parsed = data.date ? new Date(data.date) : null;
+      const pubDate = data.datePublished ?? data.dateCreated;
+      const parsed = pubDate ? new Date(pubDate) : null;
       dates.set(
         `/blog/${slug}`,
         parsed && !Number.isNaN(parsed.getTime()) ? parsed : null,

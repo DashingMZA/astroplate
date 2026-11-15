@@ -6,8 +6,14 @@ const commonFields = {
   title: z.string(),
   description: z.string(),
   meta_title: z.string().optional(),
-  // z.coerce.date() handles both Date objects and ISO string dates from frontmatter (Zod 4)
-  date: z.coerce.date().optional(),
+  // Content dates (z.coerce.date() handles both Date objects and ISO
+  // string dates from frontmatter, Zod 4). All three are optional at
+  // the schema level — `pnpm dates:check` (prebuild) enforces them for
+  // published content, because -index listing files share these schemas
+  // and must stay dateless.
+  dateCreated: z.coerce.date().optional(),
+  datePublished: z.coerce.date().optional(),
+  dateModified: z.coerce.date().optional(),
   image: z.string().optional(),
   draft: z.boolean(),
 };
@@ -47,10 +53,9 @@ const blogCollection = defineCollection({
     excerpt: z.string().optional(),
     // Custom URL slug (overrides the filename-derived id; see src/lib/utils/slug.ts).
     slug: z.string().optional(),
-    date: z.coerce.date().optional(),
-    // Last-updated date; `lastmod` is the sitemap alias for the same value.
-    updated: z.coerce.date().optional(),
-    lastmod: z.coerce.date().optional(),
+    dateCreated: z.coerce.date().optional(),
+    datePublished: z.coerce.date().optional(),
+    dateModified: z.coerce.date().optional(),
     image: z.string().optional(),
     // Social-share image; falls back to `image` when unset.
     og_image: z.string().optional(),

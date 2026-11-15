@@ -11,8 +11,9 @@
 //     a real generated route;
 //   - duplicate public URLs fail the build (same as `checkDuplicateSlugs`
 //     in the routes and the old `seoManifest`);
-//   - lastmod is `updated ?? lastmod ?? date`, a genuine content date
-//     only — never the build date.
+//   - lastmod is `dateModified ?? datePublished` (authors: `dateModified
+//     ?? dateCreated`, since author profiles have no publication date) —
+//     a genuine content date only, never the build date.
 //   - post entries carry their images (`image`, `og_image`, body refs)
 //     and page entries carry their page image (homepage banner, about
 //     banner, …) as `<image:image>` blocks — `<image:loc>` only, no
@@ -44,6 +45,12 @@ import type {
 import { SITEMAP_TYPE_KEYS } from "@/lib/seo/sitemap/types";
 import { getTaxonomy } from "@/lib/taxonomyParser";
 import {
+  authorLastmod,
+  contentLastmod,
+  publicationDate,
+  resolveContentDates,
+} from "@/lib/utils/dates";
+import {
   absoluteUrl,
   canonicalFor,
   isAbsoluteUrl,
@@ -65,9 +72,9 @@ export interface SitemapContentEntry {
     slug?: string | null;
     draft?: boolean | null;
     noindex?: boolean | null;
-    date?: Date | string | null;
-    updated?: Date | string | null;
-    lastmod?: Date | string | null;
+    dateCreated?: Date | string | null;
+    datePublished?: Date | string | null;
+    dateModified?: Date | string | null;
     canonical?: string | null;
     title?: string | null;
     image?: string | null;
@@ -76,22 +83,12 @@ export interface SitemapContentEntry {
 }
 
 /**
- * Last change of a content entry: `updated` else `lastmod` else `date`.
+ * Last change of a content entry: `dateModified` else `datePublished`.
  * Returns undefined when no valid date exists — the caller omits
- * `<lastmod>` rather than inventing one.
+ * `<lastmod>` rather than inventing one. (Re-exported from the
+ * centralized date utility so tests import it from here as before.)
  */
-export function contentLastmod(data: {
-  updated?: Date | string | null;
-  lastmod?: Date | string | null;
-  date?: Date | string | null;
-}): Date | undefined {
-  const value = data.updated ?? data.lastmod ?? data.date;
-  if (!value) {
-    return undefined;
-  }
-  const date = value instanceof Date ? value : new Date(value);
-  return Number.isNaN(date.valueOf()) ? undefined : date;
-}
+export { contentLastmod, authorLastmod };
 
 /**
  * True when an entry belongs in the sitemap at all: not a draft, not
@@ -112,8 +109,10 @@ export function isSitemapVisible(
   if (entry.data.noindex) {
     return false;
   }
-  const date = entry.data.date;
-  if (date && new Date(date) > now) {
+  // Future-dated content stays out until its publication date
+  // (creation only as a fallback) is reached.
+  const date = publicationDate(resolveContentDates(entry.data));
+  if (date && date > now) {
     return false;
   }
   return true;
@@ -143,8 +142,13 @@ export function isExternalCanonical(
 function entryLastmod(
   entry: SitemapContentEntry,
   settings: SitemapSettings,
+  resolver: (data: {
+    dateCreated?: Date | string | null;
+    datePublished?: Date | string | null;
+    dateModified?: Date | string | null;
+  }) => Date | undefined = contentLastmod,
 ): Date | undefined {
-  return settings.lastmod ? contentLastmod(entry.data) : undefined;
+  return settings.lastmod ? resolver(entry.data) : undefined;
 }
 
 /** Image file extensions accepted for body image references. */
@@ -359,7 +363,9 @@ export function authorsToEntries(
     )
     .map((author) => {
       const entry: SitemapEntry = { loc: canonicalFor(authorUrl(author)) };
-      const lastmod = entryLastmod(author, settings);
+      // Author profiles have no publication date: lastmod is
+      // `dateModified ?? dateCreated`.
+      const lastmod = entryLastmod(author, settings, authorLastmod);
       if (lastmod) {
         entry.lastmod = lastmod;
       }
@@ -471,9 +477,9 @@ export function pagesToEntries(
   const add = (
     path: string,
     data?: {
-      date?: Date | string | null;
-      updated?: Date | string | null;
-      lastmod?: Date | string | null;
+      dateCreated?: Date | string | null;
+      datePublished?: Date | string | null;
+      dateModified?: Date | string | null;
     },
     imagePaths?: (string | null | undefined)[],
   ) => {
@@ -523,12 +529,13 @@ export function pagesToEntries(
   }
 
   // Single-page collections, gated like their routes.
-  const single = (index: SitemapContentEntry | null | undefined) =>
-    index &&
-    !index.data.draft &&
-    !index.data.noindex &&
-    !isExternalCanonical(index.data.canonical) &&
-    (!index.data.date || new Date(index.data.date) <= now);
+  const single = (index: SitemapContentEntry | null | undefined) => {
+    if (!index) return false;
+    if (index.data.draft || index.data.noindex) return false;
+    if (isExternalCanonical(index.data.canonical)) return false;
+    const pub = publicationDate(resolveContentDates(index.data));
+    return !pub || pub <= now;
+  };
   if (single(input.aboutIndex)) {
     add("/about", input.aboutIndex!.data, [input.aboutIndex!.data.image]);
   }

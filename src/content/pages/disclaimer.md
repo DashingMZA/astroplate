@@ -3,6 +3,9 @@ title: "Disclaimer"
 meta_title: "Disclaimer"
 description: "General information only: Astroplate's content is provided as-is, with no professional advice and no guarantee of accuracy."
 draft: false
+dateCreated: 2026-11-14T22:14:06Z
+datePublished: 2026-11-14T22:14:06Z
+dateModified: 2026-11-14T22:14:06Z
 ---
 
 _Last updated: November 14, 2026_

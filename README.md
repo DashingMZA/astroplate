@@ -122,6 +122,12 @@ Field reference, validation rules, and examples (minimal post, full post,
 multi-author post, draft, remote/R2-image post):
 [CONTENT_SCHEMA.md](CONTENT_SCHEMA.md).
 
+Content dates are three frontmatter fields — `dateCreated`,
+`datePublished`, `dateModified` (ISO 8601 UTC, `…Z`) — stamped
+automatically by a pre-commit hook and a GitHub Action, and validated
+before every build (`pnpm dates:check` in `prebuild`). Architecture,
+automation, and the migration report: [CONTENT_DATES.md](CONTENT_DATES.md).
+
 ## SEO
 
 What each page type emits (canonical, Open Graph, Twitter, JSON-LD,

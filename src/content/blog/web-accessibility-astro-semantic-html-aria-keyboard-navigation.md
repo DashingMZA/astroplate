@@ -2,7 +2,6 @@
 title: "Web Accessibility in Astro: Semantic HTML, ARIA and Keyboard Navigation"
 meta_title: "Web Accessibility in Astro: Semantic HTML & ARIA"
 description: "Learn web accessibility in Astro: semantic HTML, ARIA rules, keyboard navigation, focus management, contrast and testing — a practical WCAG 2.2 AA guide."
-date: 2026-11-06T05:00:00Z
 image: "/images/blog/web-accessibility-astro-semantic-html-aria-keyboard-navigation-feature.webp"
 og_image: "/images/blog/web-accessibility-astro-semantic-html-aria-keyboard-navigation-og.webp"
 og_title: "Web Accessibility in Astro: Semantic HTML & ARIA"
@@ -11,6 +10,9 @@ categories: ["Accessibility"]
 author: "Muhammad Zaheer Ahmad"
 tags: ["astro", "accessibility", "a11y"]
 draft: false
+dateCreated: 2026-11-06T05:00:00Z
+datePublished: 2026-11-06T05:00:00Z
+dateModified: 2026-11-06T05:00:00Z
 ---
 
 Accessibility is not a feature you bolt on at the end of a project. It is the way a page is built: the elements you choose, the order they appear in, and whether every action works without a mouse. Astro makes the good path easier than most frameworks, because most of your page ships as plain HTML. This guide shows how to use that advantage — semantic HTML first, ARIA only where HTML falls short, and keyboard navigation as a first-class requirement — measured against WCAG 2.2 Level AA.

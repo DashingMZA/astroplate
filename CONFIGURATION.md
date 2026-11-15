@@ -196,7 +196,7 @@ URL rules.
 | --- | --- | --- | --- |
 | `enable` | boolean | `true` | Master switch: `false` generates no sitemap files at all |
 | `index_filename` | string | `"sitemap_index.xml"` | Filename of the sitemap index (also the `Sitemap:` line in `robots.txt`) |
-| `lastmod` | boolean | `true` | Emit `<lastmod>` from `updated ?? lastmod ?? date` when a date exists; `false` omits it everywhere |
+| `lastmod` | boolean | `true` | Emit `<lastmod>` from `dateModified ?? datePublished` (authors: `dateModified ?? dateCreated`) when a date exists; `false` omits it everywhere |
 | `exclude` | string[] | `["/404"]` | Exact pathnames to exclude |
 | `exclude_segments` | string[] | `["draft", "drafts", "preview", "private"]` | Any URL whose path segments include one of these is excluded |
 | `max_urls_per_sitemap` | number | `1000` | Maximum URLs per sitemap file (protocol cap 50,000). Smaller values split a type into numbered chunks (`post-sitemap1.xml`, `post-sitemap2.xml`, … — numbered from 1, no hyphen, and the bare file is not generated when chunked). Examples: `100`, `200`, `500`, `1000` |

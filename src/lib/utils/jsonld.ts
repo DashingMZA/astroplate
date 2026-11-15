@@ -6,6 +6,8 @@
 // page-specific blocks into ONE `@graph` script tag per page, so there is
 // exactly one JSON-LD block per page and no duplicate Article/BlogPosting.
 
+import { toIso } from "@/lib/utils/dates";
+
 export interface JsonLdPersonInput {
   name: string;
   /** Absolute URL of the author page, when the author resolved to a file. */
@@ -17,6 +19,7 @@ export interface BlogPostingInput {
   description?: string | null;
   /** Absolute image URL(s); omitted when the post has no image. */
   image?: string | string[] | null;
+  dateCreated?: string | null;
   datePublished?: string | null;
   dateModified?: string | null;
   authors: JsonLdPersonInput[];
@@ -32,12 +35,6 @@ export interface PublisherInput {
   logo?: string | null;
   url?: string | null;
 }
-
-const toIso = (value?: string | Date | null): string | undefined => {
-  if (!value) return undefined;
-  const date = value instanceof Date ? value : new Date(value);
-  return Number.isNaN(date.valueOf()) ? undefined : date.toISOString();
-};
 
 function personObject(author: JsonLdPersonInput): Record<string, unknown> {
   return {
@@ -86,6 +83,9 @@ export function buildBlogPostingJsonLd(
     headline: input.headline,
     ...(input.description ? { description: input.description } : {}),
     ...(images.length > 0 ? { image: images } : {}),
+    ...(toIso(input.dateCreated)
+      ? { dateCreated: toIso(input.dateCreated) }
+      : {}),
     ...(toIso(input.datePublished)
       ? { datePublished: toIso(input.datePublished) }
       : {}),
@@ -150,6 +150,32 @@ export function buildPersonJsonLd(input: {
     url: input.url,
     ...(input.image ? { image: input.image } : {}),
     ...(input.description ? { description: input.description } : {}),
+  };
+}
+
+/** WebPage block for published static pages (regular/about/contact). Article properties never belong here. */
+export function buildWebPageJsonLd(input: {
+  name: string;
+  url: string;
+  description?: string | null;
+  dateCreated?: string | null;
+  datePublished?: string | null;
+  dateModified?: string | null;
+}): Record<string, unknown> {
+  return {
+    "@type": "WebPage",
+    name: input.name,
+    url: input.url,
+    ...(input.description ? { description: input.description } : {}),
+    ...(toIso(input.dateCreated)
+      ? { dateCreated: toIso(input.dateCreated) }
+      : {}),
+    ...(toIso(input.datePublished)
+      ? { datePublished: toIso(input.datePublished) }
+      : {}),
+    ...(toIso(input.dateModified)
+      ? { dateModified: toIso(input.dateModified) }
+      : {}),
   };
 }
 

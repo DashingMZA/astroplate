@@ -8,6 +8,7 @@ import {
   buildBlogPostingJsonLd,
   buildBreadcrumbJsonLd,
 } from "@/lib/utils/jsonld";
+import { lastChangeDate, resolveContentDates, toIso } from "@/lib/utils/dates";
 import { absoluteUrl, buildCanonical, canonicalFor } from "@/lib/utils/seo";
 import { checkDuplicateSlugs, postSlug, postUrl } from "@/lib/utils/slug";
 import { getCollection } from "astro:content";
@@ -39,9 +40,9 @@ const {
   description,
   image,
   og_image,
-  date,
-  updated,
-  lastmod,
+  dateCreated,
+  datePublished,
+  dateModified,
   author,
   authors,
   categories,
@@ -61,7 +62,8 @@ const resolvedAuthors = resolveAuthors(
 
 // Social-share image: per-post og_image wins, else the hero image.
 const seoImage = og_image ?? image;
-const modifiedDate = updated ?? lastmod ?? date;
+const dates = resolveContentDates({ dateCreated, datePublished, dateModified });
+const modifiedDate = lastChangeDate(dates);
 
 // Canonical URL of this post: explicit frontmatter canonical wins,
 // otherwise the custom-slug public URL.
@@ -74,10 +76,9 @@ const articleJsonLd = buildBlogPostingJsonLd(
     headline: title,
     description: description ?? excerpt ?? undefined,
     image: seoImage ? absoluteUrl(seoImage) : undefined,
-    datePublished: date ? new Date(date).toISOString() : undefined,
-    dateModified: modifiedDate
-      ? new Date(modifiedDate).toISOString()
-      : undefined,
+    dateCreated: toIso(dates.dateCreated),
+    datePublished: toIso(dates.datePublished),
+    dateModified: toIso(modifiedDate),
     authors: resolvedAuthors.map((a) => ({
       name: a.name,
       url: a.url ? absoluteUrl(a.url) : null,
@@ -112,7 +113,7 @@ const breadcrumbJsonLd = buildBreadcrumbJsonLd([
   image_alt={title}
   ogType="article"
   article={{
-    publishedTime: date,
+    publishedTime: dates.datePublished,
     modifiedTime: modifiedDate,
     author: resolvedAuthors.map((a) => a.name),
     section: categories[0],

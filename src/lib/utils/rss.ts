@@ -9,6 +9,11 @@ import sanitizeHtml from "sanitize-html";
 import sharp from "sharp";
 import config from "@/config/config.json";
 import { absoluteUrl, resolveOgImage } from "@/lib/utils/seo";
+import {
+  lastChangeDate,
+  publicationDate,
+  resolveContentDates,
+} from "@/lib/utils/dates";
 
 /** Escape a value interpolated into raw `customData` XML. */
 export function escapeXml(value: string): string {
@@ -113,45 +118,54 @@ export function dcCreatorTags(names: string[]): string {
 }
 
 /**
- * Newest change across posts (`updated` else `lastmod` else `date`) as
+ * Newest change across posts (`dateModified` else `datePublished`) as
  * a Date, so rebuilds do not make readers think the feed changed.
- * Falls back to build time when no post carries a date.
+ * Returns undefined when no post carries a date — the caller omits
+ * `lastBuildDate` / `<updated>` instead of substituting the build
+ * time. (Previously this fell back to build time; that leaked a
+ * fabricated timestamp into every feed on dateless content.)
  */
 export function latestChangeDate(
   posts: {
     data: {
-      date?: Date | string | null;
-      updated?: Date | string | null;
-      lastmod?: Date | string | null;
+      dateCreated?: Date | string | null;
+      datePublished?: Date | string | null;
+      dateModified?: Date | string | null;
     };
   }[],
-  now: Date,
-): Date {
+): Date | undefined {
   let latest = 0;
   for (const post of posts) {
-    const changed = post.data.updated ?? post.data.lastmod ?? post.data.date;
+    const changed = lastChangeDate(resolveContentDates(post.data));
     if (!changed) {
       continue;
     }
-    const time = new Date(changed).valueOf();
+    const time = changed.valueOf();
     if (time > latest) {
       latest = time;
     }
   }
-  return new Date(latest || now.valueOf());
+  return latest > 0 ? new Date(latest) : undefined;
 }
 
 /**
  * Feed order: newest first, undated posts last, and posts sharing a
  * date ordered by id so the order is stable across builds (four demo
- * posts share one timestamp).
+ * posts share one timestamp). Publication date is the sort key
+ * (creation only as a fallback).
  */
 export function sortFeedPosts<
-  T extends { id: string; data: { date?: Date | string | null } },
+  T extends {
+    id: string;
+    data: {
+      dateCreated?: Date | string | null;
+      datePublished?: Date | string | null;
+    };
+  },
 >(posts: T[]): T[] {
   return [...posts].sort((a, b) => {
-    const aTime = a.data.date ? new Date(a.data.date).valueOf() : 0;
-    const bTime = b.data.date ? new Date(b.data.date).valueOf() : 0;
+    const aTime = publicationDate(resolveContentDates(a.data))?.valueOf() ?? 0;
+    const bTime = publicationDate(resolveContentDates(b.data))?.valueOf() ?? 0;
     return bTime - aTime || a.id.localeCompare(b.id);
   });
 }

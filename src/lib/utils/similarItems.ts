@@ -3,7 +3,8 @@ type SimilarEntry = {
   data: {
     categories?: string[];
     tags?: string[];
-    date?: string | Date | null;
+    datePublished?: string | Date | null;
+    dateCreated?: string | Date | null;
   };
 };
 
@@ -25,9 +26,12 @@ const similarItems = (
     tags = currentItem.data.tags ?? [];
   }
 
-  // NaN-safe date: undated posts sort last.
+  // NaN-safe date: undated posts sort last. Publication date is the
+  // recency key (creation only as a fallback).
   const timeOf = (item: SimilarEntry): number => {
-    const time = new Date(item.data.date ?? "").valueOf();
+    const time = new Date(
+      item.data.datePublished ?? item.data.dateCreated ?? "",
+    ).valueOf();
     return Number.isNaN(time) ? -Infinity : time;
   };
 

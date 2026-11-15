@@ -69,9 +69,13 @@ export const GET: APIRoute = async (context) => {
 
     // Channel-level RSS metadata. The Atom self-link makes feed discovery
     // and validation unambiguous; ttl gives feed readers a refresh hint.
+    // `lastBuildDate` is omitted when no entry carries a date — it is
+    // never the build time.
     customData: [
       `<language>${toRssLanguage(config.site.locale, config.site.language)}</language>`,
-      `<lastBuildDate>${updated.toUTCString()}</lastBuildDate>`,
+      ...(updated
+        ? [`<lastBuildDate>${updated.toUTCString()}</lastBuildDate>`]
+        : []),
       `<generator>Astro</generator>`,
       `<docs>https://www.rssboard.org/rss-specification</docs>`,
       `<ttl>${FEED_TTL_MINUTES}</ttl>`,

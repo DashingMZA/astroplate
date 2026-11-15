@@ -2,7 +2,6 @@
 title: "Astro Islands Architecture Explained: How Partial Hydration Works"
 meta_title: "Astro Islands Architecture: Partial Hydration Explained"
 description: "Learn how Astro islands architecture works: partial hydration, client directives, server islands, and shipping zero JavaScript by default on content sites."
-date: 2026-11-13T05:00:00Z
 image: "/images/blog/astro-islands-architecture-explained-partial-hydration-works-feature.webp"
 og_image: "/images/blog/astro-islands-architecture-explained-partial-hydration-works-og.webp"
 og_title: "Astro Islands Architecture Explained"
@@ -11,6 +10,9 @@ categories: ["Astro", "Performance"]
 author: "Muhammad Zaheer Ahmad"
 tags: ["astro", "islands", "performance"]
 draft: false
+dateCreated: 2026-11-13T05:00:00Z
+datePublished: 2026-11-13T05:00:00Z
+dateModified: 2026-11-13T05:00:00Z
 ---
 
 Most websites are mostly reading material: headings, paragraphs, images, and links that never need JavaScript to do their job. Yet many frameworks ship a JavaScript application for the whole page anyway, then re-run it in the browser just to make a search box or a carousel work. Astro islands architecture flips that default. The page is rendered to static HTML, and only the small interactive regions — the islands — get JavaScript, each on its own schedule.

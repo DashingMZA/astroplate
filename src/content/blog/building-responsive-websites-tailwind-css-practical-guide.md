@@ -2,7 +2,6 @@
 title: "Building Responsive Websites with Tailwind CSS: A Practical Guide"
 meta_title: "Responsive Websites with Tailwind CSS Guide"
 description: "Learn to build responsive websites with Tailwind CSS: mobile-first breakpoints, fluid grids and type, container queries, and an Astro setup for every screen."
-date: 2026-11-09T05:00:00Z
 image: "/images/blog/building-responsive-websites-tailwind-css-practical-guide-feature.webp"
 og_image: "/images/blog/building-responsive-websites-tailwind-css-practical-guide-og.webp"
 og_title: "Responsive Websites with Tailwind CSS"
@@ -11,6 +10,9 @@ categories: ["CSS"]
 author: "Muhammad Zaheer Ahmad"
 tags: ["tailwind", "responsive-design", "css"]
 draft: false
+dateCreated: 2026-11-09T05:00:00Z
+datePublished: 2026-11-09T05:00:00Z
+dateModified: 2026-11-09T05:00:00Z
 ---
 
 A responsive website stays usable and readable at every width, from a 360-pixel phone to a widescreen monitor, without a separate mobile version. Tailwind CSS fits that job because responsiveness is built into its utility classes: describe the small-screen layout first, then add prefixed utilities that change it as the screen grows. This guide walks through that workflow — breakpoints, grids, fluid type, images, container queries and testing — using Tailwind CSS v4 with Astro, the stack this site itself is built on.

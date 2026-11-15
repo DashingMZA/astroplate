@@ -19,6 +19,8 @@ social:
   - name: facebook
     icon: FaFacebook
     link: https://www.facebook.com/dashing.mza
+dateCreated: 2026-11-14T21:23:35Z
+dateModified: 2026-11-14T21:23:35Z
 ---
 
 Muhammad Zaheer Ahmad maintains Astroplate, an Astro theme for fast, SEO-friendly publishing.

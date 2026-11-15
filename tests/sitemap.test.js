@@ -33,6 +33,7 @@ const {
 const { buildSitemapFiles, chunkFilename, chunkEntries } = sitemapEngine;
 const {
   contentLastmod,
+  authorLastmod,
   isSitemapVisible,
   isExternalCanonical,
   stripFencedCodeBlocks,
@@ -70,7 +71,9 @@ const post = (id, data = {}, body = undefined) => ({
   body,
   data: {
     title: "My Post",
-    date: new Date("2026-11-14T05:00:00Z"),
+    dateCreated: new Date("2026-11-14T05:00:00Z"),
+    datePublished: new Date("2026-11-14T05:00:00Z"),
+    dateModified: new Date("2026-11-14T05:00:00Z"),
     image: "/images/blog/my-post-feature.webp",
     og_image: "/images/blog/my-post-og.webp",
     ...data,
@@ -574,22 +577,30 @@ test("engine: default max_urls_per_sitemap is 1000 and the configured value is r
 
 // ─── Collector transforms ──────────────────────────────────────────────────
 
-test("lastmod priority: updated > lastmod > date; invalid/missing yields undefined", () => {
+test("lastmod priority: dateModified > datePublished; authors: dateModified > dateCreated; invalid/missing yields undefined", () => {
   const d1 = new Date("2026-11-14T05:00:00.000Z");
   const d2 = new Date("2026-11-13T05:00:00.000Z");
   const d3 = new Date("2026-11-12T05:00:00.000Z");
   assert.deepEqual(
-    contentLastmod({ updated: d1, lastmod: d2, date: d3 }),
+    contentLastmod({ dateCreated: d3, datePublished: d2, dateModified: d1 }),
     d1,
   );
-  assert.deepEqual(contentLastmod({ lastmod: d2, date: d3 }), d2);
-  assert.deepEqual(contentLastmod({ date: d3 }), d3);
-  assert.equal(contentLastmod({}), undefined);
-  assert.equal(contentLastmod({ date: "not-a-date" }), undefined);
   assert.deepEqual(
-    contentLastmod({ date: "2026-11-14T05:00:00Z" }),
+    contentLastmod({ dateCreated: d3, datePublished: d2 }),
+    d2,
+  );
+  assert.deepEqual(contentLastmod({ datePublished: d3 }), d3);
+  assert.equal(contentLastmod({}), undefined);
+  assert.equal(contentLastmod({ datePublished: "not-a-date" }), undefined);
+  assert.deepEqual(
+    contentLastmod({ datePublished: "2026-11-14T05:00:00Z" }),
     new Date("2026-11-14T05:00:00.000Z"),
   );
+  // Authors have no publication date: creation is the fallback.
+  assert.deepEqual(authorLastmod({ dateCreated: d3, dateModified: d1 }), d1);
+  assert.deepEqual(authorLastmod({ dateCreated: d3 }), d3);
+  assert.equal(authorLastmod({}), undefined);
+  assert.equal(authorLastmod({ dateCreated: "not-a-date" }), undefined);
 });
 
 test("isSitemapVisible: draft, noindex, future and -index are out", () => {
@@ -597,7 +608,7 @@ test("isSitemapVisible: draft, noindex, future and -index are out", () => {
   assert.equal(isSitemapVisible(post("a", { draft: true }), NOW), false);
   assert.equal(isSitemapVisible(post("a", { noindex: true }), NOW), false);
   assert.equal(
-    isSitemapVisible(post("a", { date: new Date("2999-01-01") }), NOW),
+    isSitemapVisible(post("a", { datePublished: new Date("2999-01-01") }), NOW),
     false,
   );
   assert.equal(
@@ -621,7 +632,7 @@ test("postsToEntries: absolute canonical URLs, custom slugs, exclusions", () => 
       post("b", { slug: "My Guide!" }),
       post("c", { draft: true }),
       post("d", { noindex: true }),
-      post("e", { date: new Date("2999-01-01") }),
+      post("e", { datePublished: new Date("2999-01-01") }),
       post("f", { canonical: "https://example.com/x" }),
       post("g", { canonical: "/blog/elsewhere" }),
     ],
@@ -672,6 +683,34 @@ test("authorsToEntries: id-based URLs, noindex dropped", () => {
     entries.map((e) => e.loc),
     [`${BASE}/authors/jane-doe`],
   );
+});
+
+test("authorsToEntries: lastmod is dateModified, else dateCreated (no datePublished for authors)", () => {
+  const entries = authorsToEntries(
+    [
+      {
+        id: "edited",
+        data: {
+          title: "Edited",
+          dateCreated: new Date("2026-11-14T21:23:35Z"),
+          dateModified: new Date("2026-11-15T09:00:00Z"),
+        },
+      },
+      {
+        id: "plain",
+        data: {
+          title: "Plain",
+          dateCreated: new Date("2026-11-14T21:23:35Z"),
+        },
+      },
+      { id: "undated", data: { title: "Undated" } },
+    ],
+    liveSettings(),
+    NOW,
+  );
+  assert.deepEqual(entries[0].lastmod, new Date("2026-11-15T09:00:00.000Z"));
+  assert.deepEqual(entries[1].lastmod, new Date("2026-11-14T21:23:35.000Z"));
+  assert.equal(entries[2].lastmod, undefined);
 });
 
 test("categoriesToEntries/tagsToEntries: archive URLs from taxonomy slugs", () => {

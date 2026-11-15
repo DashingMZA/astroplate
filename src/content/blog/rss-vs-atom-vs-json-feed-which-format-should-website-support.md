@@ -2,7 +2,6 @@
 title: "RSS vs Atom vs JSON Feed: Which Format Should Your Website Support?"
 meta_title: "RSS vs Atom vs JSON Feed: Which to Support?"
 description: "Compare RSS 2.0, Atom and JSON Feed: required fields, dates, content rules and reader support, and decide which feed formats your website should publish."
-date: 2026-11-07T05:00:00Z
 image: "/images/blog/rss-vs-atom-vs-json-feed-which-format-should-website-support-feature.webp"
 og_image: "/images/blog/rss-vs-atom-vs-json-feed-which-format-should-website-support-og.webp"
 og_title: "RSS vs Atom vs JSON Feed: Which Format to Support?"
@@ -11,6 +10,9 @@ categories: ["SEO"]
 author: "Muhammad Zaheer Ahmad"
 tags: ["rss", "atom", "json-feed"]
 draft: false
+dateCreated: 2026-11-07T05:00:00Z
+datePublished: 2026-11-07T05:00:00Z
+dateModified: 2026-11-07T05:00:00Z
 ---
 
 A web feed is a machine-readable list of your newest content that readers and apps can check on their own schedule. You publish a post once, and every subscriber finds out about it without visiting your homepage or handing over an email address. That simple idea has produced three competing formats: RSS 2.0, Atom, and JSON Feed. They all do the same job, and choosing badly means some of your audience never sees your work.

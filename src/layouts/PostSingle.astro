@@ -7,6 +7,7 @@ import TableOfContents from "@/components/TableOfContents.astro";
 import { getSinglePage } from "@/lib/contentParser";
 import { displayAuthorNames, resolveAuthors } from "@/lib/utils/authors";
 import dateFormat from "@/lib/utils/dateFormat";
+import { resolveContentDates, toIso } from "@/lib/utils/dates";
 import readingTime from "@/lib/utils/readingTime";
 import { canonicalFor } from "@/lib/utils/seo";
 import { postSlug, postUrl } from "@/lib/utils/slug";
@@ -23,8 +24,25 @@ const posts = await getSinglePage(COLLECTION_FOLDER);
 // Ranked by shared categories, then shared tags, then recency; capped at 3.
 const similarPosts = similarItems(post, posts).slice(0, 3);
 const { Content, headings } = await render(post);
-const { title, description, author, authors, categories, image, date, tags } =
-  post.data;
+const {
+  title,
+  description,
+  author,
+  authors,
+  categories,
+  image,
+  datePublished,
+  dateModified,
+  tags,
+} = post.data;
+
+// Display dates (UTC): publication date always; an "Updated" date
+// only when the post was meaningfully edited after publication.
+const dates = resolveContentDates({ datePublished, dateModified });
+const showUpdated =
+  dates.dateModified &&
+  dates.datePublished &&
+  dates.dateModified.getTime() !== dates.datePublished.getTime();
 
 // Reading time from the raw Markdown body.
 const reading_time = readingTime(post.body ?? "");
@@ -99,7 +117,19 @@ const resolvedAuthors = resolveAuthors(
           </li>
           <li class="mr-4 inline-block">
             <FaRegClock className={"mr-2 -mt-1 inline-block"} />
-            {dateFormat(date)}
+            {dates.datePublished && (
+              <time datetime={toIso(dates.datePublished)}>
+                {dateFormat(dates.datePublished)}
+              </time>
+            )}
+            {showUpdated && dates.dateModified && (
+              <>
+                {" · Updated "}
+                <time datetime={toIso(dates.dateModified)}>
+                  {dateFormat(dates.dateModified)}
+                </time>
+              </>
+            )}
           </li>
           <li class="mr-4 inline-block">{reading_time}</li>
         </ul>

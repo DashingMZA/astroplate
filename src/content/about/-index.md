@@ -4,6 +4,9 @@ meta_title: "About Muhammad Zaheer Ahmad"
 description: "Muhammad Zaheer Ahmad builds Astroplate and writes practical guides on Astro, web performance, SEO, and modern frontend engineering."
 image: "/images/about-banner.webp"
 draft: false
+dateCreated: 2026-11-15T19:04:03Z
+datePublished: 2026-11-15T19:04:03Z
+dateModified: 2026-11-15T19:04:03Z
 ---
 
 I'm Muhammad Zaheer Ahmad. I build fast websites and write about how they're made.

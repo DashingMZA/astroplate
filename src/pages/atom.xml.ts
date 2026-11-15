@@ -27,16 +27,19 @@ export const GET: APIRoute = async () => {
   const atomLogo = config.feeds?.atom_logo;
   const { entries, updated } = await getFeedEntries();
 
-  const entriesXml = entries.map((e) =>
-    [
+  const entriesXml = entries.map((e) => {
+    // <updated> is required per entry; an undated post falls back to
+    // the feed's updated date. When neither exists the tag is omitted
+    // rather than filled with the build time (unreachable once every
+    // published post carries dates, as the prebuild check enforces).
+    const entryUpdated = e.modified ?? updated;
+    return [
       "<entry>",
       `<title>${escapeXml(e.title)}</title>`,
       `<link rel="alternate" type="text/html" href="${escapeXml(e.url)}" />`,
       `<id>${escapeXml(e.url)}</id>`,
       e.published ? `<published>${e.published.toISOString()}</published>` : "",
-      // <updated> is required per entry; an undated post falls back to
-      // the feed's updated date.
-      `<updated>${(e.modified ?? updated).toISOString()}</updated>`,
+      entryUpdated ? `<updated>${entryUpdated.toISOString()}</updated>` : "",
       ...e.authors.map(
         (a) => `<author><name>${escapeXml(a.name)}</name></author>`,
       ),
@@ -49,8 +52,8 @@ export const GET: APIRoute = async () => {
       "</entry>",
     ]
       .filter(Boolean)
-      .join("\n"),
-  );
+      .join("\n");
+  });
 
   const xml = [
     `<?xml version="1.0" encoding="utf-8"?>`,
@@ -60,7 +63,10 @@ export const GET: APIRoute = async () => {
     `<link rel="alternate" type="text/html" href="${escapeXml(homeUrl)}" />`,
     `<link rel="self" type="application/atom+xml" href="${escapeXml(feedUrl)}" />`,
     `<id>${escapeXml(feedUrl)}</id>`,
-    `<updated>${updated.toISOString()}</updated>`,
+    // Feed-level <updated> is required by Atom; it is omitted only
+    // when no entry carries a date (unreachable once every published
+    // post carries dates) — never the build time.
+    ...(updated ? [`<updated>${updated.toISOString()}</updated>`] : []),
     `<generator>Astro</generator>`,
     feedIcon ? `<icon>${escapeXml(absoluteUrl(feedIcon))}</icon>` : "",
     atomLogo ? `<logo>${escapeXml(absoluteUrl(atomLogo))}</logo>` : "",

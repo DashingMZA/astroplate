@@ -2,7 +2,6 @@
 title: "How to Build a Scalable Website Design System with Astro and Tailwind CSS"
 meta_title: "Design System with Astro and Tailwind CSS"
 description: "Learn how to build a scalable design system with Astro and Tailwind CSS: design tokens, reusable components, theming and governance that grow with your site."
-date: 2026-11-05T05:00:00Z
 image: "/images/blog/build-scalable-website-design-system-astro-tailwind-css-feature.webp"
 og_image: "/images/blog/build-scalable-website-design-system-astro-tailwind-css-og.webp"
 og_title: "Scalable Design System with Astro + Tailwind"
@@ -11,6 +10,9 @@ categories: ["Design Systems"]
 author: "Muhammad Zaheer Ahmad"
 tags: ["astro", "tailwind", "design-system"]
 draft: false
+dateCreated: 2026-11-05T05:00:00Z
+datePublished: 2026-11-05T05:00:00Z
+dateModified: 2026-11-05T05:00:00Z
 ---
 
 A design system is the difference between a website that grows gracefully and one that slowly falls apart. Every new page reuses the same buttons, spacing and type scale — until one day it does not, and you are maintaining five slightly different cards and three shades of blue. This guide shows how to build a design system that scales, using Astro components for structure and Tailwind CSS v4 for styling, with design tokens as the single source of truth.
