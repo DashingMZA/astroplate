@@ -120,7 +120,7 @@ Pages, S3 + CloudFront, nginx, …). Requirements:
   (`/blog/post-1/` → `dist/blog/post-1/index.html`).
 - Serve `dist/404.html` for unknown routes with a 404 status.
 - Serve `dist/robots.txt`, `dist/sitemap-index.xml`,
-  `dist/sitemap-0.xml`, and `dist/rss.xml` at the site root.
+  the `dist/sitemap-*.xml` files, and `dist/rss.xml` at the site root.
 - Respect `site.trailing_slash` in `config.json`: the build emits
   URLs with or without trailing slashes accordingly; the host
   should not force the opposite form, or canonical URLs and served
@@ -208,10 +208,10 @@ DOMAIN="https://astroplate.jadoo.bond"
 # Home page serves, canonical is absolute and self-referential
 curl -s $DOMAIN/ | grep -o '<link rel="canonical" href="[^"]*"'
 
-# Sitemap index + sitemap resolve, no /404 entry
+# Sitemap index + sitemaps resolve, no /404 entry
 curl -s $DOMAIN/sitemap-index.xml
-curl -s $DOMAIN/sitemap-0.xml | grep -o "<loc>[^<]*</loc>" | head
-curl -s $DOMAIN/sitemap-0.xml | grep -c 404   # expect 0
+curl -s $DOMAIN/sitemap-post.xml | grep -o "<loc>[^<]*</loc>" | head
+curl -s $DOMAIN/sitemap-page.xml | grep -c 404   # expect 0
 
 # robots.txt serves and names the sitemap
 curl -s $DOMAIN/robots.txt

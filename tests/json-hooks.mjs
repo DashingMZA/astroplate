@@ -24,6 +24,18 @@ function resolveAtImport(specifier) {
 }
 
 export async function resolve(specifier, context, nextResolve) {
+  // `astro:content` is a Vite virtual module: stub it under plain Node so
+  // tests can import modules that read collections (the sitemap
+  // collectors). The stub throws on any live call — tests exercise the
+  // pure transforms, never the Astro runtime.
+  if (specifier === "astro:content") {
+    return {
+      url: pathToFileURL(
+        fileURLToPath(new URL("./stubs/astro-content.mjs", import.meta.url)),
+      ).href,
+      shortCircuit: true,
+    };
+  }
   if (specifier.startsWith("@/")) {
     const full = resolveAtImport(specifier);
     const url = pathToFileURL(full).href;

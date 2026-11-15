@@ -183,6 +183,47 @@ Controls LLM-friendly docs generation during `pnpm build`
 | `include` | string[] | `[]` | Only include these routes/globs; empty = all. Example: `["/about", "/blog/**"]` |
 | `exclude` | string[] | `[]` | Exclude these routes/globs on top of the defaults. Example: `["/blog/index.html"]` |
 
+### `sitemap`
+
+Controls the config-driven sitemap system (`src/lib/seo/sitemap/`,
+served by `src/pages/[sitemap].xml.ts`). All sitemap files are
+generated during `astro build` as static files in `dist/` — no
+`@astrojs/sitemap` integration, no SSR. See
+[SEO_GUIDE.md](SEO_GUIDE.md) for the architecture and the per-type
+URL rules.
+
+| Key | Type | Default | What it controls |
+| --- | --- | --- | --- |
+| `enable` | boolean | `true` | Master switch: `false` generates no sitemap files at all |
+| `index_filename` | string | `"sitemap-index.xml"` | Filename of the sitemap index (also the `Sitemap:` line in `robots.txt`) |
+| `lastmod` | boolean | `true` | Emit `<lastmod>` from `updated ?? lastmod ?? date` when a date exists; `false` omits it everywhere |
+| `exclude` | string[] | `["/404"]` | Exact pathnames to exclude |
+| `exclude_segments` | string[] | `["draft", "drafts", "preview", "private"]` | Any URL whose path segments include one of these is excluded |
+| `max_urls_per_sitemap` | number | `1000` | Maximum URLs per sitemap file (protocol cap 50,000). Smaller values split a type into numbered chunks (`sitemap-post-2.xml`, …). Examples: `100`, `200`, `500`, `1000` |
+| `max_bytes` | number | `52428800` | Maximum uncompressed bytes per sitemap file (protocol cap 50 MB) |
+| `types.<type>.enable` | boolean | see below | Enable/disable one sitemap type |
+| `types.<type>.filename` | string | see below | Output filename for one sitemap type |
+
+Types and their defaults (11 types; the index makes 12 files):
+
+| Type | Default | Contents |
+| --- | --- | --- |
+| `pages` | on, `sitemap-page.xml` | Homepage, standalone pages, `/blog`, `/blog/page/2…`, `/categories`, `/tags`, `/authors` |
+| `posts` | on, `sitemap-post.xml` | Published blog posts |
+| `categories` | on, `sitemap-categories.xml` | Category archive pages that exist |
+| `tags` | on, `sitemap-tags.xml` | Tag archive pages that exist |
+| `authors` | on, `sitemap-authors.xml` | Published author pages |
+| `images` | on, `sitemap-images.xml` | Post pages with their featured image (`og_image` else `image`) |
+| `videos` | off, `sitemap-videos.xml` | No video content exists — enabling it fails the build until a collector is added |
+| `news` | off, `sitemap-news.xml` | No news content exists — same as `videos` |
+| `products` | off, `sitemap-products.xml` | No product content exists — same as `videos` |
+| `locales` | off, `sitemap-locales.xml` | Single locale only — same as `videos` |
+| `locations` | off, `sitemap-locations.xml` | No location content exists — same as `videos` |
+
+Invalid filenames, duplicate filenames, or a non-positive
+`max_urls_per_sitemap` fail the build with a clear error — the sitemap
+never silently generates the wrong files.
+
 ## `theme.json`
 
 ### `colors`

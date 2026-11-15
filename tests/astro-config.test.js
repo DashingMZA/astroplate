@@ -22,11 +22,17 @@ test("astro.config.mjs loads with site + all integrations", async () => {
   assert.ok(Array.isArray(config.integrations), "integrations is not an array");
 
   const names = config.integrations.map((i) => i.name);
-  // react, sitemap, AutoImport, mdx, compress (last).
+  // react, AutoImport, mdx, compress (last). The sitemap is not an
+  // integration any more — it is the native `[sitemap].xml.ts` route
+  // (src/lib/seo/sitemap/), so @astrojs/sitemap must be gone.
   assert.equal(
     config.integrations.length,
-    5,
-    `expected 5 integrations, got: ${names}`,
+    4,
+    `expected 4 integrations, got: ${names}`,
+  );
+  assert.ok(
+    !names.includes("@astrojs/sitemap"),
+    "@astrojs/sitemap must be removed — the sitemap is a native route now",
   );
   assert.ok(
     names.includes("@playform/compress"),

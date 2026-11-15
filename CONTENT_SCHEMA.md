@@ -79,9 +79,9 @@ mismatched link.
   `/blog/guides/my-guide`. The same normalisation applies per segment.
 - **Collisions fail the build**: two posts with the same public slug
   (after normalisation), or a custom slug colliding with another
-  post's filename slug, throw a duplicate-slug error from
-  `scripts/seoManifest.js` at config load — fix the frontmatter
-  rather than shipping two pages at one URL.
+  post's filename slug, throw a duplicate-slug error from the sitemap
+  collectors (`src/lib/seo/sitemap/collectors.ts`) and the post route
+  — fix the frontmatter rather than shipping two pages at one URL.
 - Pages (`pages` collection) and authors support `slug` the same way
   via `pageUrl` / `authorUrl` in the same helper.
 - The filename URL does **not** redirect to the custom slug — it

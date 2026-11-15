@@ -24,7 +24,6 @@ import {
   buildOrganizationJsonLd,
   buildWebsiteJsonLd,
 } from "../src/lib/utils/jsonld.ts";
-import { buildSitemapManifest } from "../scripts/seoManifest.js";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -370,60 +369,13 @@ test("postBelongsToAuthor: resolves by entry id, not by bare display name", () =
   );
 });
 
-// ─── Sitemap manifest (noindex exclusion + lastmod) ────────────────────────
+// ─── Search index generator ────────────────────────────────────────────────
 
 function writeMd(dir, rel, frontmatter, body = "Body text.\n") {
   const file = path.join(dir, rel);
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, `---\n${frontmatter}\n---\n\n${body}`);
 }
-
-test("buildSitemapManifest: noindex paths excluded, lastmod emitted, duplicates throw", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "seo-manifest-"));
-  try {
-    writeMd(
-      tmp,
-      "blog/visible.md",
-      "title: Visible\ndate: 2022-04-04T05:00:00Z",
-    );
-    writeMd(
-      tmp,
-      "blog/hidden.md",
-      "title: Hidden\ndate: 2022-04-04T05:00:00Z\nnoindex: true",
-    );
-    writeMd(tmp, "blog/draft-post.md", "title: Draft\ndraft: true");
-    writeMd(tmp, "blog/future.md", "title: Future\ndate: 2999-01-01T00:00:00Z");
-    writeMd(tmp, "pages/privacy-policy.md", "title: Privacy\nnoindex: true");
-    writeMd(tmp, "pages/terms.md", "title: Terms\ndate: 2022-01-01T00:00:00Z");
-    writeMd(tmp, "authors/jane-doe.md", "title: Jane Doe\nnoindex: true");
-    writeMd(tmp, "about/-index.md", "title: About\nnoindex: true");
-
-    const manifest = buildSitemapManifest(tmp);
-    assert.ok(manifest.excludedPaths.has("/blog/hidden"));
-    assert.ok(manifest.excludedPaths.has("/privacy-policy"));
-    assert.ok(manifest.excludedPaths.has("/authors/jane-doe"));
-    assert.ok(manifest.excludedPaths.has("/about"));
-    assert.ok(!manifest.excludedPaths.has("/blog/visible"));
-    assert.ok(!manifest.excludedPaths.has("/terms"));
-    // Drafts / future posts never reach the manifest at all.
-    assert.ok(!("/blog/draft-post" in manifest.lastmodByPath));
-    assert.ok(!("/blog/future" in manifest.lastmodByPath));
-    assert.equal(manifest.lastmodByPath["/blog/visible"], "2022-04-04");
-    assert.equal(manifest.lastmodByPath["/terms"], "2022-01-01");
-
-    // Duplicate public slugs throw.
-    writeMd(
-      tmp,
-      "blog/visible-copy.md",
-      "title: Copy\nslug: visible\ndate: 2022-04-04T05:00:00Z",
-    );
-    assert.throws(() => buildSitemapManifest(tmp), /Duplicate public URL/);
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-// ─── Search index generator ────────────────────────────────────────────────
 
 test("jsonGenerator: emits public-slug links, drops noindex/future/draft posts", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "seo-search-"));
@@ -500,7 +452,11 @@ test("robots.txt: dynamic endpoint, no hard-coded domain, no public copy", () =>
     "utf8",
   );
   assert.ok(
-    src.includes('absoluteUrl("/sitemap-index.xml")'),
+    src.includes("getSitemapSettings().index_filename"),
+    "robots.txt must take the sitemap index filename from config (sitemap.index_filename)",
+  );
+  assert.ok(
+    src.includes("absoluteUrl("),
     "robots.txt must build its Sitemap line with absoluteUrl()",
   );
   assert.ok(

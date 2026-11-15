@@ -92,5 +92,28 @@
     "limit": 20,
     "atom_logo": "/atom-logo.png",
     "icon": "/feed-icon.png"
+  },
+
+  "sitemap": {
+    "enable": true,
+    "index_filename": "sitemap-index.xml",
+    "lastmod": true,
+    "exclude": ["/404"],
+    "exclude_segments": ["draft", "drafts", "preview", "private"],
+    "max_urls_per_sitemap": 1000,
+    "max_bytes": 52428800,
+    "types": {
+      "pages": { "enable": true, "filename": "sitemap-page.xml" },
+      "posts": { "enable": true, "filename": "sitemap-post.xml" },
+      "categories": { "enable": true, "filename": "sitemap-categories.xml" },
+      "tags": { "enable": true, "filename": "sitemap-tags.xml" },
+      "authors": { "enable": true, "filename": "sitemap-authors.xml" },
+      "images": { "enable": true, "filename": "sitemap-images.xml" },
+      "videos": { "enable": false, "filename": "sitemap-videos.xml" },
+      "news": { "enable": false, "filename": "sitemap-news.xml" },
+      "products": { "enable": false, "filename": "sitemap-products.xml" },
+      "locales": { "enable": false, "filename": "sitemap-locales.xml" },
+      "locations": { "enable": false, "filename": "sitemap-locations.xml" }
+    }
   }
 }
