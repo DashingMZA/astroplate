@@ -31,7 +31,10 @@ test("absolute R2/CDN URLs are preserved verbatim", () => {
   assert.equal(resolveOgImage({ og_image: R2_IMAGE }).url, R2_IMAGE);
   // Protocol-relative and data: URLs are absolute too.
   assert.equal(isAbsoluteUrl("//media.csofts.tech/x.jpg"), true);
-  assert.equal(absoluteUrl("//media.csofts.tech/x.jpg"), "//media.csofts.tech/x.jpg");
+  assert.equal(
+    absoluteUrl("//media.csofts.tech/x.jpg"),
+    "//media.csofts.tech/x.jpg",
+  );
   assert.equal(isAbsoluteUrl("data:image/png;base64,abc"), false);
 });
 
@@ -42,10 +45,13 @@ test("relative paths resolve against the site base URL", () => {
 
 test("OG image priority is og_image > image > site default", () => {
   const local = "/images/post-hero.jpg";
-  assert.deepEqual(resolveOgImage({ og_image: "/images/og.jpg", image: local }), {
-    url: `${SITE}/images/og.jpg`,
-    isPageImage: true,
-  });
+  assert.deepEqual(
+    resolveOgImage({ og_image: "/images/og.jpg", image: local }),
+    {
+      url: `${SITE}/images/og.jpg`,
+      isPageImage: true,
+    },
+  );
   assert.deepEqual(resolveOgImage({ image: local }), {
     url: `${SITE}/images/post-hero.jpg`,
     isPageImage: true,
@@ -71,5 +77,85 @@ test("the shipped default OG image is the small JPEG, not the old PNG", () => {
   // The missing-image placeholder exists too (ImageMod fallback).
   assert.ok(
     fs.existsSync(path.join(repoRoot, "public/images/image-placeholder.png")),
+  );
+});
+
+// ─── One stable webp URL per blog image ──────────────────────────────────
+// The 10 articles' feature / OG / diagram images are webp sources in
+// public/images/blog/ (same dimensions as the originals). They must be
+// referenced as .webp everywhere, so the blog page, the listing card, the
+// feeds and the llms files all emit the same /images/blog/….webp URL —
+// never a hashed /_astro/… variant and never a second format of the same
+// picture. ImageMod renders already-optimized (webp/avif) sources as a
+// plain <img> for exactly this reason (see the marker test below).
+
+const BLOG_DIR = path.join(repoRoot, "src/content/blog");
+
+function articleFiles() {
+  return fs
+    .readdirSync(BLOG_DIR)
+    .filter((f) => f.endsWith(".md") && f !== "-index.md")
+    .map((f) => path.join(BLOG_DIR, f));
+}
+
+function frontmatterField(content, field) {
+  const fm = content.match(/^---\n([\s\S]*?)\n---/);
+  assert.ok(fm, "article must have frontmatter");
+  const m = fm[1].match(new RegExp(`^${field}:\\s*"([^"]+)"`, "m"));
+  assert.ok(m, `frontmatter must set ${field}`);
+  return m[1];
+}
+
+test("every article's feature + OG image is a .webp file that exists", () => {
+  const articles = articleFiles();
+  assert.equal(articles.length, 10, "expected the 10 SEO articles");
+  for (const file of articles) {
+    const content = fs.readFileSync(file, "utf8");
+    for (const field of ["image", "og_image"]) {
+      const value = frontmatterField(content, field);
+      assert.ok(
+        value.endsWith(".webp"),
+        `${path.basename(file)} ${field} must be .webp, got ${value}`,
+      );
+      assert.ok(
+        fs.existsSync(path.join(repoRoot, "public", value)),
+        `${value} must exist under public/`,
+      );
+    }
+  }
+});
+
+test("no article body image points at a .jpg/.png blog image", () => {
+  for (const file of articleFiles()) {
+    const content = fs.readFileSync(file, "utf8");
+    // Code samples may show image syntax as an example; only the real
+    // rendered image refs (outside fenced blocks) count.
+    const prose = content.replace(/```[\s\S]*?```/g, "");
+    const refs = [...prose.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)].map(
+      (m) => m[1],
+    );
+    const blogRefs = refs.filter((r) => r.startsWith("/images/blog/"));
+    assert.ok(blogRefs.length > 0, `${path.basename(file)} has diagram refs`);
+    for (const ref of blogRefs) {
+      assert.ok(
+        ref.endsWith(".webp"),
+        `${path.basename(file)} diagram must be .webp, got ${ref}`,
+      );
+    }
+  }
+});
+
+test("ImageMod: already-optimized (webp/avif) sources bypass Astro <Image>", () => {
+  const src = fs.readFileSync(
+    path.join(repoRoot, "src/layouts/components/ImageMod.astro"),
+    "utf8",
+  );
+  assert.ok(
+    src.includes("isAlreadyOptimized"),
+    "ImageMod must detect already-optimized sources",
+  );
+  assert.ok(
+    src.includes("isRemote || isAlreadyOptimized"),
+    "ImageMod must render webp/avif sources as a plain <img>, not <Image>",
   );
 });

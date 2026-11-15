@@ -3,8 +3,8 @@ title: "Deploying Astro Websites to Cloudflare Workers: A Step-by-Step Guide"
 meta_title: "Deploy Astro to Cloudflare Workers: Guide"
 description: "Learn how to deploy Astro websites to Cloudflare Workers step by step: static assets, the Cloudflare adapter, custom domains, headers, secrets and CI/CD."
 date: 2026-11-08T05:00:00Z
-image: "/images/blog/deploying-astro-websites-cloudflare-workers-step-by-step-guide-feature.jpg"
-og_image: "/images/blog/deploying-astro-websites-cloudflare-workers-step-by-step-guide-og.jpg"
+image: "/images/blog/deploying-astro-websites-cloudflare-workers-step-by-step-guide-feature.webp"
+og_image: "/images/blog/deploying-astro-websites-cloudflare-workers-step-by-step-guide-og.webp"
 og_title: "Deploy Astro to Cloudflare Workers"
 og_description: "A step-by-step guide to deploying Astro sites to Cloudflare Workers — static assets, on-demand rendering, domains and CI/CD."
 categories: ["Deployment"]
@@ -41,7 +41,7 @@ Astro has two rendering modes. In the default `output: 'static'`, every page is 
 
 The rule of thumb is simple: a blog, documentation site, marketing site or portfolio — content that is the same for every visitor — deploys as static assets, with no adapter. The adapter documentation says this directly: "If you're using Astro as a static site builder, you don't need an adapter." Add the adapter only when a route genuinely needs to run per request: an API endpoint, a page behind authentication, a server island, an Astro Action, or a session-backed feature such as a shopping cart.
 
-![Static assets versus on-demand rendering on Cloudflare Workers: a decision flow from the Astro output mode to the matching deployment shape](/images/blog/deploying-astro-websites-cloudflare-workers-step-by-step-guide-diagram-1.png)
+![Static assets versus on-demand rendering on Cloudflare Workers: a decision flow from the Astro output mode to the matching deployment shape](/images/blog/deploying-astro-websites-cloudflare-workers-step-by-step-guide-diagram-1.webp)
 
 Static output goes straight to Workers Static Assets with a small Wrangler configuration file and no Worker script. On-demand output goes through the `@astrojs/cloudflare` adapter, which builds a Worker entry point alongside the static files.
 
@@ -215,7 +215,7 @@ Manual deploys from your laptop work, but they do not scale to a team and are ea
 4. Configure the project with build command `npx astro build` and deploy command `npx wrangler deploy`.
 5. Click Save and Deploy, and preview the Worker at its `workers.dev` subdomain.
 
-![Continuous deployment pipeline for an Astro site on Cloudflare Workers: push to Git, Workers Builds runs the build, Wrangler deploys static assets and the Worker entry point](/images/blog/deploying-astro-websites-cloudflare-workers-step-by-step-guide-diagram-2.png)
+![Continuous deployment pipeline for an Astro site on Cloudflare Workers: push to Git, Workers Builds runs the build, Wrangler deploys static assets and the Worker entry point](/images/blog/deploying-astro-websites-cloudflare-workers-step-by-step-guide-diagram-2.webp)
 
 Every push now triggers the same pipeline you ran by hand, and Workers Builds also creates preview deployments for pull requests, so a content change can be reviewed on a live URL before production. Keep the Node.js version in mind: the default meets Astro's requirements, but an override must satisfy the version floor for your Astro major version.
 

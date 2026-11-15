@@ -3,8 +3,8 @@ title: "Web Accessibility in Astro: Semantic HTML, ARIA and Keyboard Navigation"
 meta_title: "Web Accessibility in Astro: Semantic HTML & ARIA"
 description: "Learn web accessibility in Astro: semantic HTML, ARIA rules, keyboard navigation, focus management, contrast and testing — a practical WCAG 2.2 AA guide."
 date: 2026-11-06T05:00:00Z
-image: "/images/blog/web-accessibility-astro-semantic-html-aria-keyboard-navigation-feature.jpg"
-og_image: "/images/blog/web-accessibility-astro-semantic-html-aria-keyboard-navigation-og.jpg"
+image: "/images/blog/web-accessibility-astro-semantic-html-aria-keyboard-navigation-feature.webp"
+og_image: "/images/blog/web-accessibility-astro-semantic-html-aria-keyboard-navigation-og.webp"
 og_title: "Web Accessibility in Astro: Semantic HTML & ARIA"
 og_description: "A practical WCAG 2.2 AA guide to web accessibility in Astro — semantic HTML, ARIA, keyboard navigation, focus and testing."
 categories: ["Accessibility"]
@@ -54,7 +54,7 @@ Start with the page skeleton: one `<header>`, one `<nav>` for primary navigation
 </html>
 ```
 
-![Diagram of an Astro page skeleton showing the landmark structure: header with primary navigation, main content with article and sections, and footer, with the skip link as the first focusable element](/images/blog/web-accessibility-astro-semantic-html-aria-keyboard-navigation-diagram-1.png)
+![Diagram of an Astro page skeleton showing the landmark structure: header with primary navigation, main content with article and sections, and footer, with the skip link as the first focusable element](/images/blog/web-accessibility-astro-semantic-html-aria-keyboard-navigation-diagram-1.webp)
 
 ### Headings are a map, not a font size
 
@@ -120,7 +120,7 @@ Every interactive element must be reachable and operable by keyboard alone: Tab 
 
 Focus order is the second half of the requirement. The tab order follows the DOM order, so a page whose visual layout is achieved by reordering elements with CSS will tab in a different order from the one a sighted user sees. Keep the DOM order logical and let CSS handle presentation. And never use a positive `tabindex` value to force an order — the only tabindex values a well-built page needs are `0`, for a custom widget in DOM order, and `-1`, for programmatic focus.
 
-![Diagram of keyboard navigation flow through a page: skip link first, then header navigation, main content, and footer, with a visible focus ring at each stop and Escape returning focus from a dialog](/images/blog/web-accessibility-astro-semantic-html-aria-keyboard-navigation-diagram-2.png)
+![Diagram of keyboard navigation flow through a page: skip link first, then header navigation, main content, and footer, with a visible focus ring at each stop and Escape returning focus from a dialog](/images/blog/web-accessibility-astro-semantic-html-aria-keyboard-navigation-diagram-2.webp)
 
 ### Visible focus is not optional
 

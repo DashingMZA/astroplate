@@ -92,9 +92,19 @@ if (!isValidPath) {
     `\x1b[31mImage not found - ${src}.\x1b[0m Make sure the image is in the /public/images folder.`,
   );
 }
+// Already-optimized sources (webp/avif) are served verbatim as a plain
+// <img>. Re-encoding them through Astro <Image> would only change the URL
+// to a hashed /_astro/… variant (and, with the caller's width/height,
+// resize the image) — so the same picture would have a different URL on
+// every surface that renders it (blog page, listing card, feeds, llms
+// files). One source file, one stable /images/… URL everywhere.
+// `widths`/`format` are ignored on this path: there is no srcset to build
+// and nothing left to re-encode.
+const isAlreadyOptimized =
+  !isRemote && isValidPath && /\.(webp|avif)$/i.test(src.split(/[?#]/)[0]);
 ---
 
-{isRemote ? (
+{isRemote || isAlreadyOptimized ? (
   <img
     src={src}
     alt={alt}

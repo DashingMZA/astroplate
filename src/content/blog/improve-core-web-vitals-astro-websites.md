@@ -3,8 +3,8 @@ title: "How to Improve Core Web Vitals in Astro Websites"
 meta_title: "Core Web Vitals in Astro: Improve LCP, INP, CLS"
 description: "Learn how to improve Core Web Vitals in Astro: fix LCP with priority images, cut INP with lazy hydration, and stop CLS with reserved space and metric fonts."
 date: 2026-11-10T05:00:00Z
-image: "/images/blog/improve-core-web-vitals-astro-websites-feature.jpg"
-og_image: "/images/blog/improve-core-web-vitals-astro-websites-og.jpg"
+image: "/images/blog/improve-core-web-vitals-astro-websites-feature.webp"
+og_image: "/images/blog/improve-core-web-vitals-astro-websites-og.webp"
 og_title: "Core Web Vitals in Astro: A Practical Guide"
 og_description: "A practical Astro guide to LCP, INP and CLS: priority images, lazy hydration, reserved space, self-hosted fonts and real-user measurement."
 categories: ["Performance"]
@@ -29,7 +29,7 @@ LCP is a loading metric; on most pages the element is a hero image or a large he
 
 The three metrics share a common enemy: unnecessary JavaScript and late-discovered resources. Heavy scripts delay the largest paint, block the main thread on interaction, and inject content that shoves the layout around. Ship less JavaScript, make important resources discoverable early, and reserve space for everything that arrives late.
 
-![How Astro's zero-JavaScript default, partial hydration and static HTML map to LCP, INP and CLS](/images/blog/improve-core-web-vitals-astro-websites-diagram-1.png)
+![How Astro's zero-JavaScript default, partial hydration and static HTML map to LCP, INP and CLS](/images/blog/improve-core-web-vitals-astro-websites-diagram-1.webp)
 
 ## Why Astro starts ahead — and where it can still go wrong
 
@@ -99,7 +99,7 @@ import hero from "../assets/hero.jpg";
 
 TTFB — the time until the browser receives the first byte of the HTML — is roughly 40% of LCP in web.dev's breakdown. On a static Astro site the HTML is pre-built, so a slow TTFB usually means the hosting or CDN is the bottleneck: an origin far from the visitor, no edge caching, or a redirect chain. Serve from a CDN near your readers and keep redirect chains to one hop. The browser also cannot paint the LCP element until its CSS has loaded, so keep critical CSS small and defer non-critical stylesheets and scripts.
 
-![A checklist flow for diagnosing a poor LCP: identify the element, check TTFB, check discovery and priority, then check render-blocking resources](/images/blog/improve-core-web-vitals-astro-websites-diagram-2.png)
+![A checklist flow for diagnosing a poor LCP: identify the element, check TTFB, check discovery and priority, then check render-blocking resources](/images/blog/improve-core-web-vitals-astro-websites-diagram-2.webp)
 
 ## Improving INP in Astro
 

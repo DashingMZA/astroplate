@@ -84,6 +84,23 @@ test("mediaTags: og_image wins, absolutized, with type + thumbnail", () => {
   );
 });
 
+test("mediaTags: webp post image keeps a stable /images/ URL with type image/webp", () => {
+  const tags = mediaTags({
+    og_image:
+      "/images/blog/astro-islands-architecture-explained-partial-hydration-works-og.webp",
+    image:
+      "/images/blog/astro-islands-architecture-explained-partial-hydration-works-feature.webp",
+  });
+  assert.match(
+    tags,
+    /media:content url="https:\/\/astroplate\.jadoo\.bond\/images\/blog\/astro-islands-architecture-explained-partial-hydration-works-og\.webp" medium="image" type="image\/webp"/,
+  );
+  assert.match(
+    tags,
+    /media:thumbnail url="https:\/\/astroplate\.jadoo\.bond\/images\/blog\/astro-islands-architecture-explained-partial-hydration-works-og\.webp"/,
+  );
+});
+
 test("mediaTags: image alone is used; remote URLs pass through unchanged", () => {
   const tags = mediaTags({ image: "https://media.csofts.tech/images/x.png" });
   assert.match(
