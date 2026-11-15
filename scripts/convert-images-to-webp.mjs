@@ -168,7 +168,7 @@ export const PASSTHROUGH_EXTS = new Set([".webp", ".avif"]);
 // longer suffix (e.g. `.jpg2`, a trailing `.`, or `?query`) never
 // matches — those references are left alone.
 export const STALE_IMAGE_REF_RE =
-  /\/images\/[^\s"'\)\]]+?\.(jpg|jpeg|png)(?=[\s"'\)\],>]|$)/gi;
+  /\/images\/[^\s"')\]]+?\.(jpg|jpeg|png)(?=[\s"'),>]|$)/gi;
 
 /** Mirror a source path into the output tree, swapping the extension to `.webp`. */
 export function outputPathFor(sourcePath, sourceDir, outputDir) {
