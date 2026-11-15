@@ -71,28 +71,16 @@ const DEFAULT_ALT = String(config.metadata.meta_image_alt ?? SITE_TITLE);
 
 export interface SocialInput {
   title?: string | null;
-  /** Legacy alias of seoTitle (existing snake_case frontmatter). */
-  meta_title?: string | null;
   seoTitle?: string | null;
   description?: string | null;
   excerpt?: string | null;
   seoDescription?: string | null;
   /** Featured / hero image. */
   image?: string | null;
-  /** Legacy alias of ogTitle. */
-  og_title?: string | null;
   ogTitle?: string | null;
-  /** Legacy alias of ogDescription. */
-  og_description?: string | null;
   ogDescription?: string | null;
-  /** Legacy alias of ogImage. */
-  og_image?: string | null;
   ogImage?: string | null;
-  /** Legacy alias of ogImageAlt. */
-  og_image_alt?: string | null;
   ogImageAlt?: string | null;
-  /** Legacy alias for a page-image alt. */
-  image_alt?: string | null;
   twitterTitle?: string | null;
   twitterDescription?: string | null;
   twitterImage?: string | null;
@@ -228,20 +216,19 @@ async function resolveImageMeta(
   return meta;
 }
 
-/** Alt text for a resolved image: platform alt -> OG alt -> image alt -> page title -> site default alt. */
+/** Alt text for a resolved image: platform alt -> OG alt -> page title -> site default alt. */
 function altFor(
   platformAlt: string | null | undefined,
   ogAlt: string | null | undefined,
-  imageAlt: string | null | undefined,
   title: string,
 ): string {
-  return pickNonEmpty(platformAlt, ogAlt, imageAlt, title) ?? DEFAULT_ALT;
+  return pickNonEmpty(platformAlt, ogAlt, title) ?? DEFAULT_ALT;
 }
 
 export async function resolveSocialMeta(
   input: SocialInput,
 ): Promise<ResolvedSocialMeta> {
-  const seoTitle = pickNonEmpty(input.seoTitle, input.meta_title);
+  const seoTitle = pickNonEmpty(input.seoTitle);
   const title = pickNonEmpty(seoTitle, input.title) ?? SITE_TITLE;
   const seoDescription = pickNonEmpty(input.seoDescription);
   const description =
@@ -249,91 +236,56 @@ export async function resolveSocialMeta(
     SITE_DESCRIPTION;
 
   const ogTitle =
-    pickNonEmpty(input.ogTitle, input.og_title, seoTitle, input.title) ??
-    SITE_TITLE;
+    pickNonEmpty(input.ogTitle, seoTitle, input.title) ?? SITE_TITLE;
   const ogDescription =
     pickNonEmpty(
       input.ogDescription,
-      input.og_description,
       seoDescription,
       input.description,
       input.excerpt,
     ) ?? SITE_DESCRIPTION;
   const twitterTitle =
-    pickNonEmpty(
-      input.twitterTitle,
-      input.ogTitle,
-      input.og_title,
-      seoTitle,
-      input.title,
-    ) ?? SITE_TITLE;
+    pickNonEmpty(input.twitterTitle, input.ogTitle, seoTitle, input.title) ??
+    SITE_TITLE;
   const twitterDescription =
     pickNonEmpty(
       input.twitterDescription,
       input.ogDescription,
-      input.og_description,
       seoDescription,
       input.description,
       input.excerpt,
     ) ?? SITE_DESCRIPTION;
   const pinterestTitle =
-    pickNonEmpty(
-      input.pinterestTitle,
-      input.ogTitle,
-      input.og_title,
-      seoTitle,
-      input.title,
-    ) ?? SITE_TITLE;
+    pickNonEmpty(input.pinterestTitle, input.ogTitle, seoTitle, input.title) ??
+    SITE_TITLE;
   const pinterestDescription =
     pickNonEmpty(
       input.pinterestDescription,
       input.ogDescription,
-      input.og_description,
       seoDescription,
       input.description,
       input.excerpt,
     ) ?? SITE_DESCRIPTION;
 
   const featured = pickNonEmpty(input.image);
-  const ogRaw = pickNonEmpty(input.ogImage, input.og_image, featured);
-  const twitterRaw = pickNonEmpty(
-    input.twitterImage,
-    input.ogImage,
-    input.og_image,
-    featured,
-  );
+  const ogRaw = pickNonEmpty(input.ogImage, featured);
+  const twitterRaw = pickNonEmpty(input.twitterImage, input.ogImage, featured);
   const pinterestRaw = pickNonEmpty(
     input.pinterestImage,
     input.ogImage,
-    input.og_image,
     featured,
   );
 
-  const ogAlt = altFor(
-    input.ogImageAlt,
-    input.og_image_alt,
-    input.image_alt,
-    title,
-  );
-  const twitterAlt = altFor(
-    input.twitterImageAlt,
-    input.ogImageAlt,
-    input.og_image_alt,
-    title,
-  );
-  const pinterestAlt = altFor(
-    input.pinterestImageAlt,
-    input.ogImageAlt,
-    input.og_image_alt,
-    title,
-  );
+  const ogAlt = pickNonEmpty(input.ogImageAlt, title) ?? DEFAULT_ALT;
+  const twitterAlt = altFor(input.twitterImageAlt, input.ogImageAlt, title);
+  const pinterestAlt = altFor(input.pinterestImageAlt, input.ogImageAlt, title);
 
   const [ogImage, twitterImage, pinterestImage] = await Promise.all([
     resolveImageMeta(
       ogRaw,
       DEFAULT_OG_IMAGE,
       ogAlt,
-      pickNonEmpty(input.ogImage, input.og_image)
+      pickNonEmpty(input.ogImage)
         ? "dedicated"
         : ogRaw
           ? "inherited"

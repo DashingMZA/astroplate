@@ -5,9 +5,13 @@ import PostSingle from "@/layouts/PostSingle.astro";
 import { getSinglePage } from "@/lib/contentParser";
 import { displayAuthorNames, resolveAuthors } from "@/lib/utils/authors";
 import {
+  buildBlogJsonLd,
   buildBlogPostingJsonLd,
   buildBreadcrumbJsonLd,
 } from "@/lib/utils/jsonld";
+import { countWords } from "@/lib/utils/readingTime";
+import { postImageUrls } from "@/lib/seo/sitemap/collectors";
+import { slugify } from "@/lib/utils/textConverter";
 import { lastChangeDate, resolveContentDates, toIso } from "@/lib/utils/dates";
 import { absoluteUrl, buildCanonical, canonicalFor } from "@/lib/utils/seo";
 import { checkDuplicateSlugs, postSlug, postUrl } from "@/lib/utils/slug";
@@ -33,36 +37,29 @@ export async function getStaticPaths() {
 const { post } = Astro.props;
 const {
   title,
-  meta_title,
   seoTitle,
-  og_title,
   ogTitle,
-  og_description,
   ogDescription,
   excerpt,
   description,
   seoDescription,
   image,
-  og_image,
   ogImage,
   ogImageAlt,
   twitterTitle,
   twitterDescription,
   twitterImage,
   twitterImageAlt,
-  pinterestTitle,
   pinterestDescription,
   pinterestImage,
-  pinterestImageAlt,
   dateCreated,
   datePublished,
   dateModified,
-  author,
   authors,
   categories,
   tags,
   canonical,
-  noindex,
+  robotsindex,
 } = post.data;
 
 // Authors resolved against the authors collection by file id first
@@ -70,12 +67,10 @@ const {
 // as plain text with no link — never a 404 author URL.
 const allAuthors = await getCollection("authors");
 const resolvedAuthors = resolveAuthors(
-  displayAuthorNames({ data: { author, authors } }),
+  displayAuthorNames({ data: { authors } }),
   allAuthors,
 );
 
-// Social-share image: per-post og_image wins, else the hero image.
-const seoImage = og_image ?? image;
 const dates = resolveContentDates({ dateCreated, datePublished, dateModified });
 const modifiedDate = lastChangeDate(dates);
 
@@ -83,63 +78,77 @@ const modifiedDate = lastChangeDate(dates);
 // otherwise the custom-slug public URL.
 const canonicalUrl = buildCanonical(canonical, postUrl(post));
 
-// Structured data: BlogPosting (+ BreadcrumbList). Base merges these into
-// the page's single @graph JSON-LD block.
+// Structured data: BlogPosting (+ BreadcrumbList + the Blog node the
+// BlogPosting `isPartOf` points at). Base merges these into the page's
+// single @graph JSON-LD block. Field-for-field the site's schema specs:
+// only the values are this post's own. The "others" default category /
+// tag is filler, never a section or keyword.
+const siteUrl = String(config.site.base_url ?? "").replace(/\/+$/, "");
+const language = String(config.site.language ?? "en");
+const firstCategory = (categories ?? []).find(
+  (category: string) => category.toLowerCase() !== "others",
+);
+const keywords = (tags ?? []).filter(
+  (tag: string) => tag.toLowerCase() !== "others",
+);
+const blogEntries = await getCollection("blog");
+const blogIndex = blogEntries.find((entry) => entry.id === "-index");
 const articleJsonLd = buildBlogPostingJsonLd(
   {
     headline: title,
     description: description ?? excerpt ?? undefined,
-    image: seoImage ? absoluteUrl(seoImage) : undefined,
-    dateCreated: toIso(dates.dateCreated),
+    image: postImageUrls(post),
     datePublished: toIso(dates.datePublished),
     dateModified: toIso(modifiedDate),
     authors: resolvedAuthors.map((a) => ({
       name: a.name,
       url: a.url ? absoluteUrl(a.url) : null,
     })),
-    publisher: config.publisher
-      ? {
-          ...config.publisher,
-          logo: config.publisher.logo
-            ? absoluteUrl(config.publisher.logo)
-            : undefined,
-        }
-      : null,
     url: canonicalUrl,
+    inLanguage: language,
+    articleSection: firstCategory ?? undefined,
+    keywords,
+    wordCount: countWords(post.body ?? ""),
   },
-  String(config.site.base_url ?? "").replace(/\/+$/, ""),
+  siteUrl,
 );
 const breadcrumbJsonLd = buildBreadcrumbJsonLd([
   { name: "Home", url: canonicalFor("/") },
   { name: "Blog", url: canonicalFor("/blog") },
+  ...(firstCategory
+    ? [
+        {
+          name: firstCategory,
+          url: canonicalFor(`/categories/${slugify(firstCategory)}`),
+        },
+      ]
+    : []),
   { name: title, url: canonicalUrl },
 ]);
+const blogJsonLd = buildBlogJsonLd({
+  name: blogIndex?.data.title ?? "Blog",
+  url: canonicalFor("/blog"),
+  siteUrl,
+});
 ---
 
 <Base
   title={title}
-  meta_title={meta_title}
   seoTitle={seoTitle}
   description={description}
   seoDescription={seoDescription}
   excerpt={excerpt}
   image={image}
-  og_title={og_title}
   ogTitle={ogTitle}
-  og_description={og_description}
   ogDescription={ogDescription}
-  og_image={og_image}
   ogImage={ogImage}
   ogImageAlt={ogImageAlt}
-  image_alt={title}
   twitterTitle={twitterTitle}
   twitterDescription={twitterDescription}
   twitterImage={twitterImage}
   twitterImageAlt={twitterImageAlt}
-  pinterestTitle={pinterestTitle}
   pinterestDescription={pinterestDescription}
   pinterestImage={pinterestImage}
-  pinterestImageAlt={pinterestImageAlt}
   ogType="article"
   article={{
     publishedTime: dates.datePublished,
@@ -149,8 +158,9 @@ const breadcrumbJsonLd = buildBreadcrumbJsonLd([
     tags,
   }}
   canonical={canonical}
-  noindex={noindex}
-  jsonLd={[articleJsonLd, breadcrumbJsonLd]}
+  robotsindex={robotsindex}
+  robotsType="blogPosts"
+  jsonLd={[articleJsonLd, breadcrumbJsonLd, blogJsonLd]}
 >
   <PostSingle post={post} />
 </Base>

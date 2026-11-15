@@ -5,6 +5,10 @@
 // Base.astro merges the site-wide WebSite + Organization blocks with the
 // page-specific blocks into ONE `@graph` script tag per page, so there is
 // exactly one JSON-LD block per page and no duplicate Article/BlogPosting.
+// The `@context` lives once at the graph level; each block below carries
+// exactly the fields of the site's schema specs (WebPage, BreadcrumbList,
+// BlogPosting) — same format, only the values are the page's own.
+// A field whose value is unknown is omitted, never null or fabricated.
 
 import { toIso } from "@/lib/utils/dates";
 
@@ -19,14 +23,19 @@ export interface BlogPostingInput {
   description?: string | null;
   /** Absolute image URL(s); omitted when the post has no image. */
   image?: string | string[] | null;
-  dateCreated?: string | null;
   datePublished?: string | null;
   dateModified?: string | null;
   authors: JsonLdPersonInput[];
-  /** Publisher block from configured site data (name/type/logo/url). */
-  publisher: Record<string, unknown> | null;
   /** Absolute canonical URL of the post (custom-slug URL). */
   url: string;
+  /** e.g. "en" from config.site.language. */
+  inLanguage?: string | null;
+  /** First category (articleSection); omitted when the post has none. */
+  articleSection?: string | null;
+  /** Post tags (keywords); omitted when empty. */
+  keywords?: string[] | null;
+  /** Word count of the post body; omitted when unknown. */
+  wordCount?: number | null;
 }
 
 export interface PublisherInput {
@@ -39,6 +48,7 @@ export interface PublisherInput {
 function personObject(author: JsonLdPersonInput): Record<string, unknown> {
   return {
     "@type": "Person",
+    ...(author.url ? { "@id": `${author.url}#person` } : {}),
     name: author.name,
     ...(author.url ? { url: author.url } : {}),
   };
@@ -68,7 +78,7 @@ function publisherObject(
   };
 }
 
-/** BlogPosting for a blog post page. `url` + `mainEntityOfPage` are the canonical custom-slug URL. */
+/** BlogPosting for a blog post page. `url` is the canonical custom-slug URL. */
 export function buildBlogPostingJsonLd(
   input: BlogPostingInput,
   siteUrl: string,
@@ -78,34 +88,40 @@ export function buildBlogPostingJsonLd(
       ? input.image.filter(Boolean)
       : [input.image]
     : [];
+  const keywords = (input.keywords ?? []).filter(Boolean);
   return {
     "@type": "BlogPosting",
+    "@id": `${input.url}#article`,
+    url: input.url,
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": `${input.url}#webpage`,
+    },
     headline: input.headline,
     ...(input.description ? { description: input.description } : {}),
     ...(images.length > 0 ? { image: images } : {}),
-    ...(toIso(input.dateCreated)
-      ? { dateCreated: toIso(input.dateCreated) }
-      : {}),
     ...(toIso(input.datePublished)
       ? { datePublished: toIso(input.datePublished) }
       : {}),
     ...(toIso(input.dateModified)
       ? { dateModified: toIso(input.dateModified) }
       : {}),
-    author: input.authors.map(personObject),
-    ...(input.publisher
-      ? {
-          publisher: publisherObject(
-            input.publisher as PublisherInput,
-            siteUrl,
-          ),
-        }
-      : {}),
-    mainEntityOfPage: {
-      "@type": "WebPage",
-      "@id": input.url,
+    author:
+      input.authors.length === 1
+        ? personObject(input.authors[0])
+        : input.authors.map(personObject),
+    publisher: {
+      "@id": `${siteUrl}/#organization`,
     },
-    url: input.url,
+    isPartOf: {
+      "@id": `${siteUrl}/#blog`,
+    },
+    ...(input.inLanguage ? { inLanguage: input.inLanguage } : {}),
+    ...(input.articleSection ? { articleSection: input.articleSection } : {}),
+    ...(keywords.length > 0 ? { keywords } : {}),
+    ...(typeof input.wordCount === "number"
+      ? { wordCount: input.wordCount }
+      : {}),
   };
 }
 
@@ -137,7 +153,23 @@ export function buildOrganizationJsonLd(
   };
 }
 
-/** Person block for an author page. */
+/** Blog node for the blog index / post pages, so a BlogPosting `isPartOf`
+ *  reference resolves to a node in the same @graph. */
+export function buildBlogJsonLd(input: {
+  name: string;
+  url: string;
+  siteUrl: string;
+}): Record<string, unknown> {
+  return {
+    "@type": "Blog",
+    "@id": `${input.siteUrl}/#blog`,
+    url: input.url,
+    name: input.name,
+  };
+}
+
+/** Person block for an author page. `@id` matches the `author.@id` a
+ *  BlogPosting emits for the same author, so the reference resolves. */
 export function buildPersonJsonLd(input: {
   name: string;
   url: string;
@@ -146,6 +178,7 @@ export function buildPersonJsonLd(input: {
 }): Record<string, unknown> {
   return {
     "@type": "Person",
+    "@id": `${input.url}#person`,
     name: input.name,
     url: input.url,
     ...(input.image ? { image: input.image } : {}),
@@ -153,22 +186,39 @@ export function buildPersonJsonLd(input: {
   };
 }
 
-/** WebPage block for published static pages (regular/about/contact). Article properties never belong here. */
+/** WebPage block for a general website page (home, about, contact,
+ *  regular pages). Article properties never belong here. */
 export function buildWebPageJsonLd(input: {
   name: string;
   url: string;
   description?: string | null;
-  dateCreated?: string | null;
   datePublished?: string | null;
   dateModified?: string | null;
+  /** e.g. "en" from config.site.language. */
+  inLanguage?: string | null;
+  /** Site base URL (no trailing slash) for the #website / #organization refs. */
+  siteUrl: string;
+  /** Absolute page image URL; omitted when the page has none. */
+  image?: string | null;
 }): Record<string, unknown> {
   return {
     "@type": "WebPage",
-    name: input.name,
+    "@id": `${input.url}#webpage`,
     url: input.url,
+    name: input.name,
     ...(input.description ? { description: input.description } : {}),
-    ...(toIso(input.dateCreated)
-      ? { dateCreated: toIso(input.dateCreated) }
+    ...(input.inLanguage ? { inLanguage: input.inLanguage } : {}),
+    isPartOf: { "@id": `${input.siteUrl}/#website` },
+    about: { "@id": `${input.siteUrl}/#organization` },
+    publisher: { "@id": `${input.siteUrl}/#organization` },
+    breadcrumb: { "@id": `${input.url}#breadcrumb` },
+    ...(input.image
+      ? {
+          primaryImageOfPage: {
+            "@type": "ImageObject",
+            url: input.image,
+          },
+        }
       : {}),
     ...(toIso(input.datePublished)
       ? { datePublished: toIso(input.datePublished) }
@@ -179,12 +229,15 @@ export function buildWebPageJsonLd(input: {
   };
 }
 
-/** BreadcrumbList for a page's breadcrumb trail. */
+/** BreadcrumbList for a page's breadcrumb trail. `@id` is the page URL
+ *  (the last item) + `#breadcrumb`, matching the WebPage `breadcrumb` ref. */
 export function buildBreadcrumbJsonLd(
   items: { name: string; url: string }[],
 ): Record<string, unknown> {
+  const pageUrl = items.length > 0 ? items[items.length - 1].url : "";
   return {
     "@type": "BreadcrumbList",
+    ...(pageUrl ? { "@id": `${pageUrl}#breadcrumb` } : {}),
     itemListElement: items.map((item, index) => ({
       "@type": "ListItem",
       position: index + 1,

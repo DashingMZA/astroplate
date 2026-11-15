@@ -10,6 +10,9 @@ NODE_VERSION = "24"
 # public/_headers for the CSP domain inventory and the documented
 # 'unsafe-inline' trade-off.
 # HSTS is included here because Netlify serves this over HTTPS.
+# Trailing-slash redirect: Netlify reads public/_redirects (shared with
+# Cloudflare Workers Static Assets), so the rule lives there, not here —
+# do not add a second [[redirects]] copy or the two can diverge.
 [[headers]]
   for = "/*"
   [headers.values]

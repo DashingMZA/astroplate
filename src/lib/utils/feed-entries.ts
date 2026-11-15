@@ -23,6 +23,7 @@ import {
   resolveContentDates,
 } from "@/lib/utils/dates";
 import { postUrl } from "@/lib/utils/slug";
+import { resolveRobotsIndex } from "@/lib/utils/robots";
 
 // A feed is a rolling window, not an archive: cap it so the files stay
 // small as the blog grows. The cap lives in config.json (`feeds.limit`,
@@ -75,7 +76,7 @@ async function load(): Promise<FeedData> {
       const pub = publicationDate(resolveContentDates(data));
       return (
         !data.draft &&
-        !data.noindex &&
+        resolveRobotsIndex("blogPosts", data.robotsindex) &&
         !id.startsWith("-") &&
         (!pub || pub <= now)
       );

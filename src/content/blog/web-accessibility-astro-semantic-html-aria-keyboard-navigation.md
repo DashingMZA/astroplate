@@ -1,13 +1,13 @@
 ---
 title: "Web Accessibility in Astro: Semantic HTML, ARIA and Keyboard Navigation"
-meta_title: "Web Accessibility in Astro: Semantic HTML & ARIA"
+seoTitle: "Web Accessibility in Astro: Semantic HTML & ARIA"
 description: "Learn web accessibility in Astro: semantic HTML, ARIA rules, keyboard navigation, focus management, contrast and testing — a practical WCAG 2.2 AA guide."
 image: "/images/blog/web-accessibility-astro-semantic-html-aria-keyboard-navigation-feature.webp"
-og_image: "/images/blog/web-accessibility-astro-semantic-html-aria-keyboard-navigation-og.webp"
-og_title: "Web Accessibility in Astro: Semantic HTML & ARIA"
-og_description: "A practical WCAG 2.2 AA guide to web accessibility in Astro — semantic HTML, ARIA, keyboard navigation, focus and testing."
+ogImage: "/images/blog/web-accessibility-astro-semantic-html-aria-keyboard-navigation-og.webp"
+ogTitle: "Web Accessibility in Astro: Semantic HTML & ARIA"
+ogDescription: "A practical WCAG 2.2 AA guide to web accessibility in Astro — semantic HTML, ARIA, keyboard navigation, focus and testing."
 categories: ["Accessibility"]
-author: "Muhammad Zaheer Ahmad"
+authors: ["Muhammad Zaheer Ahmad"]
 tags: ["astro", "accessibility", "a11y"]
 draft: false
 dateCreated: 2026-11-06T05:00:00Z

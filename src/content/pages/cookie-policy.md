@@ -1,6 +1,6 @@
 ---
 title: "Cookie Policy"
-meta_title: "Cookie Policy"
+seoTitle: "Cookie Policy"
 description: "What cookies Astroplate uses, why they are used, and how you can control or delete them."
 draft: false
 dateCreated: 2026-11-14T22:14:06Z

@@ -103,21 +103,21 @@ export function buildCanonical(
   return canonicalFor(pathname);
 }
 
-/** og:title priority: og_title > meta_title > title > site title. */
+/** og:title priority: ogTitle > seoTitle > title > site title. */
 export function resolveOgTitle(input: {
-  og_title?: string | null;
-  meta_title?: string | null;
+  ogTitle?: string | null;
+  seoTitle?: string | null;
   title?: string | null;
 }): string {
-  return input.og_title || input.meta_title || input.title || config.site.title;
+  return input.ogTitle || input.seoTitle || input.title || config.site.title;
 }
 
-/** <title> priority: meta_title > title > site title. (og_title is NOT a title fallback.) */
+/** <title> priority: seoTitle > title > site title. (ogTitle is NOT a title fallback.) */
 export function resolvePageTitle(input: {
-  meta_title?: string | null;
+  seoTitle?: string | null;
   title?: string | null;
 }): string {
-  return input.meta_title || input.title || config.site.title;
+  return input.seoTitle || input.title || config.site.title;
 }
 
 /** meta description priority: description > excerpt > site default. */
@@ -128,14 +128,14 @@ export function resolvePageDescription(input: {
   return input.description || input.excerpt || config.metadata.meta_description;
 }
 
-/** og:description priority: og_description > description > excerpt > site default. */
+/** og:description priority: ogDescription > description > excerpt > site default. */
 export function resolveOgDescription(input: {
-  og_description?: string | null;
+  ogDescription?: string | null;
   description?: string | null;
   excerpt?: string | null;
 }): string {
   return (
-    input.og_description ||
+    input.ogDescription ||
     input.description ||
     input.excerpt ||
     config.metadata.meta_description
@@ -143,15 +143,15 @@ export function resolveOgDescription(input: {
 }
 
 /**
- * OG image priority: og_image > image > site default. Returns the absolute
+ * OG image priority: ogImage > image > site default. Returns the absolute
  * URL plus whether the image came from the page (true) or the site default
  * (false) — the alt text follows the image source.
  */
 export function resolveOgImage(input: {
-  og_image?: string | null;
+  ogImage?: string | null;
   image?: string | null;
 }): { url: string; isPageImage: boolean } {
-  const pageImage = input.og_image || input.image;
+  const pageImage = input.ogImage || input.image;
   if (pageImage) {
     return { url: resolveImage(pageImage), isPageImage: true };
   }

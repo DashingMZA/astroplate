@@ -1,6 +1,5 @@
 ---
 title: "Blog Posts"
-meta_title: ""
 description: "Articles and guides on Astro, web performance, SEO, and modern frontend engineering."
 image: ""
 draft: false

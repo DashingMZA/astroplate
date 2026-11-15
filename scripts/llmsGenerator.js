@@ -127,8 +127,8 @@ function getBlogPostDates() {
       );
       const stem = file.replace(/\.mdx?$/, "");
       const slug =
-        typeof data.slug === "string" && data.slug.trim()
-          ? data.slug
+        typeof data.CustomSlug === "string" && data.CustomSlug.trim()
+          ? data.CustomSlug
               .trim()
               .replace(/^blog\//, "")
               .toLowerCase()
@@ -526,7 +526,7 @@ async function processHtml(
 ) {
   const root = parse(html);
 
-  // A page that opts out of indexing (`noindex,follow`) must not leak into
+  // A page that opts out of indexing (`noindex, follow, …`) must not leak into
   // llms.txt / llms-full.txt / its per-page .md file either.
   const noindex = isNoindexHtml(html);
 

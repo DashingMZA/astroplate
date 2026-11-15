@@ -1,18 +1,18 @@
 ---
 title: "Astro Content Collections: A Complete Guide to Managing Blog Content"
-meta_title: "Astro Content Collections: Complete Guide"
+seoTitle: "Astro Content Collections: Complete Guide"
 description: "Learn how Astro Content Collections work: define schemas with Zod, load content with glob, query with getCollection, and render blog posts with type safety."
 image: "/images/blog/astro-content-collections-complete-guide-managing-blog-content-feature.webp"
-og_image: "/images/blog/astro-content-collections-complete-guide-managing-blog-content-og.webp"
-og_title: "Astro Content Collections: Complete Guide"
-og_description: "Define, validate, query and render blog content in Astro with type-safe content collections — loaders, Zod schemas, references and routes explained."
+ogImage: "/images/blog/astro-content-collections-complete-guide-managing-blog-content-og.webp"
+ogTitle: "Astro Content Collections: Complete Guide"
+ogDescription: "Define, validate, query and render blog content in Astro with type-safe content collections — loaders, Zod schemas, references and routes explained."
 categories: ["Astro"]
-author: "Muhammad Zaheer Ahmad"
+authors: ["Muhammad Zaheer Ahmad"]
 tags: ["astro", "content-collections", "blogging"]
 draft: false
 dateCreated: 2026-11-14T05:00:00Z
 datePublished: 2026-11-14T05:00:00Z
-dateModified: 2026-11-14T05:00:00Z
+dateModified: 2026-11-15T23:03:13Z
 ---
 
 A blog that lives in a folder of Markdown files is easy to start and easy to break. One post is missing a date, another spells a tag differently, a third forgets its description, and nothing complains until a reader — or a search engine — finds the gap. Astro Content Collections fix that problem at the source: they turn a folder of files into a typed, validated, queryable content API, so a mistake in frontmatter becomes a build error instead of a broken page.
@@ -96,7 +96,7 @@ const blog = defineCollection({
 });
 ```
 
-In the Markdown file, the value is a path relative to that file, such as `cover: ./cover.jpg`. Astro checks that the file exists at build time and returns an image object for the `<Image />` component from `astro:assets`; a missing file fails the build instead of producing a broken image. This only applies to images in `src/` — images in `public/` are copied as-is and bypass optimisation, which is why this site's schema uses plain strings for `image` and `og_image`.
+In the Markdown file, the value is a path relative to that file, such as `cover: ./cover.jpg`. Astro checks that the file exists at build time and returns an image object for the `<Image />` component from `astro:assets`; a missing file fails the build instead of producing a broken image. This only applies to images in `src/` — images in `public/` are copied as-is and bypass optimisation, which is why this site's schema uses plain strings for `image` and `ogImage`.
 
 ## Querying Collections: getCollection, getEntry, and getEntries
 
@@ -154,7 +154,7 @@ const { Content, headings } = await render(post);
 
 `render()` returns a `Content` component for the entry body, plus `headings` — the list of headings in the document, which is what a table of contents is built from. For MDX entries, you can also pass a `components` prop to `<Content>` to map Markdown elements to your own components. Passing the entry through `props` is worth doing deliberately: fetching it again in the page body with `getEntry()` doubles the queries.
 
-Astroplate, the theme this site is built on, uses this pattern: its blog collection in `src/content.config.ts` uses the `glob()` loader over `src/content/blog/*.md`, with a schema covering `title`, `description`, `date`, `image`, `og_image`, `categories`, `tags`, `author`, and `draft`. Slugs come from filenames, so this article's file becomes `/blog/astro-content-collections-complete-guide-managing-blog-content`, and the same collection feeds the blog index, the post pages, and the feeds.
+Astroplate, the theme this site is built on, uses this pattern: its blog collection in `src/content.config.ts` uses the `glob()` loader over `src/content/blog/*.md`, with a schema covering `title`, `description`, `dateCreated`, `datePublished`, `dateModified`, `image`, `ogImage`, `categories`, `tags`, `authors`, and `draft`. Slugs come from filenames, so this article's file becomes `/blog/astro-content-collections-complete-guide-managing-blog-content`, and the same collection feeds the blog index, the post pages, and the feeds.
 
 ## References Between Collections
 

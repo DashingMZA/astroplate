@@ -1,6 +1,6 @@
 ---
 title: "Hey, I'm Muhammad Zaheer Ahmad!"
-meta_title: "About Muhammad Zaheer Ahmad"
+seoTitle: "About Muhammad Zaheer Ahmad"
 description: "Muhammad Zaheer Ahmad builds Astroplate and writes practical guides on Astro, web performance, SEO, and modern frontend engineering."
 image: "/images/about-banner.webp"
 draft: false

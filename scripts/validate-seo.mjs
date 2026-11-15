@@ -13,7 +13,7 @@
 // image alt attributes, exactly one H1 + heading hierarchy, empty
 // links, JSON-LD parses + no duplicate @graph entities, structured-data
 // dates consistent with RSS + sitemap, sitemap URLs resolve to real
-// dist files, every canonical is in a sitemap (except 404 / noindex).
+// dist files, every canonical is in a sitemap (except 404 / robotsindex: false).
 import fs from "node:fs";
 import path from "node:path";
 import { parse } from "node-html-parser";
@@ -188,13 +188,21 @@ for (const file of htmlFiles) {
     error(rel, "invalid-canonical", `Canonical is not absolute https: ${canonical}`);
   }
 
-  // Robots: noindex pages must carry it, indexable pages must not.
+  // Robots: every page carries a robots meta — the index variant or the
+  // noindex variant (both with max-snippet/-image-preview/-video-preview).
+  // A noindex page must not be in the sitemap (checked below).
   const robots = head
     .querySelector('meta[name="robots"]')
     ?.getAttribute("content");
   const is404 = rel === "404.html";
-  if (robots?.includes("noindex") && !is404) {
-    // A noindex page must not be in the sitemap (checked below).
+  const INDEX_ROBOTS =
+    "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1";
+  const NOINDEX_ROBOTS =
+    "noindex, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1";
+  if (!robots) {
+    error(rel, "missing-robots", 'No <meta name="robots"> on the page.');
+  } else if (robots !== INDEX_ROBOTS && robots !== NOINDEX_ROBOTS) {
+    error(rel, "invalid-robots", `Unexpected robots content: ${robots}`);
   }
 
   // OG + Twitter: presence, no duplicates, image URL + verified dims.
@@ -301,8 +309,8 @@ for (const file of htmlFiles) {
     }
   }
 
-  // Headings: exactly one H1, no skipped levels. (noindex pages are not
-  // indexed, so an H1 defect there is a warning, not an error.)
+  // Headings: exactly one H1, no skipped levels. (robotsindex: false pages
+  // are not indexed, so an H1 defect there is a warning, not an error.)
   const headings = root.querySelectorAll("h1, h2, h3, h4, h5, h6");
   const h1s = headings.filter((h) => h.tagName === "H1");
   const h1Issue = h1s.length === 0
@@ -415,14 +423,14 @@ for (const file of htmlFiles) {
   }
 
   // Sitemap coverage: every canonical must be listed (except 404 +
-  // noindex pages, which are excluded by design).
+  // robotsindex: false pages, which are excluded by design).
   if (canonical && !is404 && !robots?.includes("noindex")) {
     if (!sitemapUrls.has(canonical)) {
       error(rel, "missing-from-sitemap", `Canonical ${canonical} is not in any sitemap.`);
     }
   }
   if (canonical && robots?.includes("noindex") && sitemapUrls.has(canonical)) {
-    error(rel, "noindex-in-sitemap", `noindex page ${canonical} is listed in a sitemap.`);
+    error(rel, "noindex-in-sitemap", `robotsindex: false page ${canonical} is listed in a sitemap.`);
   }
 }
 

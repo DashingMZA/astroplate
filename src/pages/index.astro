@@ -1,7 +1,10 @@
 ---
+import config from "@/config/config.json";
 import ImageMod from "@/components/ImageMod.astro";
 import Base from "@/layouts/Base.astro";
 import { getListPage } from "@/lib/contentParser";
+import { buildBreadcrumbJsonLd, buildWebPageJsonLd } from "@/lib/utils/jsonld";
+import { absoluteUrl, canonicalFor } from "@/lib/utils/seo";
 import { markdownify, plainify } from "@/lib/utils/textConverter";
 import CallToAction from "@/partials/CallToAction.astro";
 import Testimonial from "@/partials/Testimonial.astro";
@@ -12,11 +15,29 @@ const call_to_action = await getListPage("ctaSection", "call-to-action");
 const testimonial = await getListPage("testimonialSection", "testimonial");
 
 const { banner, features } = homepage.data;
+
+// Structured data: WebPage (+ its single-item BreadcrumbList). The
+// homepage collection carries no dates, so datePublished/dateModified
+// are omitted, never fabricated.
+const pageJsonLd = buildWebPageJsonLd({
+  name: plainify(banner.title).trim(),
+  url: canonicalFor("/"),
+  description: plainify(banner.content).trim() || undefined,
+  inLanguage: String(config.site.language ?? "en"),
+  siteUrl: String(config.site.base_url ?? "").replace(/\/+$/, ""),
+  image: banner.image ? absoluteUrl(banner.image) : undefined,
+});
+const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+  { name: "Home", url: canonicalFor("/") },
+]);
 ---
 
 <Base
   title={plainify(banner.title).trim()}
   description={plainify(banner.content).trim()}
+  robotsType="pages"
+  verification
+  jsonLd={[pageJsonLd, breadcrumbJsonLd]}
 >
   <!-- Banner -->
   <section class="section pt-14">

@@ -1,11 +1,12 @@
 ---
+import config from "@/config/config.json";
 import Mermaid from "@/components/Mermaid.astro";
 import Base from "@/layouts/Base.astro";
 import { getSinglePage } from "@/lib/contentParser";
 import dateFormat from "@/lib/utils/dateFormat";
 import { lastChangeDate, resolveContentDates, toIso } from "@/lib/utils/dates";
 import { buildBreadcrumbJsonLd, buildWebPageJsonLd } from "@/lib/utils/jsonld";
-import { buildCanonical, canonicalFor } from "@/lib/utils/seo";
+import { absoluteUrl, buildCanonical, canonicalFor } from "@/lib/utils/seo";
 import { checkDuplicateSlugs, pageSlug, pageUrl } from "@/lib/utils/slug";
 import PageHeader from "@/partials/PageHeader.astro";
 import { render } from "astro:content";
@@ -32,31 +33,23 @@ export async function getStaticPaths() {
 const { page } = Astro.props;
 const {
   title,
-  meta_title,
   seoTitle,
   description,
   seoDescription,
   image,
-  og_title,
   ogTitle,
-  og_description,
   ogDescription,
-  og_image,
   ogImage,
   ogImageAlt,
   twitterTitle,
   twitterDescription,
   twitterImage,
   twitterImageAlt,
-  pinterestTitle,
-  pinterestDescription,
-  pinterestImage,
-  pinterestImageAlt,
   dateCreated,
   datePublished,
   dateModified,
   canonical,
-  noindex,
+  robotsindex,
 } = page.data;
 const { Content } = await render(page);
 
@@ -67,9 +60,11 @@ const pageJsonLd = buildWebPageJsonLd({
   name: title,
   url: pageCanonical,
   description: description ?? undefined,
-  dateCreated: toIso(dates.dateCreated),
   datePublished: toIso(dates.datePublished),
   dateModified: toIso(updatedDate),
+  inLanguage: String(config.site.language ?? "en"),
+  siteUrl: String(config.site.base_url ?? "").replace(/\/+$/, ""),
+  image: image ? absoluteUrl(image) : undefined,
 });
 const breadcrumbJsonLd = buildBreadcrumbJsonLd([
   { name: "Home", url: canonicalFor("/") },
@@ -79,29 +74,21 @@ const breadcrumbJsonLd = buildBreadcrumbJsonLd([
 
 <Base
   title={title}
-  meta_title={meta_title}
   seoTitle={seoTitle}
   description={description}
   seoDescription={seoDescription}
   image={image}
-  og_title={og_title}
   ogTitle={ogTitle}
-  og_description={og_description}
   ogDescription={ogDescription}
-  og_image={og_image}
   ogImage={ogImage}
   ogImageAlt={ogImageAlt}
-  image_alt={title}
   twitterTitle={twitterTitle}
   twitterDescription={twitterDescription}
   twitterImage={twitterImage}
   twitterImageAlt={twitterImageAlt}
-  pinterestTitle={pinterestTitle}
-  pinterestDescription={pinterestDescription}
-  pinterestImage={pinterestImage}
-  pinterestImageAlt={pinterestImageAlt}
   canonical={canonical}
-  noindex={noindex}
+  robotsindex={robotsindex}
+  robotsType="pages"
   jsonLd={[pageJsonLd, breadcrumbJsonLd]}
 >
   <PageHeader title={title} />

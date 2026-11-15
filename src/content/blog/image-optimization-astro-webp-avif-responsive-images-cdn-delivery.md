@@ -1,13 +1,13 @@
 ---
 title: "Image Optimization for Astro: WebP, AVIF, Responsive Images and CDN Delivery"
-meta_title: "Image Optimization for Astro: WebP & AVIF Guide"
+seoTitle: "Image Optimization for Astro: WebP & AVIF Guide"
 description: "Learn image optimization for Astro: WebP and AVIF formats, responsive srcset images, lazy loading, and CDN delivery that cut page weight and speed up LCP."
 image: "/images/blog/image-optimization-astro-webp-avif-responsive-images-cdn-delivery-feature.webp"
-og_image: "/images/blog/image-optimization-astro-webp-avif-responsive-images-cdn-delivery-og.webp"
-og_title: "Image Optimization for Astro: WebP, AVIF & CDN"
-og_description: "A practical Astro guide to WebP and AVIF, responsive images, lazy loading, and CDN delivery — smaller files, faster pages, better Core Web Vitals."
+ogImage: "/images/blog/image-optimization-astro-webp-avif-responsive-images-cdn-delivery-og.webp"
+ogTitle: "Image Optimization for Astro: WebP, AVIF & CDN"
+ogDescription: "A practical Astro guide to WebP and AVIF, responsive images, lazy loading, and CDN delivery — smaller files, faster pages, better Core Web Vitals."
 categories: ["Performance"]
-author: "Muhammad Zaheer Ahmad"
+authors: ["Muhammad Zaheer Ahmad"]
 tags: ["astro", "images", "performance"]
 draft: false
 dateCreated: 2026-11-11T05:00:00Z

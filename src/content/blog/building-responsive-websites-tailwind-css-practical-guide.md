@@ -1,13 +1,13 @@
 ---
 title: "Building Responsive Websites with Tailwind CSS: A Practical Guide"
-meta_title: "Responsive Websites with Tailwind CSS Guide"
+seoTitle: "Responsive Websites with Tailwind CSS Guide"
 description: "Learn to build responsive websites with Tailwind CSS: mobile-first breakpoints, fluid grids and type, container queries, and an Astro setup for every screen."
 image: "/images/blog/building-responsive-websites-tailwind-css-practical-guide-feature.webp"
-og_image: "/images/blog/building-responsive-websites-tailwind-css-practical-guide-og.webp"
-og_title: "Responsive Websites with Tailwind CSS"
-og_description: "A practical guide to responsive websites with Tailwind CSS — breakpoints, fluid layouts, container queries and testing, with real Astro code examples."
+ogImage: "/images/blog/building-responsive-websites-tailwind-css-practical-guide-og.webp"
+ogTitle: "Responsive Websites with Tailwind CSS"
+ogDescription: "A practical guide to responsive websites with Tailwind CSS — breakpoints, fluid layouts, container queries and testing, with real Astro code examples."
 categories: ["CSS"]
-author: "Muhammad Zaheer Ahmad"
+authors: ["Muhammad Zaheer Ahmad"]
 tags: ["tailwind", "responsive-design", "css"]
 draft: false
 dateCreated: 2026-11-09T05:00:00Z

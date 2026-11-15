@@ -5,7 +5,6 @@ import { z } from "astro/zod";
 const commonFields = {
   title: z.string(),
   description: z.string(),
-  meta_title: z.string().optional(),
   // Content dates (z.coerce.date() handles both Date objects and ISO
   // string dates from frontmatter, Zod 4). All three are optional at
   // the schema level — `pnpm dates:check` (prebuild) enforces them for
@@ -30,10 +29,9 @@ const canonicalField = z
   .optional();
 
 // Independent social metadata fields (optional; empty string / null /
-// undefined all count as missing). camelCase names are canonical; the
-// snake_case spellings are legacy aliases kept working for existing
-// content. All fallback chains live in src/lib/utils/social.ts —
-// nothing here re-implements them.
+// undefined all count as missing). camelCase names are the only
+// spellings — there are no legacy aliases. All fallback chains live in
+// src/lib/utils/social.ts — nothing here re-implements them.
 const socialFields = {
   seoTitle: z.string().optional(),
   seoDescription: z.string().optional(),
@@ -49,21 +47,17 @@ const socialFields = {
   pinterestDescription: z.string().optional(),
   pinterestImage: z.string().optional(),
   pinterestImageAlt: z.string().optional(),
-  // Legacy snake_case aliases.
-  og_title: z.string().optional(),
-  og_description: z.string().optional(),
-  og_image: z.string().optional(),
-  og_image_alt: z.string().optional(),
 };
 
 // SEO fields shared by the page-like collections (pages, about, contact).
 // Blog has the same fields inline (plus excerpt/featured/authors).
 const seoFields = {
   // Custom URL slug (overrides the filename-derived id; see src/lib/utils/slug.ts).
-  slug: z.string().optional(),
+  CustomSlug: z.string().optional(),
   ...socialFields,
   canonical: canonicalField,
-  noindex: z.boolean().optional(),
+  // true = index, false = noindex, null / unset = config default (robots.index).
+  robotsindex: z.boolean().nullish(),
 };
 
 // Post collection schema
@@ -71,24 +65,24 @@ const blogCollection = defineCollection({
   loader: glob({ pattern: "**/*.{md,mdx}", base: "src/content/blog" }),
   schema: z.object({
     title: z.string(),
-    meta_title: z.string().optional(),
     description: z.string().optional(),
     // Short summary for cards/search; falls back to description/body at render.
     excerpt: z.string().optional(),
     // Custom URL slug (overrides the filename-derived id; see src/lib/utils/slug.ts).
-    slug: z.string().optional(),
+    CustomSlug: z.string().optional(),
     dateCreated: z.coerce.date().optional(),
     datePublished: z.coerce.date().optional(),
     dateModified: z.coerce.date().optional(),
     image: z.string().optional(),
     // Independent social metadata (optional); see `socialFields` above.
     ...socialFields,
-    author: z.string().default("Admin"),
-    // Multi-author support; `author` above stays as the single-author fallback.
+    // The one author field: a list of author names. A single-author
+    // post lists one name; a multi-author post lists several.
     authors: z.array(z.string()).optional(),
     featured: z.boolean().optional(),
     canonical: canonicalField,
-    noindex: z.boolean().optional(),
+    // true = index, false = noindex, null / unset = config default (robots.index).
+    robotsindex: z.boolean().nullish(),
     // Use factory functions for mutable array defaults (Zod 4 best practice)
     categories: z.array(z.string()).default(() => ["others"]),
     tags: z.array(z.string()).default(() => ["others"]),
@@ -105,8 +99,11 @@ const authorsCollection = defineCollection({
     // Present in author files and the Sitepins authors schema; was silently
     // dropped by validation because it was missing here.
     email: z.string().optional(),
+    // Custom URL slug (overrides the filename-derived id; see src/lib/utils/slug.ts).
+    CustomSlug: z.string().optional(),
     canonical: canonicalField,
-    noindex: z.boolean().optional(),
+    // true = index, false = noindex, null / unset = config default (robots.index).
+    robotsindex: z.boolean().nullish(),
     social: z
       .array(
         z

@@ -2,8 +2,13 @@
 // Astro Content Collections. The rules live here once, and the engine
 // (`index.ts`) + the route only orchestrate:
 //
-//   - draft, future-dated and `noindex` entries are excluded (the same
-//     filter the feeds use in `src/lib/utils/feed-entries.ts`);
+//   - draft, future-dated and noindex entries are excluded — "noindex"
+//     is the RESOLVED robotsindex (frontmatter value, else the config
+//     default for the page type; see `src/lib/utils/robots.ts`), the
+//     same rule the feeds use in `src/lib/utils/feed-entries.ts`.
+//     Noindex URLs never appear in a sitemap: authors, tags,
+//     categories and blog archives are noindex by config default, so
+//     their sitemaps are empty and no file is generated for them;
 //   - posts with an external canonical URL are excluded — their content
 //     lives off-site, so it must not appear in this site's sitemap;
 //   - URLs come from the same helpers the routers use (`slug.ts`,
@@ -14,7 +19,7 @@
 //   - lastmod is `dateModified ?? datePublished` (authors: `dateModified
 //     ?? dateCreated`, since author profiles have no publication date) —
 //     a genuine content date only, never the build date.
-//   - post entries carry their images (`image`, `og_image`, body refs)
+//   - post entries carry their images (`image`, `ogImage`, body refs)
 //     and page entries carry their page image (homepage banner, about
 //     banner, …) as `<image:image>` blocks — `<image:loc>` only, no
 //     title. Only images that resolve to a real file under `public/`
@@ -62,6 +67,7 @@ import {
   pageUrl,
   postUrl,
 } from "@/lib/utils/slug";
+import { resolveRobotsIndex, type RobotsPageType } from "@/lib/utils/robots";
 
 /** The entry shape the pure transforms need (a structural subset of a collection entry). */
 export interface SitemapContentEntry {
@@ -69,16 +75,16 @@ export interface SitemapContentEntry {
   /** Raw Markdown/MDX body (posts) — image refs are extracted from it. */
   body?: string | null;
   data: {
-    slug?: string | null;
+    CustomSlug?: string | null;
     draft?: boolean | null;
-    noindex?: boolean | null;
+    robotsindex?: boolean | null;
     dateCreated?: Date | string | null;
     datePublished?: Date | string | null;
     dateModified?: Date | string | null;
     canonical?: string | null;
     title?: string | null;
     image?: string | null;
-    og_image?: string | null;
+    ogImage?: string | null;
   };
 }
 
@@ -92,13 +98,19 @@ export { contentLastmod, authorLastmod };
 
 /**
  * True when an entry belongs in the sitemap at all: not a draft, not
- * `noindex`, not future-dated, and not a `-`-prefixed listing stub.
- * (The `-index` files of the about/contact collections are the page
- * itself, so `pagesToEntries` checks those explicitly instead.)
+ * noindex, not future-dated, and not a `-`-prefixed listing stub.
+ * "Noindex" is the RESOLVED robotsindex for `type` — the frontmatter
+ * value when set, else the config default for that page type — so a
+ * page that is noindex by config (authors, tags, categories, blog
+ * archives by default) never appears in a sitemap, even without an
+ * explicit frontmatter value. (The `-index` files of the
+ * about/contact collections are the page itself, so `pagesToEntries`
+ * checks those explicitly instead.)
  */
 export function isSitemapVisible(
   entry: SitemapContentEntry,
   now: Date,
+  type: RobotsPageType,
 ): boolean {
   if (entry.id.startsWith("-")) {
     return false;
@@ -106,7 +118,7 @@ export function isSitemapVisible(
   if (entry.data.draft) {
     return false;
   }
-  if (entry.data.noindex) {
+  if (!resolveRobotsIndex(type, entry.data.robotsindex)) {
     return false;
   }
   // Future-dated content stays out until its publication date
@@ -235,7 +247,7 @@ export function extractBodyImagePaths(body: string): string[] {
 
 /**
  * Candidate image URLs for a post, absolute and deduplicated:
- * frontmatter `image` (featured), `og_image`, then the images
+ * frontmatter `image` (featured), `ogImage`, then the images
  * referenced in the body, in document order. No existence check here —
  * the caller filters (see `postsToEntries`).
  */
@@ -253,7 +265,7 @@ export function postImageUrls(post: SitemapContentEntry): string[] {
     }
   };
   add(post.data.image);
-  add(post.data.og_image);
+  add(post.data.ogImage);
   for (const pathOnly of extractBodyImagePaths(post.body ?? "")) {
     add(pathOnly);
   }
@@ -327,7 +339,7 @@ export function postsToEntries(
 ): SitemapEntry[] {
   const visible = posts.filter(
     (post) =>
-      isSitemapVisible(post, now) &&
+      isSitemapVisible(post, now, "blogPosts") &&
       !isExternalCanonical(post.data.canonical) &&
       !isExcludedPath(postUrl(post), settings),
   );
@@ -357,7 +369,7 @@ export function authorsToEntries(
   return authors
     .filter(
       (author) =>
-        isSitemapVisible(author, now) &&
+        isSitemapVisible(author, now, "authors") &&
         !isExternalCanonical(author.data.canonical) &&
         !isExcludedPath(authorUrl(author), settings),
     )
@@ -373,21 +385,31 @@ export function authorsToEntries(
     });
 }
 
-/** Category archive pages that actually exist (same source as the routes). */
+/** Category archive pages that actually exist (same source as the routes).
+ * Noindex by config default, so this returns no entries unless the
+ * config default for categories is flipped to index. */
 export function categoriesToEntries(
   categories: string[],
   settings: SitemapSettings,
 ): SitemapEntry[] {
+  if (!resolveRobotsIndex("categories")) {
+    return [];
+  }
   return categories
     .filter((slug) => !isExcludedPath(`/categories/${slug}`, settings))
     .map((slug) => ({ loc: canonicalFor(`/categories/${slug}`) }));
 }
 
-/** Tag archive pages that actually exist (same source as the routes). */
+/** Tag archive pages that actually exist (same source as the routes).
+ * Noindex by config default, so this returns no entries unless the
+ * config default for tags is flipped to index. */
 export function tagsToEntries(
   tags: string[],
   settings: SitemapSettings,
 ): SitemapEntry[] {
+  if (!resolveRobotsIndex("tags")) {
+    return [];
+  }
   return tags
     .filter((slug) => !isExcludedPath(`/tags/${slug}`, settings))
     .map((slug) => ({ loc: canonicalFor(`/tags/${slug}`) }));
@@ -395,7 +417,7 @@ export function tagsToEntries(
 
 /**
  * One image-sitemap entry per published post that has its own featured
- * image (`og_image` else `image`, same priority as the feeds). The
+ * image (`ogImage` else `image`, same priority as the feeds). The
  * site-default OG image is not a post's image, so it is never emitted.
  */
 export function imagesToEntries(
@@ -405,7 +427,7 @@ export function imagesToEntries(
 ): SitemapEntry[] {
   const visible = posts.filter(
     (post) =>
-      isSitemapVisible(post, now) &&
+      isSitemapVisible(post, now, "blogPosts") &&
       !isExternalCanonical(post.data.canonical) &&
       !isExcludedPath(postUrl(post), settings),
   );
@@ -453,19 +475,21 @@ export interface PageCollectionInput {
 }
 
 /**
- * Homepage + index/listing pages + standalone pages. The `-index`
- * entries of about/contact carry their own draft/noindex/canonical
- * frontmatter (their routes redirect to /404 when draft, exactly like
- * the old manifest treated them); the blog/authors indexes are gated
- * on draft only, matching their routes, which do not apply `noindex`.
- */
-/**
- * Homepage + index/listing pages + standalone pages. Page entries carry
- * their page image when they have one (homepage banner on `/`, the
- * about/contact/blog/authors `-index` image on their routes, a regular
- * page's `image` frontmatter) — `<image:loc>` only, no title. Listing
- * and pagination pages have no image. `imageExists` gates the images
- * (see `postsToEntries`).
+ * Homepage + index/listing pages + standalone pages. Every entry is
+ * gated on its RESOLVED robotsindex (frontmatter, else the config
+ * default for its page type) — a noindex URL never enters the sitemap.
+ * The `-index` entries of about/contact carry their own
+ * draft/robotsindex/canonical frontmatter (their routes redirect to
+ * /404 when draft, exactly like the old manifest treated them); the
+ * blog/authors indexes and the blog pagination are gated on the
+ * resolved config defaults (`blogArchives` / `authors`), which are
+ * noindex by default, so `/blog`, `/blog/page/N` and `/authors` stay
+ * out of the sitemap unless the config flips them to index.
+ * Page entries carry their page image when they have one (homepage
+ * banner on `/`, the about/contact/blog/authors `-index` image on
+ * their routes, a regular page's `image` frontmatter) — `<image:loc>`
+ * only, no title. Listing and pagination pages have no image.
+ * `imageExists` gates the images (see `postsToEntries`).
  */
 export function pagesToEntries(
   input: PageCollectionInput,
@@ -514,14 +538,19 @@ export function pagesToEntries(
 
   // Homepage — always generated; the homepage collection has no dates.
   add("/", undefined, [input.homepageBannerImage]);
-  // Listing index pages (their routes have no draft gate).
-  add("/categories");
-  add("/tags");
+  // Listing index pages — only when their type is indexable by config.
+  if (resolveRobotsIndex("categories")) {
+    add("/categories");
+  }
+  if (resolveRobotsIndex("tags")) {
+    add("/tags");
+  }
 
   // Regular standalone pages (custom slugs respected).
   const visiblePages = input.regularPages.filter(
     (page) =>
-      isSitemapVisible(page, now) && !isExternalCanonical(page.data.canonical),
+      isSitemapVisible(page, now, "pages") &&
+      !isExternalCanonical(page.data.canonical),
   );
   checkDuplicateSlugs(visiblePages, pageUrl, "page");
   for (const page of visiblePages) {
@@ -531,7 +560,8 @@ export function pagesToEntries(
   // Single-page collections, gated like their routes.
   const single = (index: SitemapContentEntry | null | undefined) => {
     if (!index) return false;
-    if (index.data.draft || index.data.noindex) return false;
+    if (index.data.draft) return false;
+    if (!resolveRobotsIndex("pages", index.data.robotsindex)) return false;
     if (isExternalCanonical(index.data.canonical)) return false;
     const pub = publicationDate(resolveContentDates(index.data));
     return !pub || pub <= now;
@@ -542,16 +572,28 @@ export function pagesToEntries(
   if (single(input.contactIndex)) {
     add("/contact", input.contactIndex!.data, [input.contactIndex!.data.image]);
   }
-  if (input.blogIndex && !input.blogIndex.data.draft) {
+  if (
+    input.blogIndex &&
+    !input.blogIndex.data.draft &&
+    resolveRobotsIndex("blogArchives", input.blogIndex.data.robotsindex)
+  ) {
     add("/blog", input.blogIndex.data, [input.blogIndex.data.image]);
   }
-  if (input.authorsIndex && !input.authorsIndex.data.draft) {
+  if (
+    input.authorsIndex &&
+    !input.authorsIndex.data.draft &&
+    resolveRobotsIndex("authors", input.authorsIndex.data.robotsindex)
+  ) {
     add("/authors", input.authorsIndex.data, [input.authorsIndex.data.image]);
   }
 
-  // Blog pagination pages 2..N (page 1 is /blog itself).
-  for (let page = 2; page <= input.blogTotalPages; page++) {
-    add(`/blog/page/${page}`);
+  // Blog pagination pages 2..N (page 1 is /blog itself) — only when
+  // blog archives are indexable (noindex by default); the blog
+  // `-index` frontmatter governs the whole archive section.
+  if (resolveRobotsIndex("blogArchives", input.blogIndex?.data.robotsindex)) {
+    for (let page = 2; page <= input.blogTotalPages; page++) {
+      add(`/blog/page/${page}`);
+    }
   }
   return entries;
 }
@@ -563,7 +605,7 @@ async function collectPosts(
   now: Date,
 ): Promise<SitemapEntry[]> {
   const posts = await getCollection("blog", ({ data, id }) =>
-    isSitemapVisible({ id, data }, now),
+    isSitemapVisible({ id, data }, now, "blogPosts"),
   );
   return postsToEntries(posts, settings, now, isPublicFile);
 }
@@ -640,7 +682,7 @@ async function collectImages(
   now: Date,
 ): Promise<SitemapEntry[]> {
   const posts = await getCollection("blog", ({ data, id }) =>
-    isSitemapVisible({ id, data }, now),
+    isSitemapVisible({ id, data }, now, "blogPosts"),
   );
   return imagesToEntries(posts, settings, now);
 }

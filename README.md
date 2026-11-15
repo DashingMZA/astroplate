@@ -34,10 +34,10 @@ code. See [CONFIGURATION.md](CONFIGURATION.md) for the full walkthrough.
 - Dark mode with a theme switcher (system default)
 - Pagination, similar-post suggestions, reading time
 - SEO: absolute canonical URLs, Open Graph / Twitter cards with
-  `og_title`/`og_description` priority chains, single `@graph`
+  `ogTitle`/`ogDescription` priority chains, single `@graph`
   JSON-LD (WebSite + Organization + BlogPosting/BreadcrumbList/
   Person), sitemap with `lastmod`, `robots.txt`, and an RSS feed;
-  `noindex` pages are excluded from the sitemap, RSS, search index,
+  noindex pages (resolved `robotsindex`) are excluded from the sitemap, RSS, search index,
   and LLM docs
 - Security headers (CSP + `nosniff` + Referrer/Permissions-Policy +
   HSTS on HTTPS targets) for Cloudflare, Netlify, and nginx — see

@@ -26,6 +26,12 @@ import { ClientRouter } from "astro:transitions";
 import Announcement from "./helpers/Announcement.astro";
 import SearchModal from "./helpers/SearchModal";
 import { toIso } from "@/lib/utils/dates";
+import {
+  resolveRobotsIndex,
+  robotsMetaContent,
+  type RobotsPageType,
+} from "@/lib/utils/robots";
+import { verificationMetaTags } from "@/lib/utils/verification";
 
 // font families - extract font names for Font component (filter out type keys)
 const fontEntries = Object.entries(theme.fonts.font_family).filter(
@@ -44,20 +50,11 @@ export interface ArticleMeta {
 // types for frontmatters
 export interface Props {
   title?: string;
-  meta_title?: string;
   description?: string;
   excerpt?: string;
   image?: string;
-  og_title?: string;
-  og_description?: string;
-  og_image?: string;
-  /** Alt text for a page-specific OG image (defaults to the page title). */
-  og_image_alt?: string;
-  /** Alias of og_image_alt, kept for call sites that pass `image_alt`. */
-  image_alt?: string;
   /** Independent social metadata (all optional; see social.ts for the
-   * exact fallback chains). snake_case spellings above are legacy
-   * aliases and keep working. */
+   * exact fallback chains). */
   seoTitle?: string;
   seoDescription?: string;
   ogTitle?: string;
@@ -68,14 +65,20 @@ export interface Props {
   twitterDescription?: string;
   twitterImage?: string;
   twitterImageAlt?: string;
-  pinterestTitle?: string;
   pinterestDescription?: string;
   pinterestImage?: string;
-  pinterestImageAlt?: string;
   /** Pagination neighbours (absolute URLs); emitted as rel=prev/next. */
   prevUrl?: string;
   nextUrl?: string;
-  noindex?: boolean;
+  /** Per-page robots override: true = index, false = noindex, null/unset =
+   * the config default for `robotsType` (see robots.ts). */
+  robotsindex?: boolean | null;
+  /** Page type for the config robots default. Defaults to "pages". */
+  robotsType?: RobotsPageType;
+  /** Home page only: emit the domain-verification meta tags from
+   * `verification` in config.json (one per provider, only when its
+   * code is set). No other page passes this. */
+  verification?: boolean;
   canonical?: string;
   ogType?: "website" | "article";
   article?: ArticleMeta;
@@ -85,15 +88,9 @@ export interface Props {
 // destructure frontmatter
 const {
   title,
-  meta_title,
   description,
   excerpt,
   image,
-  og_title,
-  og_description,
-  og_image,
-  og_image_alt,
-  image_alt,
   seoTitle,
   seoDescription,
   ogTitle: ogTitleProp,
@@ -104,13 +101,13 @@ const {
   twitterDescription,
   twitterImage,
   twitterImageAlt,
-  pinterestTitle,
   pinterestDescription,
   pinterestImage,
-  pinterestImageAlt,
   prevUrl,
   nextUrl,
-  noindex,
+  robotsindex,
+  robotsType,
+  verification,
   canonical,
   ogType,
   article,
@@ -124,29 +121,21 @@ const {
 // (it leaves a trailing newline from marked's block output — trim it).
 const social = await resolveSocialMeta({
   title,
-  meta_title,
   seoTitle,
   description,
   excerpt,
   seoDescription,
   image,
-  og_title,
   ogTitle: ogTitleProp,
-  og_description,
   ogDescription: ogDescriptionProp,
-  og_image,
   ogImage: ogImageProp,
-  og_image_alt,
   ogImageAlt: ogImageAltProp,
-  image_alt,
   twitterTitle,
   twitterDescription,
   twitterImage,
   twitterImageAlt,
-  pinterestTitle,
   pinterestDescription,
   pinterestImage,
-  pinterestImageAlt,
 });
 const pageTitle = plainify(social.title).trim();
 const pageDescription = plainify(social.description).trim();
@@ -154,6 +143,18 @@ const ogTitle = plainify(social.og.title).trim();
 const ogDescription = plainify(social.og.description).trim();
 const twitterTitleResolved = plainify(social.twitter.title).trim();
 const twitterDescriptionResolved = plainify(social.twitter.description).trim();
+
+// Domain-verification meta tags (home page only, when the `verification`
+// prop is set): one per provider whose code is configured in config.json.
+const verificationTags = verification
+  ? verificationMetaTags(
+      (config as { verification?: Record<string, unknown> }).verification,
+    )
+  : [];
+
+// Robots: always emitted. The variant follows the frontmatter override,
+// else the config default for the page type (see robots.ts).
+const robotsIndexed = resolveRobotsIndex(robotsType ?? "pages", robotsindex);
 
 // Canonical: always emitted. An explicit `canonical` prop overrides the
 // page's own public URL (absolute URLs are trailing-slash normalised,
@@ -211,15 +212,24 @@ const jsonLdGraph = {
 <!doctype html>
 <html lang={config.site.language ?? "en"}>
   <head>
-    <!-- google tag manager -->
+    <!-- google tag manager (kept first — it must load before anything else it measures) -->
     {config.google_tag_manager.enable && (
       <GoogleTagmanager id={config.google_tag_manager.gtm_id} />
     )}
-    <!-- favicon -->
+
+    <!-- 1. character encoding and viewport -->
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=5"
+    />
+
+    <!-- 2. essential browser icons and manifest -->
     <link rel="shortcut icon" href={config.site.favicon} />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <!-- theme meta -->
+    <link rel="apple-touch-icon" href={config.site.apple_touch_icon} />
+    <link rel="manifest" href={config.site.web_manifest} />
+
+    <!-- 3. theme configuration -->
     <meta name="theme-name" content="astroplate" />
     <meta name="msapplication-TileColor" content="#000000" />
     <meta
@@ -233,51 +243,36 @@ const jsonLdGraph = {
       content="#000"
     />
     <meta name="generator" content={Astro.generator} />
-    <meta charset="utf-8" />
 
-    <!-- google font css - Astro 6 built-in Font API -->
-    {fontEntries.map(([key]) => {
-      // Font's cssVariable only accepts the variables declared in theme.json
-      // (`--font-primary` / `--font-secondary`); derive that union from the
-      // theme keys instead of casting to `any`.
-      const cssVar = `--font-${key}` as `--font-${Exclude<
-        keyof typeof theme.fonts.font_family,
-        `${string}_type`
-      >}`;
-      return <Font cssVariable={cssVar} preload />;
-    })}
-
-    <!-- responsive meta -->
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=5"
-    />
-
-    <!-- title -->
+    <!-- 4. page title and SEO metadata -->
     <title>{pageTitle}</title>
+    <meta name="description" content={pageDescription} />
+    <meta name="robots" content={robotsMetaContent(robotsIndexed)} />
+    <meta name="author" content={config.metadata.meta_author} />
+    {/* domain verification (home page only): one tag per provider
+      whose code is set in config.json `verification`. */}
+    {verificationTags.map((tag) => (
+      <meta name={tag.name} content={tag.content} />
+    ))}
 
-    <!-- canonical url (always emitted; defaults to this page's own URL) -->
+    <!-- 5. canonical and language alternates -->
     <link rel="canonical" href={canonicalUrl} />
     {prevUrl && <link rel="prev" href={prevUrl} />}
     {nextUrl && <link rel="next" href={nextUrl} />}
 
-    <!-- rss feed -->
+    <!-- 6. RSS, Atom and JSON Feed discovery -->
     <link
       rel="alternate"
       type="application/rss+xml"
       title={config.site.title}
       href={absoluteUrl("/rss.xml")}
     />
-
-    <!-- atom feed -->
     <link
       rel="alternate"
       type="application/atom+xml"
       title={config.site.title}
       href={absoluteUrl("/atom.xml")}
     />
-
-    <!-- json feed -->
     <link
       rel="alternate"
       type="application/feed+json"
@@ -285,24 +280,42 @@ const jsonLdGraph = {
       href={absoluteUrl("/feed.json")}
     />
 
-    <!-- noindex robots (only emitted when a page opts out; the default is index,follow) -->
-    {noindex && <meta name="robots" content="noindex,follow" />}
-
-    <!-- meta-description -->
-    <meta name="description" content={pageDescription} />
-
-    <ClientRouter />
-
-    <!-- author from config.json -->
-    <meta name="author" content={config.metadata.meta_author} />
-
-    <!-- open graph -->
+    <!-- 7. open graph -->
     <meta property="og:title" content={ogTitle} />
     <meta property="og:description" content={ogDescription} />
     <meta property="og:type" content={resolvedOgType} />
     <meta property="og:url" content={ogUrl} />
     <meta property="og:site_name" content={config.site.title} />
     <meta property="og:locale" content={config.site.locale ?? "en_US"} />
+    <meta property="og:image" content={ogImage.url} />
+    {ogImage.secureUrl && (
+      <meta property="og:image:secure_url" content={ogImage.secureUrl} />
+    )}
+    {ogImage.type && <meta property="og:image:type" content={ogImage.type} />}
+    {ogImage.width && (
+      <meta property="og:image:width" content={String(ogImage.width)} />
+    )}
+    {ogImage.height && (
+      <meta property="og:image:height" content={String(ogImage.height)} />
+    )}
+    {ogImageAlt && <meta property="og:image:alt" content={ogImageAlt} />}
+
+    <!-- 8. twitter cards -->
+    <meta name="twitter:card" content={social.twitter.card} />
+    <meta name="twitter:title" content={twitterTitleResolved} />
+    <meta name="twitter:description" content={twitterDescriptionResolved} />
+    <meta name="twitter:image" content={twitterImageMeta.url} />
+    {twitterImageAltText && (
+      <meta name="twitter:image:alt" content={twitterImageAltText} />
+    )}
+    {social.twitter.site && (
+      <meta name="twitter:site" content={social.twitter.site} />
+    )}
+    {social.twitter.creator && (
+      <meta name="twitter:creator" content={social.twitter.creator} />
+    )}
+
+    <!-- 9. article metadata -->
     {resolvedOgType === "article" && article && (
       <>
         {toIso(article.publishedTime) && (
@@ -329,36 +342,26 @@ const jsonLdGraph = {
       </>
     )}
 
-    <!-- og-image (dimensions/MIME verified from the actual file; omitted when unverifiable) -->
-    <meta property="og:image" content={ogImage.url} />
-    {ogImage.secureUrl && (
-      <meta property="og:image:secure_url" content={ogImage.secureUrl} />
-    )}
-    {ogImage.type && <meta property="og:image:type" content={ogImage.type} />}
-    {ogImage.width && (
-      <meta property="og:image:width" content={String(ogImage.width)} />
-    )}
-    {ogImage.height && (
-      <meta property="og:image:height" content={String(ogImage.height)} />
-    )}
-    {ogImageAlt && <meta property="og:image:alt" content={ogImageAlt} />}
+    <!-- 10. font preloads and font declarations - Astro 6 built-in Font API -->
+    {fontEntries.map(([key]) => {
+      // Font's cssVariable only accepts the variables declared in theme.json
+      // (`--font-primary` / `--font-secondary`); derive that union from the
+      // theme keys instead of casting to `any`.
+      const cssVar = `--font-${key}` as `--font-${Exclude<
+        keyof typeof theme.fonts.font_family,
+        `${string}_type`
+      >}`;
+      return <Font cssVariable={cssVar} preload />;
+    })}
 
-    <!-- twitter (independent fields; each falls back through OG when unset — see social.ts) -->
-    <meta name="twitter:card" content={social.twitter.card} />
-    <meta name="twitter:title" content={twitterTitleResolved} />
-    <meta name="twitter:description" content={twitterDescriptionResolved} />
-    <meta name="twitter:image" content={twitterImageMeta.url} />
-    {twitterImageAltText && (
-      <meta name="twitter:image:alt" content={twitterImageAltText} />
-    )}
-    {social.twitter.site && (
-      <meta name="twitter:site" content={social.twitter.site} />
-    )}
-    {social.twitter.creator && (
-      <meta name="twitter:creator" content={social.twitter.creator} />
-    )}
+    <!-- 11. stylesheets — Astro injects the bundled <link rel="stylesheet">
+         tags at the end of <head>; scripts/normalize-html.mjs moves them
+         here (before the View Transitions scripts and JSON-LD). -->
 
-    <!-- structured data (one @graph block per page) -->
+    <!-- 12. view transitions scripts -->
+    <ClientRouter />
+
+    <!-- 13. JSON-LD structured data (one @graph block per page) -->
     <JsonLd data={jsonLdGraph} />
   </head>
   <body class="flex flex-col min-h-screen">

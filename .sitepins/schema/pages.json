@@ -12,8 +12,8 @@
       "isRequired": true
     },
     {
-      "name": "meta_title",
-      "label": "Meta Title",
+      "name": "seoTitle",
+      "label": "SEO Title",
       "type": "string",
       "value": ""
     },
@@ -30,25 +30,25 @@
       "value": ""
     },
     {
-      "name": "slug",
+      "name": "CustomSlug",
       "label": "Custom Slug",
       "type": "string",
       "value": ""
     },
     {
-      "name": "og_title",
+      "name": "ogTitle",
       "label": "Social Share Title (OG Title)",
       "type": "string",
       "value": ""
     },
     {
-      "name": "og_description",
+      "name": "ogDescription",
       "label": "Social Share Description (OG Description)",
       "type": "string",
       "value": ""
     },
     {
-      "name": "og_image",
+      "name": "ogImage",
       "label": "Social Share Image (OG Image)",
       "type": "media",
       "value": ""
@@ -60,10 +60,10 @@
       "value": ""
     },
     {
-      "name": "noindex",
-      "label": "Noindex",
+      "name": "robotsindex",
+      "label": "Robots Index",
       "type": "boolean",
-      "value": false
+      "value": true
     },
     {
       "name": "draft",

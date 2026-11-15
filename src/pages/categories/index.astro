@@ -1,6 +1,9 @@
 ---
+import config from "@/config/config.json";
 import Base from "@/layouts/Base.astro";
 import { getAllTaxonomy, getTaxonomy } from "@/lib/taxonomyParser";
+import { buildBreadcrumbJsonLd } from "@/lib/utils/jsonld";
+import { canonicalFor } from "@/lib/utils/seo";
 import { humanize } from "@/lib/utils/textConverter";
 import PageHeader from "@/partials/PageHeader.astro";
 
@@ -8,11 +11,19 @@ const BLOG_FOLDER = "blog";
 
 const categories = await getTaxonomy(BLOG_FOLDER, "categories");
 const allCategories = await getAllTaxonomy(BLOG_FOLDER, "categories");
+
+// Structured data: this listing page's own BreadcrumbList.
+const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+  { name: "Home", url: canonicalFor("/") },
+  { name: "Categories", url: canonicalFor("/categories") },
+]);
 ---
 
 <Base
   title={"Categories"}
-  description={"Browse all blog post categories on Astroplate."}
+  description={`Browse all blog post categories on ${config.site.title}.`}
+  robotsType="categories"
+  jsonLd={[breadcrumbJsonLd]}
 >
   <PageHeader title={"Categories"} />
   <section class="section">

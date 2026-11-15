@@ -7,6 +7,8 @@
     "language": "en",
     "locale": "en_US",
     "favicon": "/favicon.png",
+    "apple_touch_icon": "/apple-touch-icon.png",
+    "web_manifest": "/manifest.webmanifest",
     "logo": "/logo.png",
     "logo_darkmode": "/logo-darkmode.png",
     "logo_width": "150",
@@ -77,6 +79,17 @@
     "meta_description": "Astro and Tailwind boilerplate"
   },
 
+  "verification": {
+    "pinterest": "",
+    "facebook": "",
+    "google": "",
+    "bing": "",
+    "yandex": "",
+    "baidu": "",
+    "naver": "",
+    "ahrefs": ""
+  },
+
   "llms": {
     "generate_llms_txt": true,
     "generate_llms_full_txt": true,
@@ -115,6 +128,17 @@
       "products": { "enable": false, "filename": "product-sitemap.xml" },
       "locales": { "enable": false, "filename": "locales-sitemap.xml" },
       "locations": { "enable": false, "filename": "locations-sitemap.xml" }
+    }
+  },
+
+  "robots": {
+    "index": {
+      "pages": true,
+      "blogPosts": true,
+      "authors": false,
+      "tags": false,
+      "categories": false,
+      "blogArchives": false
     }
   }
 }

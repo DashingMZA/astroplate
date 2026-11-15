@@ -3,6 +3,8 @@ import BlogCard from "@/components/BlogCard.astro";
 import Base from "@/layouts/Base.astro";
 import { getSinglePage } from "@/lib/contentParser";
 import { getTaxonomy } from "@/lib/taxonomyParser";
+import { buildBreadcrumbJsonLd } from "@/lib/utils/jsonld";
+import { canonicalFor } from "@/lib/utils/seo";
 import { sortByDate } from "@/lib/utils/sortFunctions";
 import taxonomyFilter from "@/lib/utils/taxonomyFilter";
 import { humanize } from "@/lib/utils/textConverter";
@@ -29,7 +31,18 @@ const sortedPosts = sortByDate(filterByTags);
 const tagName = humanize(tag ?? "");
 ---
 
-<Base title={`${tagName} — Tag`} description={`All posts tagged ${tagName}.`}>
+<Base
+  title={`${tagName} — Tag`}
+  description={`All posts tagged ${tagName}.`}
+  robotsType="tags"
+  jsonLd={[
+    buildBreadcrumbJsonLd([
+      { name: "Home", url: canonicalFor("/") },
+      { name: "Tags", url: canonicalFor("/tags") },
+      { name: tagName, url: canonicalFor(`/tags/${tag}`) },
+    ]),
+  ]}
+>
   <PageHeader title={tagName} />
   <div class="section-sm pb-0">
     <div class="container">

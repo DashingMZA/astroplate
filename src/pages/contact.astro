@@ -4,9 +4,9 @@ import Base from "@/layouts/Base.astro";
 import { getListPage } from "@/lib/contentParser";
 import { resolveContactFormAction } from "@/lib/utils/contactForm";
 import dateFormat from "@/lib/utils/dateFormat";
-import { buildWebPageJsonLd } from "@/lib/utils/jsonld";
+import { buildBreadcrumbJsonLd, buildWebPageJsonLd } from "@/lib/utils/jsonld";
 import { lastChangeDate, resolveContentDates, toIso } from "@/lib/utils/dates";
-import { canonicalFor } from "@/lib/utils/seo";
+import { absoluteUrl, canonicalFor } from "@/lib/utils/seo";
 import PageHeader from "@/partials/PageHeader.astro";
 
 const contactIndex = await getListPage("contact", "-index");
@@ -14,24 +14,17 @@ const {
   title,
   description,
   seoDescription,
-  meta_title,
   seoTitle,
   image,
-  og_title,
   ogTitle,
-  og_description,
   ogDescription,
-  og_image,
   ogImage,
   ogImageAlt,
   twitterTitle,
   twitterDescription,
   twitterImage,
   twitterImageAlt,
-  pinterestTitle,
-  pinterestDescription,
-  pinterestImage,
-  pinterestImageAlt,
+  robotsindex,
 } = contactIndex.data;
 const dates = resolveContentDates(contactIndex.data);
 const updatedDate = lastChangeDate(dates);
@@ -39,10 +32,16 @@ const pageJsonLd = buildWebPageJsonLd({
   name: title,
   url: canonicalFor("/contact"),
   description: description ?? undefined,
-  dateCreated: toIso(dates.dateCreated),
   datePublished: toIso(dates.datePublished),
   dateModified: toIso(updatedDate),
+  inLanguage: String(config.site.language ?? "en"),
+  siteUrl: String(config.site.base_url ?? "").replace(/\/+$/, ""),
+  image: image ? absoluteUrl(image) : undefined,
 });
+const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+  { name: "Home", url: canonicalFor("/") },
+  { name: title, url: canonicalFor("/contact") },
+]);
 
 // The form POSTs to an external provider endpoint configured in
 // config.json (`contact_form.action`). Empty / "#" means unconfigured:
@@ -66,28 +65,21 @@ if (!buildDrafts && contactIndex.data.draft) {
 
 <Base
   title={title}
-  meta_title={meta_title}
   seoTitle={seoTitle}
   description={description}
   seoDescription={seoDescription}
   image={image}
-  og_title={og_title}
   ogTitle={ogTitle}
-  og_description={og_description}
   ogDescription={ogDescription}
-  og_image={og_image}
   ogImage={ogImage}
   ogImageAlt={ogImageAlt}
-  image_alt={title}
   twitterTitle={twitterTitle}
   twitterDescription={twitterDescription}
   twitterImage={twitterImage}
   twitterImageAlt={twitterImageAlt}
-  pinterestTitle={pinterestTitle}
-  pinterestDescription={pinterestDescription}
-  pinterestImage={pinterestImage}
-  pinterestImageAlt={pinterestImageAlt}
-  jsonLd={[pageJsonLd]}
+  robotsindex={robotsindex}
+  robotsType="pages"
+  jsonLd={[pageJsonLd, breadcrumbJsonLd]}
 >
   <PageHeader title={title} />
   <section class="section-sm">

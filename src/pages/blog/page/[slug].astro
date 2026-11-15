@@ -5,6 +5,7 @@ import config from "@/config/config.json";
 import Base from "@/layouts/Base.astro";
 import { getListPage, getSinglePage } from "@/lib/contentParser";
 import { getAllTaxonomy, getTaxonomy } from "@/lib/taxonomyParser";
+import { buildBreadcrumbJsonLd } from "@/lib/utils/jsonld";
 import { sortByDate } from "@/lib/utils/sortFunctions";
 import { canonicalFor } from "@/lib/utils/seo";
 import PageHeader from "@/partials/PageHeader.astro";
@@ -47,6 +48,16 @@ const nextPageUrl =
     ? canonicalFor(`/blog/page/${currentPage + 1}`)
     : undefined;
 
+// Structured data: this pagination page's own BreadcrumbList.
+const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+  { name: "Home", url: canonicalFor("/") },
+  { name: postIndex.data.title, url: canonicalFor("/blog") },
+  {
+    name: `Page ${currentPage}`,
+    url: canonicalFor(`/blog/page/${currentPage}`),
+  },
+]);
+
 export async function getStaticPaths() {
   const BLOG_FOLDER = "blog";
   const posts = await getSinglePage(BLOG_FOLDER);
@@ -66,11 +77,13 @@ export async function getStaticPaths() {
 
 <Base
   title={pageTitle}
-  meta_title={postIndex.data.meta_title}
+  seoTitle={postIndex.data.seoTitle}
   image={postIndex.data.image}
   description={pageDescription}
+  robotsType="blogArchives"
   prevUrl={prevPageUrl}
   nextUrl={nextPageUrl}
+  jsonLd={[breadcrumbJsonLd]}
 >
   <PageHeader title={pageTitle} />
   <section class="section">

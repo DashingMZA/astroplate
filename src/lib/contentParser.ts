@@ -11,7 +11,7 @@ import {
 // "@/lib/contentParser" path.
 type PageData = {
   title: string;
-  meta_title?: string;
+  seoTitle?: string;
   description?: string;
   image?: string;
   draft?: boolean;

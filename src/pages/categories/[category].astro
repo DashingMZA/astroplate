@@ -3,7 +3,9 @@ import BlogCard from "@/components/BlogCard.astro";
 import Base from "@/layouts/Base.astro";
 import { getSinglePage } from "@/lib/contentParser";
 import { getTaxonomy } from "@/lib/taxonomyParser";
+import { buildBreadcrumbJsonLd } from "@/lib/utils/jsonld";
 import { sortByDate } from "@/lib/utils/sortFunctions";
+import { canonicalFor } from "@/lib/utils/seo";
 import taxonomyFilter from "@/lib/utils/taxonomyFilter";
 import { humanize } from "@/lib/utils/textConverter";
 import PageHeader from "@/partials/PageHeader.astro";
@@ -33,6 +35,17 @@ const categoryName = humanize(category ?? "");
 <Base
   title={`${categoryName} — Category`}
   description={`All posts in the ${categoryName} category.`}
+  robotsType="categories"
+  jsonLd={[
+    buildBreadcrumbJsonLd([
+      { name: "Home", url: canonicalFor("/") },
+      { name: "Categories", url: canonicalFor("/categories") },
+      {
+        name: categoryName,
+        url: canonicalFor(`/categories/${category}`),
+      },
+    ]),
+  ]}
 >
   <PageHeader title={categoryName} />
   <div class="section-sm pb-0">

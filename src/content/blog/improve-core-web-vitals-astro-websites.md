@@ -1,13 +1,13 @@
 ---
 title: "How to Improve Core Web Vitals in Astro Websites"
-meta_title: "Core Web Vitals in Astro: Improve LCP, INP, CLS"
+seoTitle: "Core Web Vitals in Astro: Improve LCP, INP, CLS"
 description: "Learn how to improve Core Web Vitals in Astro: fix LCP with priority images, cut INP with lazy hydration, and stop CLS with reserved space and metric fonts."
 image: "/images/blog/improve-core-web-vitals-astro-websites-feature.webp"
-og_image: "/images/blog/improve-core-web-vitals-astro-websites-og.webp"
-og_title: "Core Web Vitals in Astro: A Practical Guide"
-og_description: "A practical Astro guide to LCP, INP and CLS: priority images, lazy hydration, reserved space, self-hosted fonts and real-user measurement."
+ogImage: "/images/blog/improve-core-web-vitals-astro-websites-og.webp"
+ogTitle: "Core Web Vitals in Astro: A Practical Guide"
+ogDescription: "A practical Astro guide to LCP, INP and CLS: priority images, lazy hydration, reserved space, self-hosted fonts and real-user measurement."
 categories: ["Performance"]
-author: "Muhammad Zaheer Ahmad"
+authors: ["Muhammad Zaheer Ahmad"]
 tags: ["astro", "core-web-vitals", "performance"]
 draft: false
 dateCreated: 2026-11-10T05:00:00Z

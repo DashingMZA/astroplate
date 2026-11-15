@@ -1,11 +1,12 @@
 ---
+import config from "@/config/config.json";
 import ImageMod from "@/components/ImageMod.astro";
 import Base from "@/layouts/Base.astro";
 import { getListPage } from "@/lib/contentParser";
 import dateFormat from "@/lib/utils/dateFormat";
 import { lastChangeDate, resolveContentDates, toIso } from "@/lib/utils/dates";
-import { buildWebPageJsonLd } from "@/lib/utils/jsonld";
-import { canonicalFor } from "@/lib/utils/seo";
+import { buildBreadcrumbJsonLd, buildWebPageJsonLd } from "@/lib/utils/jsonld";
+import { absoluteUrl, canonicalFor } from "@/lib/utils/seo";
 import { markdownify } from "@/lib/utils/textConverter";
 import { render } from "astro:content";
 
@@ -15,24 +16,17 @@ const {
   title,
   description,
   seoDescription,
-  meta_title,
   seoTitle,
   image,
-  og_title,
   ogTitle,
-  og_description,
   ogDescription,
-  og_image,
   ogImage,
   ogImageAlt,
   twitterTitle,
   twitterDescription,
   twitterImage,
   twitterImageAlt,
-  pinterestTitle,
-  pinterestDescription,
-  pinterestImage,
-  pinterestImageAlt,
+  robotsindex,
 } = aboutIndex.data;
 const dates = resolveContentDates(aboutIndex.data);
 const updatedDate = lastChangeDate(dates);
@@ -40,10 +34,16 @@ const pageJsonLd = buildWebPageJsonLd({
   name: title,
   url: canonicalFor("/about"),
   description: description ?? undefined,
-  dateCreated: toIso(dates.dateCreated),
   datePublished: toIso(dates.datePublished),
   dateModified: toIso(updatedDate),
+  inLanguage: String(config.site.language ?? "en"),
+  siteUrl: String(config.site.base_url ?? "").replace(/\/+$/, ""),
+  image: image ? absoluteUrl(image) : undefined,
 });
+const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+  { name: "Home", url: canonicalFor("/") },
+  { name: title, url: canonicalFor("/about") },
+]);
 
 const buildDrafts = process.argv.includes("--buildDrafts");
 if (!buildDrafts && aboutIndex.data.draft) {
@@ -53,28 +53,21 @@ if (!buildDrafts && aboutIndex.data.draft) {
 
 <Base
   title={title}
-  meta_title={meta_title}
   seoTitle={seoTitle}
   description={description}
   seoDescription={seoDescription}
   image={image}
-  og_title={og_title}
   ogTitle={ogTitle}
-  og_description={og_description}
   ogDescription={ogDescription}
-  og_image={og_image}
   ogImage={ogImage}
   ogImageAlt={ogImageAlt}
-  image_alt={title}
   twitterTitle={twitterTitle}
   twitterDescription={twitterDescription}
   twitterImage={twitterImage}
   twitterImageAlt={twitterImageAlt}
-  pinterestTitle={pinterestTitle}
-  pinterestDescription={pinterestDescription}
-  pinterestImage={pinterestImage}
-  pinterestImageAlt={pinterestImageAlt}
-  jsonLd={[pageJsonLd]}
+  robotsindex={robotsindex}
+  robotsType="pages"
+  jsonLd={[pageJsonLd, breadcrumbJsonLd]}
 >
   <section class="section-sm">
     <div class="container">

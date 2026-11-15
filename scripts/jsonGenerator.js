@@ -27,7 +27,7 @@ const getData = (folder, groupDepth) => {
       const { data, content } = matter(file);
       const pathParts = filepath.split(path.sep);
       // Filename-derived id, e.g. "blog/post-1" (nested: "blog/guides/x").
-      // A custom `slug` wins over it (normalised, leading `blog/` forgiven);
+      // A custom `CustomSlug` wins over it (normalised, leading `blog/` forgiven);
       // the emitted search slug is always the full public path, so result
       // links are `/blog/<slug>` — a bare custom slug previously produced
       // a broken `/<slug>` link.
@@ -57,9 +57,13 @@ const getData = (folder, groupDepth) => {
   const now = new Date();
   return getPaths.filter((page) => {
     // Same visibility rules as the router (getSinglePage) and RSS:
-    // no drafts, no noindex pages, no future-dated posts (publication
+    // no drafts, no robotsindex: false pages, no future-dated posts (publication
     // date, creation only as a fallback).
-    if (!page || page.frontmatter?.draft || page.frontmatter?.noindex) {
+    if (
+      !page ||
+      page.frontmatter?.draft ||
+      page.frontmatter?.robotsindex === false
+    ) {
       return false;
     }
     const pub =
@@ -82,7 +86,7 @@ try {
     );
     throw new Error(
       `Duplicate blog post URLs — two or more posts resolve to the same public URL. ` +
-        `Give each post a unique custom \`slug\` (or rename the file):\n${lines.join("\n")}`,
+        `Give each post a unique custom \`CustomSlug\` (or rename the file):\n${lines.join("\n")}`,
     );
   }
 

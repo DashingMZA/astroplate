@@ -27,16 +27,13 @@ const { Content, headings } = await render(post);
 const {
   title,
   description,
-  author,
   authors,
   categories,
   image,
-  og_image,
   ogImage,
   twitterTitle,
   twitterDescription,
   twitterImage,
-  pinterestTitle,
   pinterestDescription,
   pinterestImage,
   datePublished,
@@ -52,6 +49,13 @@ const showUpdated =
   dates.datePublished &&
   dates.dateModified.getTime() !== dates.datePublished.getTime();
 
+// Visible breadcrumb trail — mirrors the JSON-LD BreadcrumbList exactly:
+// Home → Blog → Category → Title. The category crumb is the first real
+// category ("others" is filler, never a crumb).
+const firstCategory = (categories ?? []).find(
+  (category: string) => category.toLowerCase() !== "others",
+);
+
 // Reading time from the raw Markdown body.
 const reading_time = readingTime(post.body ?? "");
 
@@ -60,7 +64,7 @@ const reading_time = readingTime(post.body ?? "");
 // with no link — never a link to a 404 author page.
 const allAuthors = await getCollection("authors");
 const resolvedAuthors = resolveAuthors(
-  displayAuthorNames({ data: { author, authors } }),
+  displayAuthorNames({ data: { authors } }),
   allAuthors,
 );
 ---
@@ -73,6 +77,14 @@ const resolvedAuthors = resolveAuthors(
           items={[
             { label: "Home", href: "/" },
             { label: "Blog", href: "/blog" },
+            ...(firstCategory
+              ? [
+                  {
+                    label: firstCategory,
+                    href: `/categories/${slugify(firstCategory)}`,
+                  },
+                ]
+              : []),
             { label: title },
           ]}
         />
@@ -171,11 +183,10 @@ const resolvedAuthors = resolveAuthors(
               slug={postSlug(post)}
               url={canonicalFor(postUrl(post))}
               image={image}
-              ogImage={ogImage ?? og_image}
+              ogImage={ogImage}
               twitterTitle={twitterTitle}
               twitterDescription={twitterDescription}
               twitterImage={twitterImage}
-              pinterestTitle={pinterestTitle}
               pinterestDescription={pinterestDescription}
               pinterestImage={pinterestImage}
             />

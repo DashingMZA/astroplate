@@ -5,6 +5,7 @@ import config from "@/config/config.json";
 import Base from "@/layouts/Base.astro";
 import { getListPage, getSinglePage } from "@/lib/contentParser";
 import { getAllTaxonomy, getTaxonomy } from "@/lib/taxonomyParser";
+import { buildBlogJsonLd, buildBreadcrumbJsonLd } from "@/lib/utils/jsonld";
 import { sortByDate } from "@/lib/utils/sortFunctions";
 import { canonicalFor } from "@/lib/utils/seo";
 import PageHeader from "@/partials/PageHeader.astro";
@@ -24,6 +25,18 @@ const tags = await getTaxonomy(BLOG_FOLDER, "tags");
 const sortedPosts = sortByDate(posts);
 const totalPages: number = Math.ceil(posts.length / config.settings.pagination);
 const currentPosts = sortedPosts.slice(0, config.settings.pagination);
+// Structured data: the blog's own BreadcrumbList + the Blog node the
+// posts' `isPartOf` points at.
+const siteUrl = String(config.site.base_url ?? "").replace(/\/+$/, "");
+const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+  { name: "Home", url: canonicalFor("/") },
+  { name: postIndex.data.title, url: canonicalFor("/blog") },
+]);
+const blogJsonLd = buildBlogJsonLd({
+  name: postIndex.data.title,
+  url: canonicalFor("/blog"),
+  siteUrl,
+});
 // Page 1 of the blog listing: rel=next points at page 2 when it exists
 // (pagination pages carry their own titles + rel=prev/next).
 const nextPageUrl = totalPages > 1 ? canonicalFor(`/blog/page/2`) : undefined;
@@ -31,10 +44,12 @@ const nextPageUrl = totalPages > 1 ? canonicalFor(`/blog/page/2`) : undefined;
 
 <Base
   title={postIndex.data.title}
-  meta_title={postIndex.data.meta_title}
+  seoTitle={postIndex.data.seoTitle}
   image={postIndex.data.image}
   description={postIndex.data.description}
+  robotsType="blogArchives"
   nextUrl={nextPageUrl}
+  jsonLd={[breadcrumbJsonLd, blogJsonLd]}
 >
   <PageHeader title={postIndex?.data.title} />
   <section class="section">

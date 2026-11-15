@@ -42,7 +42,7 @@ testimonials). Its rule:
 This matters because an absolute URL must never become
 `/publichttps://…` (which renders nothing). The rule is covered by
 the shipped demo post `src/content/blog/post-r2-example.md`, whose
-`image` and `og_image` are absolute R2 URLs — keep that post
+`image` and `ogImage` are absolute R2 URLs — keep that post
 published so builds keep verifying remote-image handling end to end.
 
 The same verbatim rule applies to SEO images: `src/lib/utils/seo.ts`
@@ -72,15 +72,15 @@ configured in `astro.config.mjs`):
   this branch; a dead remote URL instead falls back to the same
   placeholder at runtime (see “Missing-image fallback” below).
 
-## `image` vs `og_image`
+## `image` vs `ogImage`
 
 | Field | Used for | Fallback |
 | --- | --- | --- |
 | `image` (frontmatter) | On-page hero / card image | Site `metadata.meta_image` (for SEO only) |
-| `og_image` (frontmatter) | OG/Twitter share image + JSON-LD image | `image` |
+| `ogImage` (frontmatter) | OG/Twitter share image + JSON-LD image | `image` |
 | `metadata.meta_image` (`config.json`) | Default OG/Twitter image for pages without one | — |
 
-Use `og_image` when the share image should differ from the hero —
+Use `ogImage` when the share image should differ from the hero —
 typically a 1200×630 card. If you only set `image`, social shares
 use the hero image. See [SEO_GUIDE.md](SEO_GUIDE.md).
 
@@ -197,7 +197,7 @@ is implemented; do not treat it as a working feature.**
   upload into `public/images/`, which is exactly where `ImageMod`
   looks for local images.
 - `.sitepins/schema/blog.json` and `authors.json` already type the
-  `image` / `og_image` fields as `media`, so a CMS media picker
+  `image` / `ogImage` fields as `media`, so a CMS media picker
   would fill them with paths under `public/images/` (or absolute
   URLs for remote storage).
 - If a future media upload is added, the contract it must satisfy

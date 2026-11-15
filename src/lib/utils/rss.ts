@@ -72,7 +72,7 @@ export function mediaMimeType(url: string): string | null {
 }
 
 /**
- * Media RSS tags for a post's own featured image (`og_image` else
+ * Media RSS tags for a post's own featured image (`ogImage` else
  * `image`, same priority as `resolveOgImage`). Returns "" when the post
  * has no own image — the site-default OG image is not a post's featured
  * image, so it is never emitted here. `dimensions` (when known, e.g.
@@ -81,7 +81,7 @@ export function mediaMimeType(url: string): string | null {
  */
 export function mediaTags(
   input: {
-    og_image?: string | null;
+    ogImage?: string | null;
     image?: string | null;
   },
   dimensions?: { width: number; height: number } | null,

@@ -69,9 +69,9 @@ test("mediaMimeType: query/fragment ignored, unknown types return null", () => {
 
 // ─── Media RSS tags ──────────────────────────────────────────────────────
 
-test("mediaTags: og_image wins, absolutized, with type + thumbnail", () => {
+test("mediaTags: ogImage wins, absolutized, with type + thumbnail", () => {
   const tags = mediaTags({
-    og_image: "/images/r2-example-og.webp",
+    ogImage: "/images/r2-example-og.webp",
     image: "/images/r2-example.webp",
   });
   assert.match(
@@ -86,7 +86,7 @@ test("mediaTags: og_image wins, absolutized, with type + thumbnail", () => {
 
 test("mediaTags: webp post image keeps a stable /images/ URL with type image/webp", () => {
   const tags = mediaTags({
-    og_image:
+    ogImage:
       "/images/blog/astro-islands-architecture-explained-partial-hydration-works-og.webp",
     image:
       "/images/blog/astro-islands-architecture-explained-partial-hydration-works-feature.webp",
@@ -115,7 +115,7 @@ test("mediaTags: image alone is used; remote URLs pass through unchanged", () =>
 
 test("mediaTags: no own image means no tags (site default is not a featured image)", () => {
   assert.equal(mediaTags({}), "");
-  assert.equal(mediaTags({ og_image: null, image: null }), "");
+  assert.equal(mediaTags({ ogImage: null, image: null }), "");
 });
 
 test("mediaTags: unknown extension omits type but keeps url + medium", () => {

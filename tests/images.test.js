@@ -2,7 +2,7 @@
 // Every assertion reuses the REAL helpers in src/lib/utils/seo.ts
 // (no re-implemented logic): absolute URLs (R2/CDN) must be preserved
 // verbatim, relative paths resolve against base_url, and the OG image
-// priority is og_image > image > site default.
+// priority is ogImage > image > site default.
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
@@ -28,7 +28,7 @@ test("absolute R2/CDN URLs are preserved verbatim", () => {
   assert.equal(absoluteUrl(R2_IMAGE), R2_IMAGE);
   assert.equal(resolveImage(R2_IMAGE), R2_IMAGE);
   assert.equal(resolveOgImage({ image: R2_IMAGE }).url, R2_IMAGE);
-  assert.equal(resolveOgImage({ og_image: R2_IMAGE }).url, R2_IMAGE);
+  assert.equal(resolveOgImage({ ogImage: R2_IMAGE }).url, R2_IMAGE);
   // Protocol-relative and data: URLs are absolute too.
   assert.equal(isAbsoluteUrl("//media.csofts.tech/x.jpg"), true);
   assert.equal(
@@ -43,10 +43,10 @@ test("relative paths resolve against the site base URL", () => {
   assert.equal(absoluteUrl("images/logo.png"), `${SITE}/images/logo.png`);
 });
 
-test("OG image priority is og_image > image > site default", () => {
+test("OG image priority is ogImage > image > site default", () => {
   const local = "/images/post-hero.jpg";
   assert.deepEqual(
-    resolveOgImage({ og_image: "/images/og.jpg", image: local }),
+    resolveOgImage({ ogImage: "/images/og.jpg", image: local }),
     {
       url: `${SITE}/images/og.jpg`,
       isPageImage: true,
@@ -126,7 +126,7 @@ test("every article's feature + OG image is a .webp file that exists", () => {
   assert.equal(articles.length, 10, "expected the 10 SEO articles");
   for (const file of articles) {
     const content = fs.readFileSync(file, "utf8");
-    for (const field of ["image", "og_image"]) {
+    for (const field of ["image", "ogImage"]) {
       const value = frontmatterField(content, field);
       assert.ok(
         value.endsWith(".webp"),

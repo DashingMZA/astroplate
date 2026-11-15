@@ -27,7 +27,7 @@ GTM, and Disqus settings for every page's `<head>`.
 | `title` | string | `"Astroplate"` | Site name; fallback page title, `og:site_name`, RSS title |
 | `base_url` | string | `"https://astroplate.jadoo.bond"` | Canonical domain. Every canonical URL, `og:url`, sitemap URL, and RSS link is built from this. Must be the public production URL, with scheme, no trailing slash |
 | `base_path` | string | `"/"` | Sub-path the site is served under (e.g. `"/blog"`). `"/"` means root |
-| `trailing_slash` | boolean | `false` | `true` → URLs end with `/`; `false` → no trailing slash. Affects canonical URLs and Astro routing |
+| `trailing_slash` | boolean | `false` | `true` → URLs end with `/`; `false` → no trailing slash. Affects canonical URLs and Astro routing. With `false`, every host 301-redirects a trailing-slash request to the slashless URL (see "Trailing slash" in [SEO_GUIDE.md](SEO_GUIDE.md)) |
 | `language` | string | `"en"` | `lang` attribute on `<html>` |
 | `locale` | string | `"en_US"` | `og:locale` meta tag |
 | `favicon` | string | `"/images/favicon.png"` | Favicon path (relative to `public/`) |
@@ -170,6 +170,23 @@ values (see [SEO_GUIDE.md](SEO_GUIDE.md)).
 | `meta_image_alt` | string | `"Astroplate"` | `og:image:alt` / `twitter:image:alt` |
 | `meta_description` | string | `"Astro and Tailwind boilerplate"` | Default `<meta name="description">`, OG description, and RSS channel description |
 
+### `verification`
+
+Domain-verification codes for search engines and social platforms.
+Each code renders its meta tag **on the home page only** (see
+[SEO_GUIDE.md](SEO_GUIDE.md)); an empty code emits no tag.
+
+| Key | Type | Default | What it controls |
+| --- | --- | --- | --- |
+| `pinterest` | string | `""` | `<meta name="p:domain_verify">` |
+| `facebook` | string | `""` | `<meta name="facebook-domain-verification">` |
+| `google` | string | `""` | `<meta name="google-site-verification">` |
+| `bing` | string | `""` | `<meta name="msvalidate.01">` |
+| `yandex` | string | `""` | `<meta name="yandex-verification">` |
+| `baidu` | string | `""` | `<meta name="baidu-site-verification">` |
+| `naver` | string | `""` | `<meta name="naver-site-verification">` |
+| `ahrefs` | string | `""` | `<meta name="ahrefs-site-verification">` |
+
 ### `llms`
 
 Controls LLM-friendly docs generation during `pnpm build`
@@ -213,7 +230,7 @@ Types and their defaults (11 types; the index makes 12 files):
 | `categories` | on, `category-sitemap.xml` | Category archive pages that exist |
 | `tags` | on, `post_tag-sitemap.xml` | Tag archive pages that exist |
 | `authors` | on, `author-sitemap.xml` | Published author pages |
-| `images` | on, `image-sitemap.xml` | Post pages with their featured image (`og_image` else `image`) — one image per post, unchanged by the post/page embedding |
+| `images` | on, `image-sitemap.xml` | Post pages with their featured image (`ogImage` else `image`) — one image per post, unchanged by the post/page embedding |
 | `videos` | off, `video-sitemap.xml` | No video content exists — enabling it fails the build until a collector is added |
 | `news` | off, `news-sitemap.xml` | No news content exists — same as `videos` |
 | `products` | off, `product-sitemap.xml` | No product content exists — same as `videos` |

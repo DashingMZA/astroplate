@@ -29,13 +29,12 @@ any entry whose id starts with `-`.
 | Field | Type | Required | Default | Notes |
 | --- | --- | --- | --- | --- |
 | `title` | string | yes | — | Post title; also the `<h1>` and fallback `<title>` |
-| `meta_title` | string | no | `title` | `<title>` tag (legacy alias of `seoTitle`). Falls back to `title`, then site title |
-| `seoTitle` | string | no | `meta_title` | `<title>` tag. Priority: `seoTitle` > `meta_title` > `title` > site title |
+| `seoTitle` | string | no | `title` | `<title>` tag. Priority: `seoTitle` > `title` > site title |
 | `seoDescription` | string | no | `description` | `<meta name="description">`. Priority: `seoDescription` > `description` > `excerpt` > site default |
-| `ogTitle` | string | no | — | Social-share title. Priority: `ogTitle` > `seoTitle` > `title` for `og:title` (legacy alias: `og_title`) |
-| `ogDescription` | string | no | `description` | Social-share description. Priority: `ogDescription` > `seoDescription` > `description` > `excerpt` > site default (legacy alias: `og_description`) |
-| `ogImage` | string | no | `image` | Social-share image. Wins over `image` for OG/Twitter/Pinterest; also used in JSON-LD (legacy alias: `og_image`) |
-| `ogImageAlt` | string | no | page title | Alt text for the OG image (legacy alias: `og_image_alt`) |
+| `ogTitle` | string | no | — | Social-share title. Priority: `ogTitle` > `seoTitle` > `title` for `og:title` |
+| `ogDescription` | string | no | `description` | Social-share description. Priority: `ogDescription` > `seoDescription` > `description` > `excerpt` > site default |
+| `ogImage` | string | no | `image` | Social-share image. Wins over `image` for OG/Twitter/Pinterest; also used in JSON-LD |
+| `ogImageAlt` | string | no | page title | Alt text for the OG image |
 | `twitterTitle` | string | no | `ogTitle` | X title. Priority: `twitterTitle` > `ogTitle` > `seoTitle` > `title` |
 | `twitterDescription` | string | no | `ogDescription` | X description. Priority: `twitterDescription` > `ogDescription` > `seoDescription` > `description` |
 | `twitterImage` | string | no | `ogImage` | X image. Priority: `twitterImage` > `ogImage` > `image` > site default Twitter image |
@@ -50,14 +49,13 @@ any entry whose id starts with `-`.
 | `datePublished` | date | yes* | — | First publication date, set once, never changes. Drafts have none. Future dates are excluded from the build (see below) |
 | `dateModified` | date | yes* | — | Latest meaningful modification; drives `article:modified_time`, JSON-LD `dateModified`, sitemap `<lastmod>` and the feeds |
 | `image` | string | no | site `meta_image` | Hero image. Local path (`/images/….png`) or absolute URL (see [IMAGE_STORAGE.md](IMAGE_STORAGE.md)) |
-| `author` | string | no | `"Admin"` | Single-author name; fallback when `authors` is absent. Resolved to an author file by id first, display-name slug second (see Authors) |
-| `authors` | string[] | no | — | Multi-author list. When non-empty it replaces `author` for display, OG `article:author` tags, and JSON-LD authors |
+| `authors` | string[] | no | — | Author list. Single-author posts list one name; multi-author posts list several. Drives the byline, OG `article:author` tags, and JSON-LD authors |
 | `categories` | string[] | no | `["others"]` | Taxonomy; first category becomes OG `article:section` |
 | `tags` | string[] | no | `["others"]` | Taxonomy; emitted as OG `article:tag` entries |
-| `slug` | string | no | filename id | **Custom URL slug — it drives routing.** See “Custom slugs” below |
+| `CustomSlug` | string | no | filename id | **Custom URL slug — it drives routing.** See “Custom slugs” below |
 | `featured` | boolean | no | — | Accepted but **not consumed**: no featured-post section, filter, or ordering exists in this version |
 | `canonical` | string | no | page's own URL | Absolute `https://…` URL or site-relative path (`/blog/x`); anything else fails validation. Overrides the generated canonical URL |
-| `noindex` | boolean | no | `false` | `true` emits `<meta name="robots" content="noindex,follow">` and excludes the post from the sitemap, RSS, search index, and LLM docs |
+| `robotsindex` | boolean | no | config default | `false` (or a noindex config default for the type) emits `<meta name="robots" content="noindex, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">` and excludes the post from the sitemap, RSS, search index, and LLM docs |
 | `draft` | boolean | no | — | `true` excludes the post from the build (see below) |
 
 Validation notes:
@@ -79,26 +77,26 @@ Validation notes:
 
 ### Custom slugs — how routing works
 
-`slug` overrides the filename-derived id for a post's public URL.
+`CustomSlug` overrides the filename-derived id for a post's public URL.
 One shared helper (`src/lib/utils/slug.ts`: `postUrl`, `postSlug`)
 keeps the route, cards, share links, RSS, canonical/JSON-LD URLs, and
 the search index on the same URL, so a custom slug never produces a
 mismatched link.
 
-- `slug: "my-guide"` on `src/content/blog/post-1.md` publishes the
+- `CustomSlug: "my-guide"` on `src/content/blog/post-1.md` publishes the
   post at `/blog/my-guide` (not `/blog/post-1`).
 - Slugs are normalised (lowercased, spaces/punctuation become
   hyphens) and **Unicode letters are preserved, not stripped**:
-  `slug: "café-guide"` stays `café-guide`; `slug: "my guide!"` becomes
+  `CustomSlug: "café-guide"` stays `café-guide`; `CustomSlug: "my guide!"` becomes
   `my-guide`.
-- Nested slugs work: `slug: "guides/my-guide"` publishes at
+- Nested slugs work: `CustomSlug: "guides/my-guide"` publishes at
   `/blog/guides/my-guide`. The same normalisation applies per segment.
 - **Collisions fail the build**: two posts with the same public slug
   (after normalisation), or a custom slug colliding with another
   post's filename slug, throw a duplicate-slug error from the sitemap
   collectors (`src/lib/seo/sitemap/collectors.ts`) and the post route
   — fix the frontmatter rather than shipping two pages at one URL.
-- Pages (`pages` collection) and authors support `slug` the same way
+- Pages (`pages` collection) and authors support `CustomSlug` the same way
   via `pageUrl` / `authorUrl` in the same helper.
 - The filename URL does **not** redirect to the custom slug — it
   simply is not built. Old filename links 404 after a slug change,
@@ -145,9 +143,9 @@ to the site default OG image.
 ```markdown
 ---
 title: "How to Build a Modern Application with Next.js and Tailwind CSS"
-meta_title: "Build a Modern App with Next.js and Tailwind CSS"
-og_title: "Build a Modern App with Next.js + Tailwind"
-og_description: "A hands-on Next.js + Tailwind guide, from setup to a polished interface."
+seoTitle: "Build a Modern App with Next.js and Tailwind CSS"
+ogTitle: "Build a Modern App with Next.js + Tailwind"
+ogDescription: "A hands-on Next.js + Tailwind guide, from setup to a polished interface."
 description: "A practical guide to building a modern web application with Next.js and Tailwind CSS."
 excerpt: "From project setup to a polished, responsive interface."
 dateCreated: 2022-04-04T05:00:00Z
@@ -155,13 +153,13 @@ datePublished: 2022-04-04T05:00:00Z
 dateModified: 2022-04-10T05:00:00Z
 slug: "build-modern-app-nextjs-tailwind"
 image: "/images/image-placeholder.png"
-og_image: "/images/og-image.jpg"
-author: "John Doe"
+ogImage: "/images/og-image.jpg"
+authors: ["John Doe"]
 categories: ["Application", "Data"]
 tags: ["nextjs", "tailwind"]
 featured: true
 canonical: "https://example.com/blog/my-post/"
-noindex: false
+robotsindex: true
 draft: false
 ---
 
@@ -169,9 +167,9 @@ Post body…
 ```
 
 Notes on this example: `dateModified` drives the modified
-date; `og_image` is what social shares show; `og_title` /
-`og_description` override the plain title/description for social
-shares only; `slug` publishes this post at
+date; `ogImage` is what social shares show; `ogTitle` /
+`ogDescription` override the plain title/description for social
+shares only; `CustomSlug` publishes this post at
 `/blog/build-modern-app-nextjs-tailwind`; `canonical` may be absolute
 or site-relative; `featured: true` is accepted but has no visible
 effect (no featured UI exists).
@@ -185,7 +183,6 @@ description: "Written together."
 dateCreated: 2022-04-04T05:00:00Z
 datePublished: 2022-04-04T05:00:00Z
 dateModified: 2022-04-04T05:00:00Z
-author: "John Doe"
 authors: ["John Doe", "Sam Wilson"]
 categories: ["Technology"]
 tags: ["technology"]
@@ -195,9 +192,9 @@ draft: false
 Post body…
 ```
 
-`authors` wins over `author` for the byline, the OG
-`article:author` tags, and the JSON-LD author list. Keep `author`
-set as the single-author fallback. Author names are resolved to an
+`authors` drives the byline, the OG
+`article:author` tags, and the JSON-LD author list. Single-author
+posts list one name. Author names are resolved to an
 author file by entry id first (`john-doe`), with a legacy
 display-name slug match as fallback; a name that matches no file
 renders as plain text, never as a link to a 404 author page.
@@ -209,7 +206,7 @@ renders as plain text, never as a link to a 404 author page.
 title: "Work in Progress"
 description: "Not ready yet."
 dateCreated: 2022-04-04T05:00:00Z
-author: "John Doe"
+authors: ["John Doe"]
 draft: true
 ---
 
@@ -224,15 +221,15 @@ the blog listing. It only appears with `--buildDrafts`.
 ```markdown
 ---
 title: "Serving Blog Images from R2: A Remote Image Example"
-meta_title: "Serving Blog Images from R2: A Remote Image Example"
+seoTitle: "Serving Blog Images from R2: A Remote Image Example"
 description: "A demo post showing how Astroplate handles blog images hosted remotely on R2, with a separate social share image for Open Graph."
 dateCreated: 2022-04-05T05:00:00Z
 datePublished: 2022-04-05T05:00:00Z
 dateModified: 2022-04-05T05:00:00Z
 image: "https://media.csofts.tech/images/r2-example.jpg"
-og_image: "https://media.csofts.tech/images/r2-example-og.jpg"
+ogImage: "https://media.csofts.tech/images/r2-example-og.jpg"
 categories: ["Technology"]
-author: "John Doe"
+authors: ["John Doe"]
 tags: ["technology"]
 draft: false
 ---
@@ -241,13 +238,13 @@ Post body…
 ```
 
 This is the shipped demo post `src/content/blog/post-r2-example.md`.
-Both `image` and `og_image` are absolute `https://` URLs; they are
+Both `image` and `ogImage` are absolute `https://` URLs; they are
 rendered verbatim (see [IMAGE_STORAGE.md](IMAGE_STORAGE.md)). No
 local copy is needed.
 
 ## Authors (`authors`)
 
-Shared base fields (`title`, `description`, `meta_title`,
+Shared base fields (`title`, `description`, `seoTitle`,
 `dateCreated`, `datePublished`, `dateModified`, `image`, `draft`) plus:
 
 | Field | Type | Required | Notes |
@@ -290,7 +287,7 @@ All three share the common fields only:
 | --- | --- | --- | --- |
 | `title` | string | yes | Page title |
 | `description` | string | yes | Meta description |
-| `meta_title` | string | no | `<title>` override |
+| `seoTitle` | string | no | `<title>` override |
 | `date` | date | no | Optional |
 | `image` | string | no | Page/OG image |
 | `draft` | boolean | yes (in schema) | `true` excludes the page from the build |
@@ -375,26 +372,25 @@ form fields match what the build validates:
 
 | Schema file | Mirrors | Notes |
 | --- | --- | --- |
-| `.sitepins/schema/blog.json` | `blog` collection | 20 fields, including the new `excerpt`, `slug`, `updated`, `lastmod`, `og_image`, `og_title`, `og_description`, `authors`, `featured`, `canonical`, `noindex`. `author` and `authors` are dropdowns referencing `src/content/authors/*.md` by `title` |
-| `.sitepins/schema/pages.json` | `pages` collection | `title` (required), `meta_title`, `description`, `image`, `draft` |
-| `.sitepins/schema/authors.json` | `authors` collection | `title` (required), `email`, `image`, `description`, `social` (array of `name`/`icon`/`link`), `draft` |
+| `.sitepins/schema/blog.json` | `blog` collection | 19 fields, including the new `excerpt`, `CustomSlug`, `dateCreated`, `datePublished`, `dateModified`, `ogImage`, `ogTitle`, `ogDescription`, `authors`, `featured`, `canonical`, `robotsindex`. `authors` is a dropdown referencing `src/content/authors/*.md` by `title` |
+| `.sitepins/schema/pages.json` | `pages` collection | `title` (required), `seoTitle`, `description`, `image`, `draft` |
+| `.sitepins/schema/authors.json` | `authors` collection | `title` (required), `CustomSlug`, `email`, `image`, `description`, `canonical`, `robotsindex`, `social` (array of `name`/`icon`/`link`), `draft` |
 
 ### Mapping table (Zod field → Sitepins field)
 
 | Zod field (`content.config.ts`) | Sitepins type | Notes |
 | --- | --- | --- |
 | `title` | string (required) | Same in all three schemas |
-| `meta_title` | string | |
+| `seoTitle` | string | |
 | `description` | string | |
 | `excerpt` | string | Blog only |
-| `slug` | string (“Custom Slug”) | Blog only; drives routing — see “Custom slugs” above |
-| `date` / `updated` / `lastmod` | Date | Blog only |
-| `image` / `og_image` | media | `og_image` labelled “Social Share Image (OG Image)” |
-| `og_title` / `og_description` | string | Blog only; consumed as the OG/Twitter title/description overrides |
-| `author` | string, dropdown from authors folder | Default `"Admin"` |
+| `CustomSlug` | string (“Custom Slug”) | Blog only; drives routing — see “Custom slugs” above |
+| `dateCreated` / `datePublished` / `dateModified` | Date | Blog only |
+| `image` / `ogImage` | media | `ogImage` labelled “Social Share Image (OG Image)” |
+| `ogTitle` / `ogDescription` | string | Blog only; consumed as the OG/Twitter title/description overrides |
 | `authors` | Array of string, dropdown from authors folder | Blog only |
 | `categories` / `tags` | Array of string | Default `["others"]` in Zod |
-| `featured` / `noindex` / `draft` | boolean | `featured` is accepted but has no UI; `noindex` excludes the post from sitemap/RSS/search/llms |
+| `featured` / `robotsindex` / `draft` | boolean | `featured` is accepted but has no UI; a noindex resolved `robotsindex` (`false`, or a noindex config default) excludes the post from sitemap/RSS/search/llms |
 | `canonical` | string (“Canonical URL”) | Absolute URL or site-relative path |
 | `email` | string | Authors only |
 | `social` | Array of object (`name`, `icon`, `link`) | Authors only |

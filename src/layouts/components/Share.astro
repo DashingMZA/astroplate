@@ -21,7 +21,6 @@ const {
   twitterTitle,
   twitterDescription,
   twitterImage,
-  pinterestTitle,
   pinterestDescription,
   pinterestImage,
 }: {
@@ -35,7 +34,6 @@ const {
   twitterTitle?: string;
   twitterDescription?: string;
   twitterImage?: string;
-  pinterestTitle?: string;
   pinterestDescription?: string;
   pinterestImage?: string;
 } = Astro.props;
@@ -53,8 +51,8 @@ const shareUrl = url
 
 // Platform-specific share text/image come from the centralized social
 // resolver (same fallback chains as the <head> metadata): X uses the
-// resolved Twitter title, Pinterest uses the resolved Pin title /
-// description / image. Nothing here re-implements a fallback.
+// resolved Twitter title, Pinterest uses the resolved Pin description /
+// image. Nothing here re-implements a fallback.
 const social = await resolveSocialMeta({
   title,
   description,
@@ -63,7 +61,6 @@ const social = await resolveSocialMeta({
   twitterTitle,
   twitterDescription,
   twitterImage,
-  pinterestTitle,
   pinterestDescription,
   pinterestImage,
 });

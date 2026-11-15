@@ -11,8 +11,7 @@ import ImageMod from "./ImageMod.astro";
 
 const { summary_length }: { summary_length: number } = config.settings;
 const { data } = Astro.props;
-const { title, image, author, authors, categories, excerpt, description } =
-  data.data;
+const { title, image, authors, categories, excerpt, description } = data.data;
 const dates = resolveContentDates(data.data);
 
 // Card text: excerpt > description > raw-body slice. The old code sliced
@@ -26,7 +25,7 @@ const cardText =
 // display-name match as fallback). Unresolved names render as plain text.
 const allAuthors = await getCollection("authors");
 const resolvedAuthors = resolveAuthors(
-  displayAuthorNames({ data: { author, authors } }),
+  displayAuthorNames({ data: { authors } }),
   allAuthors,
 );
 ---

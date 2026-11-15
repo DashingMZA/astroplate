@@ -18,31 +18,31 @@ priorities.
 | Tag | Value / rule |
 | --- | --- |
 | `<meta charset>` | `utf-8` |
-| `<title>` | `seoTitle`, else `meta_title`, else `title`, else site title (plain-text, HTML stripped) |
+| `<title>` | `seoTitle`, else `title`, else site title (plain-text, HTML stripped) |
 | `<link rel="canonical">` | Always emitted. Defaults to the page's own URL (`base_url` + `base_path` + pathname, honouring `trailing_slash`); an explicit `canonical` prop overrides it (absolute URL or site-relative path) |
 | `<link rel="prev">` / `<link rel="next">` | Blog listing pagination only (`/blog` → page 2, page N ↔ N±1; page 2's prev is `/blog`, never `/blog/page/1`) |
 | `<meta name="description">` | `seoDescription`, else `description`, else `excerpt`, else site `metadata.meta_description` |
 | `<meta name="author">` | Site `metadata.meta_author` |
-| `og:title` | `ogTitle` (or legacy `og_title`), else `seoTitle` / `meta_title`, else `title`, else site title |
-| `og:description` | `ogDescription` (or `og_description`), else `seoDescription`, else `description`, else `excerpt`, else site default |
+| `og:title` | `ogTitle`, else `seoTitle`, else `title`, else site title |
+| `og:description` | `ogDescription`, else `seoDescription`, else `description`, else `excerpt`, else site default |
 | `og:type` | `"website"`, except `"article"` on blog posts |
 | `og:url` | The canonical URL |
 | `og:site_name` | Site title |
 | `og:locale` | Site `locale` (default `"en_US"`) |
-| `og:image` | `ogImage` (or `og_image`), else `image`, else site `metadata.meta_image` — resolved to an absolute URL. Absolute URLs are never prefixed with the site domain |
+| `og:image` | `ogImage`, else `image`, else site `metadata.meta_image` — resolved to an absolute URL. Absolute URLs are never prefixed with the site domain |
 | `og:image:secure_url` | Same as `og:image` when the URL is https |
 | `og:image:type` / `:width` / `:height` | Verified from the actual image file with sharp at build time (default OG image: 1200×630 `image/webp`). Remote images carry no dimensions — omitted, never invented |
-| `og:image:alt` | Platform alt → OG alt → image alt → page title → site `metadata.meta_image_alt` |
+| `og:image:alt` | Platform alt → OG alt → page title → site `metadata.meta_image_alt` |
 | `twitter:card` | `summary_large_image` (an image always resolves — at minimum the configured default) |
 | `twitter:title` / `twitter:description` | Independent fields (`twitterTitle` / `twitterDescription`), each falling back through OG → SEO → title/description |
 | `twitter:image` / `twitter:image:alt` | Independent (`twitterImage` → `ogImage` → featured → site `metadata.meta_twitter_image`); alt follows the same chain as OG |
 | `twitter:site` / `twitter:creator` | From `config.social` (`twitter_site` / `twitter_creator`); currently `@Dashing_ZB` (the linked X profile). Omitted when unconfigured — never invented |
-| Pinterest | No standard Pinterest meta tags exist — Pinterest reads the OG tags above. The Pin button (`Share.astro`) uses the resolved Pinterest title / description / image (`pinterestTitle` → `ogTitle` → …; `pinterestImage` → `ogImage` → …). No dedicated vertical Pin image is configured, so Pins inherit the OG image |
-| Favicon / touch icon / manifest | `config.site.favicon` (`rel="shortcut icon"`), `/apple-touch-icon.png` (180×180, generated from the favicon), `/manifest.webmanifest` |
+| Pinterest | No standard Pinterest meta tags exist — Pinterest reads the OG tags above. The Pin button (`Share.astro`, blog posts only) uses the resolved Pinterest description / image (`pinterestDescription` → `ogDescription` → …; `pinterestImage` → `ogImage` → …). No dedicated vertical Pin image is configured, so Pins inherit the OG image |
+| Favicon / touch icon / manifest | `config.site.favicon` (`rel="shortcut icon"`), `config.site.apple_touch_icon` (180×180, generated from the favicon), `config.site.web_manifest` |
 | RSS / Atom / JSON discovery | `<link rel="alternate">` for `/rss.xml`, `/atom.xml`, `/feed.json` |
 | `<html lang>` | Site `language` (default `"en"`) |
 | Skip link | “Skip to content” link to `#main-content` (first focusable element) |
-| `<meta name="robots">` | Only when a page sets `noindex: true`: `noindex,follow`. The page is also excluded from the sitemap, RSS, search index, and LLM docs |
+| `<meta name="robots">` | Always emitted. Index variant by default (`index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1`); noindex variant when the page opts out (`robotsindex: false` frontmatter or the config default for its type, see `robots.index` in `config.json`). A noindex page (resolved `robotsindex`: frontmatter, else the config default for its type) is also excluded from the sitemap, RSS, search index, and LLM docs |
 
 ### Blog posts only (via `src/pages/blog/[single].astro` + `Base.astro`)
 
@@ -51,10 +51,34 @@ priorities.
 | `og:type` | `"article"` |
 | `article:published_time` | Post `datePublished` (ISO) |
 | `article:modified_time` | `dateModified`, else `datePublished` (ISO) |
-| `article:author` | One tag per author (`authors` array, else `author`) |
+| `article:author` | One tag per author (`authors` list) |
 | `article:section` | First category |
 | `article:tag` | One tag per tag |
 | JSON-LD `Article` | Exactly one per post (see below) |
+
+### Trailing slash
+
+Canonical URLs are slashless: `trailing_slash: false` in
+`config.json` makes Astro generate slashless canonicals, links,
+sitemap URLs and feed links, and the build emits no internal link
+with a trailing slash (except the site root `/` itself — see
+`tests/trailing-slash.test.js`). A trailing-slash request must not
+serve the same page: every host 301-redirects it to the slashless
+URL. This is a static build with no server middleware, so the rule
+lives in the host configs:
+
+| Host | Where the rule lives |
+| --- | --- |
+| Vercel (production) | `vercel.json` `redirects`: `/:path+/` → `/:path+`, `permanent: true` (301) |
+| Cloudflare Workers Static Assets | `wrangler.jsonc` `assets.html_handling: "drop-trailing-slash"` (platform-native) **and** `public/_redirects`: `/*/ /:splat 301` (upgrades it to a permanent 301) |
+| Netlify | Reads the same `public/_redirects` file — no second copy in `netlify.toml` |
+| nginx (Docker) | `config/nginx/nginx.conf`: `rewrite ^/(.*)/$ /$1 permanent;` |
+
+The root `/` never redirects (every pattern needs at least one
+segment before the trailing slash). Query strings are preserved by
+the host. Flipping `trailing_slash` to `true` is a different URL
+shape, not a toggle for this rule — every rule above would have to
+be inverted with it.
 
 ### JSON-LD
 
@@ -63,47 +87,103 @@ containing the site-wide `WebSite` + `Organization` blocks (from
 `config.site` / `config.publisher`) plus any page-specific blocks,
 rendered by `src/layouts/components/JsonLd.astro` (which escapes `</`
 inside the JSON so a `</script>` sequence in content can never break
-out of the script element). Blog posts add a `BlogPosting` block, and
-pages that render breadcrumbs add a `BreadcrumbList`; author pages
-add a `Person` block. There is no `SearchAction`: search is a
-client-side modal, not a search-results page, so a query URL would
-be fabricated.
+out of the script element). The `@context` lives once at the graph
+level; each block below carries exactly the fields of the site's
+schema specs — same format, only the values are the page's own.
+There is no `SearchAction`: search is a client-side modal, not a
+search-results page, so a query URL would be fabricated.
 
-Blog post `BlogPosting` (built in `src/pages/blog/[single].astro`,
-authors resolved via `src/lib/utils/authors.ts`):
+- **WebPage** — every general page: home, about, contact, regular
+  pages. `@id` is the page URL + `#webpage`; `isPartOf` points at
+  `#website`, `about` and `publisher` at `#organization`,
+  `breadcrumb` at the page URL + `#breadcrumb`. `primaryImageOfPage`
+  is the page image when it has one (home/about banner, a regular
+  page's `image`); `datePublished` / `dateModified` are the page's
+  dates, omitted when the page has none (the homepage carries no
+  dates). No `dateCreated`: the spec carries only the two dates.
+  Built by `buildWebPageJsonLd` (`src/lib/utils/jsonld.ts`).
+- **BreadcrumbList** — every page has its own trail. `@id` is the
+  page URL + `#breadcrumb`. Home → page for general pages;
+  Home → Blog → Category → Post for blog posts (the category crumb
+  is the first category; Home → Blog → Post when the post has no
+  real category); Home → Authors → Name for author pages;
+  Home → Categories/Tags/Authors → Name for the listing pages.
+  Built by `buildBreadcrumbJsonLd`.
+- **BlogPosting** — one per post (built in
+  `src/pages/blog/[single].astro`, authors resolved via
+  `src/lib/utils/authors.ts`):
 
 ```json
 {
-  "@context": "https://schema.org",
-  "@graph": [
-    { "@type": "WebSite", "url": "<site base_url>", "name": "<site title>" },
-    { "@type": "Organization", "name": "<publisher.name>", "logo": { "@type": "ImageObject", "url": "<absolute logo URL>" }, "url": "<publisher.url>" },
-    {
-      "@type": "BlogPosting",
-      "headline": "<post title>",
-      "description": "<post description>",
-      "image": ["<absolute image URL>"],
-      "url": "<canonical post URL>",
-      "mainEntityOfPage": "<canonical post URL>",
-      "dateCreated": "<ISO date>",
-      "datePublished": "<ISO date>",
-      "dateModified": "<ISO date>",
-      "author": [{ "@type": "Person", "name": "<author>", "url": "<author page URL>" }],
-      "publisher": { "@type": "<publisher.type>", "name": "<publisher.name>" }
-    }
-  ]
+  "@type": "BlogPosting",
+  "@id": "<canonical post URL>#article",
+  "url": "<canonical post URL>",
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "<canonical post URL>#webpage" },
+  "headline": "<post title>",
+  "description": "<post description>",
+  "image": ["<featured image>", "<OG image>", "<body image>", "…"],
+  "datePublished": "<ISO date>",
+  "dateModified": "<ISO date>",
+  "author": { "@type": "Person", "@id": "<author page URL>#person", "name": "<author>", "url": "<author page URL>" },
+  "publisher": { "@id": "<site base_url>/#organization" },
+  "isPartOf": { "@id": "<site base_url>/#blog" },
+  "inLanguage": "<config.site.language>",
+  "articleSection": "<first category>",
+  "keywords": ["<tag>", "…"],
+  "wordCount": 2716
 }
 ```
 
-- `image` uses `og_image` if set, else `image`, resolved to an
-  absolute URL; omitted when the post has no image.
-- `author` lists every entry of `authors`, or the single `author`,
-  as `Person` objects with the author-page URL when the author file
-  exists; an unresolvable name renders as a bare name with no URL.
-- `publisher` comes from `config.json` (`publisher.name`,
-  `publisher.type`, `publisher.logo`, `publisher.url`).
+- `image` is the post's images in order — featured `image`, `ogImage`,
+  then the images referenced in the body (the same set the sitemap
+  emits, via `postImageUrls`); omitted when the post has no image.
+- `author` is a single `Person` object for one author, an array for
+  several. The `@id` is the author-page URL + `#person` — the same
+  `@id` the author page's own `Person` block carries, so the
+  reference resolves. An unresolvable name renders as a bare name
+  with no URL and no `@id`. Author URLs use the site's canonical
+  form (no trailing slash).
+- `publisher` is only the `#organization` reference — the full
+  Organization block already lives in the same `@graph`.
+- `isPartOf` points at `#blog`; a minimal `Blog` node (`@id`
+  `<site base_url>/#blog`, `url` `/blog`, `name` from the blog
+  `-index` title) is emitted on the blog index and post pages so the
+  reference resolves. Built by `buildBlogJsonLd`.
+- `articleSection` is the first category; `keywords` are the post's
+  tags. The `others` default category / tag is filler and is never a
+  section or a keyword — both are omitted when no real value exists.
+- `wordCount` counts the post body's readable words
+  (`countWords` in `src/lib/utils/readingTime.ts`): fenced/inline
+  code and image markup are stripped, link text is kept.
 - `url` / `mainEntityOfPage` are the canonical post URL (custom slug
-  included — see [CONTENT_SCHEMA.md](CONTENT_SCHEMA.md)).
+  included — see [CONTENT_SCHEMA.md](CONTENT_SCHEMA.md)). No
+  `dateCreated`: the spec carries only `datePublished` /
+  `dateModified`.
+
+### Domain verification
+
+Domain-verification meta tags for Pinterest, Facebook, Google, Bing,
+Yandex, Baidu, Naver and Ahrefs live in `config.json`
+(`verification`: one code per provider, empty when unconfigured)
+and render **only on the home page** (`verification` prop on
+`Base`, passed by `src/pages/index.astro` only). A provider with no
+code emits no tag — never a placeholder. The mapping
+(`verificationMetaTags` in `src/lib/utils/verification.ts`) is:
+
+| Provider | Meta name |
+| --- | --- |
+| Pinterest | `p:domain_verify` |
+| Facebook | `facebook-domain-verification` |
+| Google | `google-site-verification` |
+| Bing | `msvalidate.01` |
+| Yandex | `yandex-verification` |
+| Baidu | `baidu-site-verification` |
+| Naver | `naver-site-verification` |
+| Ahrefs | `ahrefs-site-verification` |
+
+To verify the domain with a provider, paste its code into the matching
+`verification` field in `config.json` and rebuild — the tag appears in
+the homepage `<head>` only.
 
 
 ### Sitemap
@@ -116,18 +196,25 @@ at build time). The files are generated during `astro build` as static
 files in `dist/`, with Rank Math-style names (type first, `sitemap`
 second; the index uses an underscore):
 
-- `dist/sitemap_index.xml` lists the generated files (6 in the
-  current build): `page-sitemap.xml` (16 URLs), `post-sitemap.xml`
-  (10), `category-sitemap.xml` (7), `post_tag-sitemap.xml` (20),
-  `author-sitemap.xml` (3), `image-sitemap.xml` (10 posts with
-  their featured images).
+- `dist/sitemap_index.xml` lists the generated files (3 in the
+  current build): `page-sitemap.xml` (7 URLs), `post-sitemap.xml`
+  (10), `image-sitemap.xml` (10 posts with their featured images).
+  Author, category and tag sitemaps are NOT generated while those
+  types are noindex by config default (see below) — an enabled type
+  with no entries produces no file and no index entry.
 - `/404` is excluded, as are any URL segments `draft`, `drafts`,
   `preview`, or `private` (see `sitemap.exclude` /
   `sitemap.exclude_segments` in `config.json`).
-- `noindex: true` pages are excluded, as are draft and future-dated
-  posts and posts with an external canonical URL. Duplicate public
-  URLs (two posts, same slug) fail the build instead of publishing a
-  colliding sitemap.
+- Exclusion follows the RESOLVED robotsindex (frontmatter value,
+  else the config default for the page type): a noindex URL never
+  appears in a sitemap. Authors, tags, categories and blog archives
+  are noindex by config default, so `/authors`, `/blog`,
+  `/blog/page/N`, `/categories`, `/tags` and every author/category/
+  tag page stay out unless the config default (or an explicit
+  frontmatter `robotsindex: true`) flips the type to index. Draft
+  and future-dated posts and posts with an external canonical URL
+  are excluded too. Duplicate public URLs (two posts, same slug)
+  fail the build instead of publishing a colliding sitemap.
 - Entries carry `lastmod` from `dateModified ?? datePublished`
   (authors: `dateModified ?? dateCreated`) when a date exists —
   never the build date. Index entries carry the newest genuine
@@ -141,9 +228,8 @@ second; the index uses an underscore):
   page URL in `page-sitemap.xml` carries one when the page has an
   image (homepage banner on `/`, about banner on `/about`). Only
   images that resolve to a real file under `public/` are emitted, so
-  a stale reference can never ship. Category, tag and author
-  sitemaps carry no images (their archive pages have none), and
-  `image-sitemap.xml` is unchanged: one OG image per post.
+  a stale reference can never ship. `image-sitemap.xml` is
+  unchanged: one OG image per post.
 - Chunking: at most `sitemap.max_urls_per_sitemap` URLs (default
   1000) and 50 MB uncompressed per file; when a type splits, chunks
   are named `post-sitemap1.xml`, `post-sitemap2.xml`, … (numbered
@@ -161,8 +247,9 @@ and `tests/sitemap.test.js` for the covered behaviour.
 Verify after a build:
 
 ```bash
-ls dist/*sitemap*.xml                     # expect 7 files (index + 6 types)
+ls dist/*sitemap*.xml                     # expect 4 files (index + 3 types)
 python3 -c "import xml.etree.ElementTree as ET, glob; [ET.parse(f) for f in glob.glob('dist/*sitemap*.xml')]"
+grep -c "<url>" dist/page-sitemap.xml     # expect 7
 grep -c "<url>" dist/post-sitemap.xml     # expect 10
 grep -c "<image:image>" dist/post-sitemap.xml  # expect 40 (4 per post)
 grep -c "404" dist/page-sitemap.xml       # expect 0
@@ -218,14 +305,14 @@ Shared rules (all three feeds):
   same remark/rehype pipeline as the page, sanitized, relative
   image/link URLs made absolute. Pure helpers live in
   `src/lib/utils/rss.ts` and are unit-tested in `tests/rss.test.js`.
-- Featured image: the post's own `og_image` (else `image`), with the
+- Featured image: the post's own `ogImage` (else `image`), with the
   MIME type from the file extension and real pixel dimensions when the
   image is a local file (read with `sharp` at build time). RSS/Atom
   use `<media:content>` + `<media:thumbnail>`; JSON Feed uses the
   `image` field. Remote images and posts without their own image get
   no dimensions / no media tags — dimensions are never invented, and
   the site-default OG image is never passed off as a featured image.
-- `noindex: true` posts are excluded, like drafts and future-dated
+- `robotsindex: false` posts are excluded, like drafts and future-dated
   posts.
 - Sorted newest first; same-date posts by id (stable across builds);
   undated posts sort last.
@@ -255,7 +342,6 @@ Frontmatter fields (full reference in [CONTENT_SCHEMA.md](CONTENT_SCHEMA.md)):
 ```markdown
 ---
 title: "How to Build a Modern Application with Next.js and Tailwind CSS"
-meta_title: "Build a Modern App with Next.js and Tailwind CSS"
 seoTitle: "Build a Modern App with Next.js and Tailwind CSS"
 ogTitle: "Build a Modern App with Next.js + Tailwind"
 twitterTitle: "Build a Modern App with Next.js + Tailwind"
@@ -268,12 +354,11 @@ pinterestImage: "/images/pin-image.jpg"
 dateCreated: 2022-04-04T05:00:00Z
 datePublished: 2022-04-04T05:00:00Z
 dateModified: 2022-04-10T05:00:00Z
-author: "John Doe"
 authors: ["John Doe", "Sam Wilson"]
 categories: ["Application", "Data"]
 tags: ["nextjs", "tailwind"]
 canonical: "https://example.com/blog/my-post/"
-noindex: false
+robotsindex: true
 ---
 ```
 
@@ -283,13 +368,13 @@ All social fields are optional; empty strings, `null` and
 
 Rules:
 
-- **`seoTitle` / `meta_title`** set the browser `<title>`:
-  `seoTitle` > `meta_title` > `title` > site title. `ogTitle` does
+- **`seoTitle`** sets the browser `<title>`:
+  `seoTitle` > `title` > site title. `ogTitle` does
   **not** fall back into `<title>` — it is the social title only.
 - **`seoDescription`** sets the meta description:
   `seoDescription` > `description` > `excerpt` > site default.
 - **`ogTitle`** sets `og:title`: `ogTitle` > `seoTitle` >
-  `title` > site title. (Legacy `og_title` still works as an alias.)
+  `title` > site title.
 - **`ogDescription`** sets `og:description`: `ogDescription` >
   `seoDescription` > `description` > `excerpt` > site default.
 - **`twitterTitle` / `twitterDescription` / `twitterImage`** are
@@ -315,13 +400,18 @@ Rules:
   site-relative path (`/blog/x`), resolved against `base_url` at
   render time. Use it when the same content exists elsewhere (e.g.
   cross-posted) and the other URL should get the ranking credit.
-- **`noindex: true`** emits
-  `<meta name="robots" content="noindex,follow">` (link-following is
-  preserved) and excludes the page from the sitemap, RSS, search
-  index, and LLM docs. The page is still built and still linked from
-  the site — `noindex` only asks search engines not to index it.
-  `noindex` exists on blog posts and on the page-like collections
-  (`pages`, `about`, `contact`).
+- **`robotsindex`** controls the robots meta: `true` (or unset / `null`,
+  when the config default for the page type is index) emits
+  `<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">`;
+  `false` emits the `noindex, follow, …` variant (same max-snippet /
+  max-image-preview / max-video-preview) and excludes the page from the
+  sitemap, RSS, search index, and LLM docs. The page is still built and
+  still linked from the site — `robotsindex: false` only asks search
+  engines not to index it. `robotsindex` exists on blog posts and on the
+  page-like collections (`pages`, `about`, `contact`) and on authors.
+  The per-type defaults live in `config.json` under `robots.index`
+  (pages + blog posts index; authors, tags, categories, and blog
+  archives noindex); a frontmatter value always wins over the default.
 - **`dateCreated` / `datePublished` / `dateModified`** are the only
   date fields (see [CONTENT_DATES.md](CONTENT_DATES.md)). `dateCreated`
   is set once and never changes; `datePublished` is set on first

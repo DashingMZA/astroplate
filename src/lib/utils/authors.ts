@@ -1,5 +1,5 @@
-// Author resolution — the single place that turns a post's `author` /
-// `authors` frontmatter strings into author entries.
+// Author resolution — the single place that turns a post's `authors`
+// frontmatter list into author entries.
 //
 // Resolution order for each name:
 //   1. author file id (e.g. frontmatter "John Doe" -> `john-doe.md`)
@@ -7,8 +7,7 @@
 // A name that matches nothing resolves to `{ entry: null, url: null }` and
 // is rendered as plain text with NO link (never a link to a 404 such as
 // `/authors/admin`) and a single build-time warning per unknown name.
-// Names are deduplicated (by resolved entry id, else by slugified name), so
-// a name listed in both `author` and `authors` renders once.
+// Names are deduplicated (by resolved entry id, else by slugified name).
 
 import { slugify } from "@/lib/utils/textConverter";
 import type { CollectionEntry } from "astro:content";
@@ -26,14 +25,14 @@ export interface ResolvedAuthor {
 // Warn once per unknown name per build, not once per card render.
 const warnedMissing = new Set<string>();
 
-/** Names a post claims, in order: `authors` array wins, else `[author]`. */
+/** Names a post claims, in order. No authors listed → `["Admin"]`. */
 export function displayAuthorNames(post: {
-  data: { author?: string | null; authors?: string[] | null };
+  data: { authors?: string[] | null };
 }): string[] {
   const raw =
     post.data.authors && post.data.authors.length > 0
       ? post.data.authors
-      : [post.data.author ?? "Admin"];
+      : ["Admin"];
   const names: string[] = [];
   for (const name of raw) {
     const trimmed = (name ?? "").trim();
@@ -87,7 +86,7 @@ export function resolveAuthors(
  * silently keep matching by title.)
  */
 export function postBelongsToAuthor(
-  post: { data: { author?: string | null; authors?: string[] | null } },
+  post: { data: { authors?: string[] | null } },
   authorEntry: CollectionEntry<"authors">,
   allAuthors: CollectionEntry<"authors">[],
 ): boolean {

@@ -7,5 +7,11 @@
   "assets": {
     "directory": "./dist",
     "not_found_handling": "404-page",
+    // Canonical URLs are slashless (Astro `trailingSlash: "never"`):
+    // a trailing-slash request is redirected to the slashless URL
+    // instead of serving the same page. `drop-trailing-slash` is the
+    // platform-native behaviour; `public/_redirects` upgrades it to
+    // a permanent 301 (same rule, same direction — no loop either way).
+    "html_handling": "drop-trailing-slash",
   },
 }

@@ -60,9 +60,9 @@ check, and `build`.
 ## Content and config conventions
 
 - **Posts** live in `src/content/blog/` as Markdown with validated
-  frontmatter — see `CONTENT_SCHEMA.md` for every field (`slug`, `excerpt`,
-  `authors[]`, `categories`, `tags`, `featured`, `canonical`, `noindex`,
-  `og_image`, ...). Drafts stay out of the build, sitemap, and RSS.
+  frontmatter — see `CONTENT_SCHEMA.md` for every field (`CustomSlug`, `excerpt`,
+  `authors[]`, `categories`, `tags`, `featured`, `canonical`, `robotsindex`,
+  `ogImage`, ...). Drafts stay out of the build, sitemap, and RSS.
 - **Authors** live in `src/content/authors/`; posts reference them by
   display name in `authors[]`.
 - **Images:** local images go in `public/images/`; remote images (e.g.

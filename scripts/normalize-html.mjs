@@ -8,9 +8,13 @@
 //   1. every attribute value is double-quoted, and
 //   2. head tags use the conventional order — `<meta property="og:type"
 //      content="website">`, `<link rel="..." href="...">`.
+// It also moves Astro's auto-injected bundled `<link rel="stylesheet">`
+// tags (which Astro appends at the end of <head>) up to their head-order
+// slot — after the font declarations, before the View Transitions scripts
+// and JSON-LD (see `src/layouts/Base.astro`, sections 11–13).
 // It changes NOTHING else: the script re-parses its own output and
 // refuses to write a file whose text, element counts, or attribute
-// values differ from the input. Run automatically as part of
+// values differ from the (moved) input. Run automatically as part of
 // `pnpm build` (after `astro build`, before `llmsGenerator.js`).
 // Usage: node scripts/normalize-html.mjs [--dist dist]
 import fs from "node:fs";
@@ -79,6 +83,46 @@ function fingerprint(document) {
   return parts.join("|");
 }
 
+// Move Astro's auto-injected bundled stylesheets to their head-order slot:
+// after the font declarations, before the View Transitions scripts and
+// JSON-LD. Astro appends `<link rel="stylesheet">` at the end of <head>;
+// the move preserves their relative order and changes nothing else.
+function moveStylesheets(document) {
+  let head = null;
+  walk(document, (node) => {
+    if (node.tagName === "head") head = node;
+  });
+  if (!head || !Array.isArray(head.childNodes)) return;
+  const sheets = [];
+  head.childNodes = head.childNodes.filter((child) => {
+    const isStylesheet =
+      child.tagName === "link" &&
+      (child.attrs ?? []).some(
+        (a) => a.name === "rel" && a.value === "stylesheet",
+      );
+    if (isStylesheet) sheets.push(child);
+    return !isStylesheet;
+  });
+  if (sheets.length === 0) return;
+  // Anchor on the first View Transitions element (its meta tags come
+  // before its script); stylesheets go before the whole block.
+  const anchor = head.childNodes.findIndex((child) => {
+    const attrs = child.attrs ?? [];
+    const isViewTransitionsMeta =
+      child.tagName === "meta" &&
+      attrs.some(
+        (a) =>
+          a.name === "name" && a.value.startsWith("astro-view-transitions"),
+      );
+    const isClientRouterScript =
+      child.tagName === "script" &&
+      attrs.some((a) => a.name === "src" && a.value.includes("ClientRouter"));
+    return isViewTransitionsMeta || isClientRouterScript;
+  });
+  const at = anchor === -1 ? head.childNodes.length : anchor;
+  head.childNodes.splice(at, 0, ...sheets);
+}
+
 function* walkHtml(dir) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
@@ -93,9 +137,12 @@ let bytesAdded = 0;
 for (const file of walkHtml(distDir)) {
   const rel = path.relative(distDir, file);
   const original = fs.readFileSync(file, "utf8");
-  const originalDoc = parse5.parse(original);
-  const before = fingerprint(originalDoc);
   const document = parse5.parse(original);
+  // The fingerprint is taken AFTER the stylesheet move: it verifies the
+  // serialization round-trip preserves the moved tree exactly, and the
+  // move itself is a deliberate, order-only change.
+  moveStylesheets(document);
+  const before = fingerprint(document);
   walk(document, reorderAttrs);
   const normalized = parse5.serialize(document);
   const after = fingerprint(parse5.parse(normalized));

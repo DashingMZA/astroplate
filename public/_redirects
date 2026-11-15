@@ -1,0 +1,12 @@
+# Redirects for Cloudflare Workers Static Assets and Netlify (both read
+# this file from the build output; Vercel uses vercel.json `redirects`
+# instead, nginx uses config/nginx/nginx.conf).
+#
+# Canonical URLs are slashless (Astro `trailingSlash: "never"`): a
+# trailing-slash request must redirect to the slashless URL instead of
+# serving the same page. The root `/` is untouched — the pattern needs
+# at least one segment before the trailing slash, so `/` never matches.
+# Query strings are preserved by the host.
+
+# Any trailing-slash path -> the same path without the slash (301).
+/*/ /:splat 301

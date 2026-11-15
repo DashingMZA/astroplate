@@ -12,6 +12,12 @@
       "isRequired": true
     },
     {
+      "name": "CustomSlug",
+      "label": "Custom Slug",
+      "type": "string",
+      "value": ""
+    },
+    {
       "name": "email",
       "label": "Email",
       "type": "string",
@@ -36,10 +42,10 @@
       "value": ""
     },
     {
-      "name": "noindex",
-      "label": "Noindex",
+      "name": "robotsindex",
+      "label": "Robots Index",
       "type": "boolean",
-      "value": false
+      "value": true
     },
     {
       "name": "social",

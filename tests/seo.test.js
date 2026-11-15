@@ -1,5 +1,5 @@
 // Wave B tests — slug routing, canonical/OG priority, JSON-LD, authors,
-// noindex sitemap exclusion, search-index links and R2 image URLs.
+// robotsindex sitemap exclusion, search-index links and R2 image URLs.
 // Every test imports the REAL helpers (no re-implemented logic).
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
@@ -10,6 +10,7 @@ import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import {
+  authorSlug,
   authorUrl,
   checkDuplicateSlugs,
   normalizeSlug,
@@ -34,12 +35,18 @@ const social = await import("../src/lib/utils/social.ts");
 const authorsMod = await import("../src/lib/utils/authors.ts");
 const { displayAuthorNames, resolveAuthors, postBelongsToAuthor } = authorsMod;
 const {
+  buildBlogJsonLd,
   buildBlogPostingJsonLd,
   buildBreadcrumbJsonLd,
   buildOrganizationJsonLd,
+  buildPersonJsonLd,
   buildWebPageJsonLd,
   buildWebsiteJsonLd,
 } = await import("../src/lib/utils/jsonld.ts");
+const { countWords } = await import("../src/lib/utils/readingTime.ts");
+const { verificationMetaTags } = await import(
+  "../src/lib/utils/verification.ts"
+);
 
 // ─── Slug normalisation ────────────────────────────────────────────────────
 
@@ -63,12 +70,12 @@ test("normalizeSlug: nested paths and stray slashes survive cleanly", () => {
 
 test("publicSlug: custom slug wins, empty custom slug falls back to id", () => {
   assert.equal(
-    publicSlug({ id: "post-1", data: { slug: "My Guide!" } }),
+    publicSlug({ id: "post-1", data: { CustomSlug: "My Guide!" } }),
     "my-guide",
   );
   assert.equal(publicSlug({ id: "post-1", data: {} }), "post-1");
-  assert.equal(publicSlug({ id: "post-1", data: { slug: "   " } }), "post-1");
-  assert.equal(publicSlug({ id: "post-1", data: { slug: "!!!" } }), "post-1");
+  assert.equal(publicSlug({ id: "post-1", data: { CustomSlug: "   " } }), "post-1");
+  assert.equal(publicSlug({ id: "post-1", data: { CustomSlug: "!!!" } }), "post-1");
   assert.equal(
     publicSlug({ id: "guides/deep-post.md", data: {} }),
     "guides/deep-post",
@@ -77,24 +84,29 @@ test("publicSlug: custom slug wins, empty custom slug falls back to id", () => {
 
 test("postSlug/postUrl: leading blog/ prefix is forgiven, URLs are /blog/<slug>", () => {
   assert.equal(
-    postSlug({ id: "post-1", data: { slug: "blog/my-guide" } }),
+    postSlug({ id: "post-1", data: { CustomSlug: "blog/my-guide" } }),
     "my-guide",
   );
   assert.equal(
-    postUrl({ id: "post-1", data: { slug: "My Guide!" } }),
+    postUrl({ id: "post-1", data: { CustomSlug: "My Guide!" } }),
     "/blog/my-guide",
   );
   assert.equal(postUrl({ id: "post-1", data: {} }), "/blog/post-1");
   assert.equal(
-    postUrl({ id: "x", data: { slug: "guides/my-post" } }),
+    postUrl({ id: "x", data: { CustomSlug: "guides/my-post" } }),
     "/blog/guides/my-post",
   );
   assert.equal(pageUrl({ id: "privacy-policy", data: {} }), "/privacy-policy");
   assert.equal(
-    pageUrl({ id: "privacy-policy", data: { slug: "Privacy & Legal" } }),
+    pageUrl({ id: "privacy-policy", data: { CustomSlug: "Privacy & Legal" } }),
     "/privacy-legal",
   );
   assert.equal(authorUrl({ id: "john-doe" }), "/authors/john-doe");
+  assert.equal(
+    authorUrl({ id: "john-doe", data: { CustomSlug: "J. Doe!" } }),
+    "/authors/j-doe",
+  );
+  assert.equal(authorSlug({ id: "john-doe", data: {} }), "john-doe");
 });
 
 test("checkDuplicateSlugs: throws listing every conflicting file", () => {
@@ -102,7 +114,7 @@ test("checkDuplicateSlugs: throws listing every conflicting file", () => {
   try {
     checkDuplicateSlugs(
       [
-        { id: "post-1", data: { slug: "my-guide" } },
+        { id: "post-1", data: { CustomSlug: "my-guide" } },
         { id: "post-2", data: {} },
         { id: "my-guide", data: {} },
       ],
@@ -121,7 +133,7 @@ test("checkDuplicateSlugs: throws listing every conflicting file", () => {
     checkDuplicateSlugs(
       [
         { id: "post-1", data: {} },
-        { id: "post-2", data: { slug: "other" } },
+        { id: "post-2", data: { CustomSlug: "other" } },
       ],
       postUrl,
       "blog post",
@@ -164,24 +176,24 @@ test("buildCanonical: explicit absolute canonical is trailing-slash normalised",
 
 // ─── OG / Twitter priority ─────────────────────────────────────────────────
 
-test("OG priority: og_title > meta_title > title; og_title is NOT a <title> fallback", () => {
+test("OG priority: ogTitle > seoTitle > title; ogTitle is NOT a <title> fallback", () => {
   assert.equal(
-    seo.resolveOgTitle({ og_title: "OG", meta_title: "Meta", title: "T" }),
+    seo.resolveOgTitle({ ogTitle: "OG", seoTitle: "Meta", title: "T" }),
     "OG",
   );
-  assert.equal(seo.resolveOgTitle({ meta_title: "Meta", title: "T" }), "Meta");
+  assert.equal(seo.resolveOgTitle({ seoTitle: "Meta", title: "T" }), "Meta");
   assert.equal(seo.resolveOgTitle({ title: "T" }), "T");
-  assert.equal(seo.resolvePageTitle({ og_title: "OG", title: "T" }), "T");
+  assert.equal(seo.resolvePageTitle({ ogTitle: "OG", title: "T" }), "T");
   assert.equal(
-    seo.resolvePageTitle({ meta_title: "Meta", title: "T" }),
+    seo.resolvePageTitle({ seoTitle: "Meta", title: "T" }),
     "Meta",
   );
 });
 
-test("OG description priority: og_description > description > excerpt > default", () => {
+test("OG description priority: ogDescription > description > excerpt > default", () => {
   assert.equal(
     seo.resolveOgDescription({
-      og_description: "OGD",
+      ogDescription: "OGD",
       description: "D",
       excerpt: "E",
     }),
@@ -198,7 +210,7 @@ test("OG description priority: og_description > description > excerpt > default"
 
 test("resolveOgImage: R2 https URLs pass through unchanged; local paths get the live domain", () => {
   const r2 = seo.resolveOgImage({
-    og_image: "https://media.csofts.tech/images/r2-example-og.jpg",
+    ogImage: "https://media.csofts.tech/images/r2-example-og.jpg",
   });
   assert.equal(r2.url, "https://media.csofts.tech/images/r2-example-og.jpg");
   assert.equal(r2.isPageImage, true);
@@ -484,13 +496,15 @@ test("social 15+16: dist HTML has no duplicate meta tags and correct metadata", 
 
 // ─── JSON-LD ───────────────────────────────────────────────────────────────
 
-test("BlogPosting JSON-LD: url + mainEntityOfPage are the canonical URL, authors are Persons with URLs", () => {
+test("BlogPosting JSON-LD: exact spec shape — @id, WebPage ref, author @id, publisher/isPartOf refs, section/keywords/wordCount", () => {
   const block = buildBlogPostingJsonLd(
     {
       headline: "My Guide",
       description: "Desc",
-      image: "https://astroplate.jadoo.bond/images/x.png",
-      dateCreated: "2022-04-03T05:00:00.000Z",
+      image: [
+        "https://astroplate.jadoo.bond/images/x.webp",
+        "https://astroplate.jadoo.bond/images/y.webp",
+      ],
       datePublished: "2022-04-04T05:00:00.000Z",
       dateModified: "2022-04-05T05:00:00.000Z",
       authors: [
@@ -500,41 +514,60 @@ test("BlogPosting JSON-LD: url + mainEntityOfPage are the canonical URL, authors
         },
         { name: "Ghost Writer", url: null },
       ],
-      publisher: {
-        name: "Astroplate",
-        type: "Organization",
-        logo: "https://astroplate.jadoo.bond/logo.png",
-        url: "https://astroplate.jadoo.bond",
-      },
       url: "https://astroplate.jadoo.bond/blog/my-guide",
+      inLanguage: "en",
+      articleSection: "Astro",
+      keywords: ["astro", "seo"],
+      wordCount: 1234,
     },
     "https://astroplate.jadoo.bond",
   );
   assert.equal(block["@type"], "BlogPosting");
+  assert.equal(block["@id"], "https://astroplate.jadoo.bond/blog/my-guide#article");
   assert.equal(block.url, "https://astroplate.jadoo.bond/blog/my-guide");
   assert.deepEqual(block.mainEntityOfPage, {
     "@type": "WebPage",
-    "@id": "https://astroplate.jadoo.bond/blog/my-guide",
+    "@id": "https://astroplate.jadoo.bond/blog/my-guide#webpage",
   });
   assert.deepEqual(block.author, [
     {
       "@type": "Person",
+      "@id": "https://astroplate.jadoo.bond/authors/john-doe#person",
       name: "John Doe",
       url: "https://astroplate.jadoo.bond/authors/john-doe",
     },
     { "@type": "Person", name: "Ghost Writer" },
   ]);
-  assert.equal(block.publisher.name, "Astroplate");
-  // All three content dates, never invented: created < published < modified.
-  assert.equal(block.dateCreated, "2022-04-03T05:00:00.000Z");
+  assert.deepEqual(block.publisher, {
+    "@id": "https://astroplate.jadoo.bond/#organization",
+  });
+  assert.deepEqual(block.isPartOf, {
+    "@id": "https://astroplate.jadoo.bond/#blog",
+  });
+  assert.equal(block.inLanguage, "en");
+  assert.equal(block.articleSection, "Astro");
+  assert.deepEqual(block.keywords, ["astro", "seo"]);
+  assert.equal(block.wordCount, 1234);
+  // The spec has no dateCreated: it is never emitted.
+  assert.ok(!("dateCreated" in block));
   assert.equal(block.datePublished, "2022-04-04T05:00:00.000Z");
   assert.equal(block.dateModified, "2022-04-05T05:00:00.000Z");
+  // A single author is one Person object, not a one-item array.
+  const single = buildBlogPostingJsonLd(
+    {
+      headline: "Solo",
+      authors: [{ name: "A", url: null }],
+      url: "https://astroplate.jadoo.bond/blog/x",
+    },
+    "https://astroplate.jadoo.bond",
+  );
+  assert.equal(single.author["@type"], "Person");
+  assert.ok(!Array.isArray(single.author));
   // Round-trips through JSON with hostile characters intact.
   const tricky = buildBlogPostingJsonLd(
     {
       headline: 'Quote "test" </script> & <b>bold</b>',
       authors: [{ name: "A", url: null }],
-      publisher: null,
       url: "https://astroplate.jadoo.bond/blog/x",
     },
     "https://astroplate.jadoo.bond",
@@ -545,28 +578,53 @@ test("BlogPosting JSON-LD: url + mainEntityOfPage are the canonical URL, authors
   );
 });
 
-test("WebPage JSON-LD: static pages carry the three dates, no article fields", () => {
+test("WebPage JSON-LD: exact spec shape — @id, site refs, breadcrumb ref, primary image, two dates", () => {
   const block = buildWebPageJsonLd({
     name: "Privacy Policy",
     url: "https://astroplate.jadoo.bond/privacy-policy",
     description: "How Astroplate handles data.",
-    dateCreated: "2026-11-15T19:04:03.000Z",
     datePublished: "2026-11-15T19:04:03.000Z",
     dateModified: "2026-11-15T19:04:03.000Z",
+    inLanguage: "en",
+    siteUrl: "https://astroplate.jadoo.bond",
+    image: "https://astroplate.jadoo.bond/images/privacy.webp",
   });
   assert.equal(block["@type"], "WebPage");
+  assert.equal(
+    block["@id"],
+    "https://astroplate.jadoo.bond/privacy-policy#webpage",
+  );
   assert.equal(block.name, "Privacy Policy");
-  assert.equal(block.dateCreated, "2026-11-15T19:04:03.000Z");
+  assert.equal(block.inLanguage, "en");
+  assert.deepEqual(block.isPartOf, {
+    "@id": "https://astroplate.jadoo.bond/#website",
+  });
+  assert.deepEqual(block.about, {
+    "@id": "https://astroplate.jadoo.bond/#organization",
+  });
+  assert.deepEqual(block.publisher, {
+    "@id": "https://astroplate.jadoo.bond/#organization",
+  });
+  assert.deepEqual(block.breadcrumb, {
+    "@id": "https://astroplate.jadoo.bond/privacy-policy#breadcrumb",
+  });
+  assert.deepEqual(block.primaryImageOfPage, {
+    "@type": "ImageObject",
+    url: "https://astroplate.jadoo.bond/images/privacy.webp",
+  });
   assert.equal(block.datePublished, "2026-11-15T19:04:03.000Z");
   assert.equal(block.dateModified, "2026-11-15T19:04:03.000Z");
-  // Missing dates are omitted, never null or fabricated.
+  // The spec has no dateCreated: it is never emitted.
+  assert.ok(!("dateCreated" in block));
+  // Missing dates / image are omitted, never null or fabricated.
   const undated = buildWebPageJsonLd({
     name: "Draft",
     url: "https://astroplate.jadoo.bond/draft",
+    siteUrl: "https://astroplate.jadoo.bond",
   });
-  assert.ok(!("dateCreated" in undated));
   assert.ok(!("datePublished" in undated));
   assert.ok(!("dateModified" in undated));
+  assert.ok(!("primaryImageOfPage" in undated));
 });
 
 test("WebSite JSON-LD has no SearchAction (no search results page exists)", () => {
@@ -605,8 +663,90 @@ test("BreadcrumbList JSON-LD positions items in order", () => {
     { name: "My Guide", url: "https://astroplate.jadoo.bond/blog/my-guide" },
   ]);
   assert.equal(crumbs["@type"], "BreadcrumbList");
+  assert.equal(
+    crumbs["@id"],
+    "https://astroplate.jadoo.bond/blog/my-guide#breadcrumb",
+  );
   assert.equal(crumbs.itemListElement.length, 3);
   assert.equal(crumbs.itemListElement[2].position, 3);
+});
+
+test("Person JSON-LD: @id matches the BlogPosting author @id for the same author", () => {
+  const person = buildPersonJsonLd({
+    name: "John Doe",
+    url: "https://astroplate.jadoo.bond/authors/john-doe",
+    image: "https://astroplate.jadoo.bond/images/john.webp",
+    description: "Writer.",
+  });
+  assert.equal(person["@type"], "Person");
+  assert.equal(
+    person["@id"],
+    "https://astroplate.jadoo.bond/authors/john-doe#person",
+  );
+  assert.equal(person.url, "https://astroplate.jadoo.bond/authors/john-doe");
+});
+
+test("Blog JSON-LD: the node BlogPosting isPartOf points at", () => {
+  const blog = buildBlogJsonLd({
+    name: "Blog Posts",
+    url: "https://astroplate.jadoo.bond/blog",
+    siteUrl: "https://astroplate.jadoo.bond",
+  });
+  assert.equal(blog["@type"], "Blog");
+  assert.equal(blog["@id"], "https://astroplate.jadoo.bond/#blog");
+  assert.equal(blog.url, "https://astroplate.jadoo.bond/blog");
+  assert.equal(blog.name, "Blog Posts");
+});
+
+test("countWords: prose counts, code fences / inline code / images do not, link text does", () => {
+  assert.equal(countWords("Hello world, this is a test."), 6);
+  assert.equal(
+    countWords("# Title\n\nSome prose here.\n\n```js\nconst x = 1;\n```\n\nMore prose."),
+    6,
+  );
+  assert.equal(countWords("See [the guide](/blog/x) for details."), 5);
+  assert.equal(countWords("![Diagram](/images/a.webp)\n\nCaption text."), 2);
+  assert.equal(countWords(""), 0);
+});
+
+test("verificationMetaTags: one tag per configured provider, empty/unknown values emit nothing", () => {
+  assert.deepEqual(verificationMetaTags(undefined), []);
+  assert.deepEqual(verificationMetaTags({}), []);
+  assert.deepEqual(
+    verificationMetaTags({
+      google: "google-code-123",
+      pinterest: "  ",
+      ahrefs: "ahrefs-code-9",
+      unknown: "nope",
+    }),
+    [
+      { name: "google-site-verification", content: "google-code-123" },
+      { name: "ahrefs-site-verification", content: "ahrefs-code-9" },
+    ],
+  );
+  // All eight providers map to their exact meta names.
+  assert.deepEqual(
+    verificationMetaTags({
+      pinterest: "p",
+      facebook: "f",
+      google: "g",
+      bing: "b",
+      yandex: "y",
+      baidu: "d",
+      naver: "n",
+      ahrefs: "a",
+    }).map((t) => t.name),
+    [
+      "p:domain_verify",
+      "facebook-domain-verification",
+      "google-site-verification",
+      "msvalidate.01",
+      "yandex-verification",
+      "baidu-site-verification",
+      "naver-site-verification",
+      "ahrefs-site-verification",
+    ],
+  );
 });
 
 // ─── Authors ───────────────────────────────────────────────────────────────
@@ -634,27 +774,24 @@ test("resolveAuthors: file-id match first, legacy title-slug fallback, missing r
   assert.equal(resolved[2].url, null);
 });
 
-test("displayAuthorNames: authors array wins, else [author], default Admin", () => {
+test("displayAuthorNames: authors list, else default Admin", () => {
   assert.deepEqual(
     displayAuthorNames({
-      data: { author: "John Doe", authors: ["Sam Wilson"] },
+      data: { authors: ["Sam Wilson"] },
     }),
     ["Sam Wilson"],
   );
-  assert.deepEqual(
-    displayAuthorNames({ data: { author: "John Doe", authors: [] } }),
-    ["John Doe"],
-  );
+  assert.deepEqual(displayAuthorNames({ data: { authors: [] } }), ["Admin"]);
   assert.deepEqual(displayAuthorNames({ data: {} }), ["Admin"]);
 });
 
 test("postBelongsToAuthor: resolves by entry id, not by bare display name", () => {
-  const post = { data: { author: "William Jacob" } };
+  const post = { data: { authors: ["William Jacob"] } };
   assert.equal(postBelongsToAuthor(post, fakeAuthors[1], fakeAuthors), true);
   assert.equal(postBelongsToAuthor(post, fakeAuthors[0], fakeAuthors), false);
   assert.equal(
     postBelongsToAuthor(
-      { data: { author: "Nobody Here" } },
+      { data: { authors: ["Nobody Here"] } },
       fakeAuthors[0],
       fakeAuthors,
     ),
@@ -670,13 +807,13 @@ function writeMd(dir, rel, frontmatter, body = "Body text.\n") {
   fs.writeFileSync(file, `---\n${frontmatter}\n---\n\n${body}`);
 }
 
-test("jsonGenerator: emits public-slug links, drops noindex/future/draft posts", () => {
+test("jsonGenerator: emits public-slug links, drops robotsindex: false/future/draft posts", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "seo-search-"));
   try {
     writeMd(
       tmp,
       "src/content/blog/with-slug.md",
-      'title: With Slug\ndatePublished: 2022-04-04T05:00:00Z\nslug: "My Guide!"',
+      'title: With Slug\ndatePublished: 2022-04-04T05:00:00Z\nCustomSlug: "My Guide!"',
     );
     writeMd(
       tmp,
@@ -686,7 +823,7 @@ test("jsonGenerator: emits public-slug links, drops noindex/future/draft posts",
     writeMd(
       tmp,
       "src/content/blog/hidden.md",
-      "title: Hidden\ndatePublished: 2022-04-04T05:00:00Z\nnoindex: true",
+      "title: Hidden\ndatePublished: 2022-04-04T05:00:00Z\nrobotsindex: false",
     );
     writeMd(
       tmp,
@@ -718,7 +855,7 @@ test("jsonGenerator: duplicate public slugs fail the run", () => {
     writeMd(
       tmp,
       "src/content/blog/a.md",
-      'title: A\ndatePublished: 2022-04-04T05:00:00Z\nslug: "same"',
+      'title: A\ndatePublished: 2022-04-04T05:00:00Z\nCustomSlug: "same"',
     );
     writeMd(
       tmp,

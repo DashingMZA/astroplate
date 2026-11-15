@@ -2,6 +2,8 @@
 import AuthorCard from "@/components/AuthorCard.astro";
 import Base from "@/layouts/Base.astro";
 import { getListPage, getSinglePage } from "@/lib/contentParser";
+import { buildBreadcrumbJsonLd } from "@/lib/utils/jsonld";
+import { canonicalFor } from "@/lib/utils/seo";
 import PageHeader from "@/partials/PageHeader.astro";
 
 const authorIndex = await getListPage("authors", "-index");
@@ -12,12 +14,20 @@ if (!buildDrafts && authorIndex.data.draft) {
 }
 
 const authors = await getSinglePage("authors");
+
+// Structured data: this listing page's own BreadcrumbList.
+const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+  { name: "Home", url: canonicalFor("/") },
+  { name: authorIndex.data.title, url: canonicalFor("/authors") },
+]);
 ---
 
 <Base
   title={authorIndex.data.title}
   description={authorIndex.data.description}
   image={authorIndex.data.image}
+  robotsType="authors"
+  jsonLd={[breadcrumbJsonLd]}
 >
   <PageHeader title={authorIndex.data.title} />
   <section class="section-sm pb-0">

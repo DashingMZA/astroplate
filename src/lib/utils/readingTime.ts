@@ -37,4 +37,22 @@ const readingTime = (content: string): string => {
   }
 };
 
+// Word count of a post body, for the BlogPosting `wordCount` JSON-LD
+// field. Fenced / inline code and image markup are not readable prose
+// and are stripped; link text is kept (it is read). Markdown markers
+// and HTML tags are stripped. Counts whitespace-separated tokens.
+export function countWords(content: string): number {
+  const text = content
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/~~~[\s\S]*?~~~/g, " ")
+    .replace(/`[^`]*`/g, " ")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/[#>*_~`|-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text ? text.split(" ").filter(Boolean).length : 0;
+}
+
 export default readingTime;

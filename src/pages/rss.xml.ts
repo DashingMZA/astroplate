@@ -10,7 +10,7 @@
 // would expose author emails to scrapers), `content:encoded` with the
 // post's rendered HTML (sanitized, absolute URLs), and `media:content` /
 // `media:thumbnail` for the post's own featured image (with real pixel
-// dimensions when the image is a local file). Draft / noindex /
+// dimensions when the image is a local file). Draft / robotsindex: false /
 // future-dated posts are excluded, exactly as the sitemap and search
 // index exclude them.
 import config from "@/config/config.json";

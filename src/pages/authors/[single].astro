@@ -8,7 +8,7 @@ import { getSinglePage } from "@/lib/contentParser";
 import { postBelongsToAuthor } from "@/lib/utils/authors";
 import { buildBreadcrumbJsonLd, buildPersonJsonLd } from "@/lib/utils/jsonld";
 import { absoluteUrl, canonicalFor } from "@/lib/utils/seo";
-import { authorUrl } from "@/lib/utils/slug";
+import { authorSlug, authorUrl, checkDuplicateSlugs } from "@/lib/utils/slug";
 import { getCollection, render } from "astro:content";
 
 // get all static paths for authors
@@ -16,9 +16,13 @@ export async function getStaticPaths() {
   const COLLECTION_FOLDER = "authors";
   const authors = await getSinglePage(COLLECTION_FOLDER);
 
+  // Two authors must never resolve to the same public URL (custom
+  // CustomSlug colliding with another author's slug or file id).
+  checkDuplicateSlugs(authors, authorUrl, "author");
+
   const paths = authors.map((author) => ({
     params: {
-      single: author.id,
+      single: authorSlug(author),
     },
     props: { author },
   }));
@@ -29,28 +33,20 @@ const { author } = Astro.props;
 const {
   title,
   social,
-  meta_title,
   seoTitle,
   description,
   seoDescription,
   image,
-  og_title,
   ogTitle,
-  og_description,
   ogDescription,
-  og_image,
   ogImage,
   ogImageAlt,
   twitterTitle,
   twitterDescription,
   twitterImage,
   twitterImageAlt,
-  pinterestTitle,
-  pinterestDescription,
-  pinterestImage,
-  pinterestImageAlt,
   canonical,
-  noindex,
+  robotsindex,
 } = author.data;
 const { Content } = await render(author);
 
@@ -79,29 +75,21 @@ const breadcrumbJsonLd = buildBreadcrumbJsonLd([
 
 <Base
   title={title}
-  meta_title={meta_title}
   seoTitle={seoTitle}
   description={description}
   seoDescription={seoDescription}
   image={image}
-  og_title={og_title}
   ogTitle={ogTitle}
-  og_description={og_description}
   ogDescription={ogDescription}
-  og_image={og_image}
   ogImage={ogImage}
   ogImageAlt={ogImageAlt}
-  image_alt={title}
   twitterTitle={twitterTitle}
   twitterDescription={twitterDescription}
   twitterImage={twitterImage}
   twitterImageAlt={twitterImageAlt}
-  pinterestTitle={pinterestTitle}
-  pinterestDescription={pinterestDescription}
-  pinterestImage={pinterestImage}
-  pinterestImageAlt={pinterestImageAlt}
   canonical={canonical}
-  noindex={noindex}
+  robotsindex={robotsindex}
+  robotsType="authors"
   jsonLd={[personJsonLd, breadcrumbJsonLd]}
 >
   <section class="section-sm pb-0">

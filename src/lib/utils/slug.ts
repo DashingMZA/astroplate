@@ -1,10 +1,10 @@
 // Canonical public-slug helpers — the SINGLE source of truth for post and
 // page URLs. Every router, link, canonical, RSS item, sitemap entry, search
-// record and JSON-LD URL must go through here so a custom `slug` frontmatter
-// value and the filename-derived id can never disagree.
+// record and JSON-LD URL must go through here so a custom `CustomSlug`
+// frontmatter value and the filename-derived id can never disagree.
 //
 // Rules:
-// - `data.slug`, when set, wins over the filename-derived id.
+// - `data.CustomSlug`, when set, wins over the filename-derived id.
 // - Normalisation: trim, lowercase, spaces/punctuation runs become one
 //   hyphen, duplicate hyphens collapse, leading/trailing hyphens and
 //   slashes are stripped. Unicode letters/digits are PRESERVED (they are
@@ -18,7 +18,7 @@
 
 export interface Sluggable {
   id: string;
-  data: { slug?: string | null };
+  data?: { CustomSlug?: string | null };
 }
 
 /** Strip a trailing `.md` / `.mdx` extension from a collection entry id. */
@@ -48,11 +48,13 @@ export function normalizeSlug(raw: string): string {
 
 /**
  * The public slug for a blog post or a regular page: the normalised custom
- * `slug` when set (and non-empty after normalisation), else the
+ * `CustomSlug` when set (and non-empty after normalisation), else the
  * filename-derived id.
  */
 export function publicSlug(entry: Sluggable): string {
-  const custom = entry.data.slug ? normalizeSlug(entry.data.slug) : "";
+  const custom = entry.data?.CustomSlug
+    ? normalizeSlug(entry.data.CustomSlug)
+    : "";
   if (custom) {
     return custom;
   }
@@ -83,9 +85,14 @@ export function pageUrl(page: Sluggable): string {
   return `/${publicSlug(page)}`;
 }
 
-/** Public URL path of an author page, keyed by the author file id. */
-export function authorUrl(author: { id: string }): string {
-  return `/authors/${normalizeSlug(stripIdExtension(author.id))}`;
+/** Public slug for an author page: the custom `CustomSlug` when set, else the author file id. */
+export function authorSlug(author: Sluggable): string {
+  return publicSlug(author);
+}
+
+/** Public URL path of an author page, e.g. `/authors/john-doe`. */
+export function authorUrl(author: Sluggable): string {
+  return `/authors/${authorSlug(author)}`;
 }
 
 /**
@@ -116,6 +123,6 @@ export function checkDuplicateSlugs(
   );
   throw new Error(
     `Duplicate ${label} URL${conflicts.length > 1 ? "s" : ""} — two or more entries resolve to the same public URL. ` +
-      `Give each entry a unique custom \`slug\` (or rename the file):\n${lines.join("\n")}`,
+      `Give each entry a unique custom \`CustomSlug\` (or rename the file):\n${lines.join("\n")}`,
   );
 }

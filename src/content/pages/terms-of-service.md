@@ -1,6 +1,6 @@
 ---
 title: "Terms of Service"
-meta_title: "Terms of Service"
+seoTitle: "Terms of Service"
 description: "The terms that govern your use of Astroplate, including content ownership, acceptable use, and liability."
 draft: false
 dateCreated: 2026-11-14T22:14:06Z

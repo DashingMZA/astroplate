@@ -1,13 +1,13 @@
 ---
 title: "Technical SEO for Astro Websites: Sitemaps, Canonicals and Structured Data"
-meta_title: "Technical SEO for Astro Websites"
+seoTitle: "Technical SEO for Astro Websites"
 description: "Technical SEO for Astro websites: automatic sitemaps, self-referencing canonical URLs, robots.txt and JSON-LD structured data, with working Astro 7 examples."
 image: "/images/blog/technical-seo-astro-websites-sitemaps-canonicals-structured-data-feature.webp"
-og_image: "/images/blog/technical-seo-astro-websites-sitemaps-canonicals-structured-data-og.webp"
-og_title: "Technical SEO for Astro Websites"
-og_description: "Sitemaps, canonical URLs and JSON-LD structured data for Astro sites — a practical technical SEO guide with working config and code."
+ogImage: "/images/blog/technical-seo-astro-websites-sitemaps-canonicals-structured-data-og.webp"
+ogTitle: "Technical SEO for Astro Websites"
+ogDescription: "Sitemaps, canonical URLs and JSON-LD structured data for Astro sites — a practical technical SEO guide with working config and code."
 categories: ["SEO"]
-author: "Muhammad Zaheer Ahmad"
+authors: ["Muhammad Zaheer Ahmad"]
 tags: ["astro", "seo", "technical-seo"]
 draft: false
 dateCreated: 2026-11-12T05:00:00Z

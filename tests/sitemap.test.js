@@ -75,7 +75,7 @@ const post = (id, data = {}, body = undefined) => ({
     datePublished: new Date("2026-11-14T05:00:00Z"),
     dateModified: new Date("2026-11-14T05:00:00Z"),
     image: "/images/blog/my-post-feature.webp",
-    og_image: "/images/blog/my-post-og.webp",
+    ogImage: "/images/blog/my-post-og.webp",
     ...data,
   },
 });
@@ -603,17 +603,49 @@ test("lastmod priority: dateModified > datePublished; authors: dateModified > da
   assert.equal(authorLastmod({ dateCreated: "not-a-date" }), undefined);
 });
 
-test("isSitemapVisible: draft, noindex, future and -index are out", () => {
-  assert.equal(isSitemapVisible(post("a"), NOW), true);
-  assert.equal(isSitemapVisible(post("a", { draft: true }), NOW), false);
-  assert.equal(isSitemapVisible(post("a", { noindex: true }), NOW), false);
+test("isSitemapVisible: draft, noindex, future and -index are out — noindex is the RESOLVED robotsindex", () => {
+  assert.equal(isSitemapVisible(post("a"), NOW, "blogPosts"), true);
   assert.equal(
-    isSitemapVisible(post("a", { datePublished: new Date("2999-01-01") }), NOW),
+    isSitemapVisible(post("a", { draft: true }), NOW, "blogPosts"),
     false,
   );
   assert.equal(
-    isSitemapVisible({ id: "-index", data: { title: "X" } }, NOW),
+    isSitemapVisible(post("a", { robotsindex: false }), NOW, "blogPosts"),
     false,
+  );
+  assert.equal(
+    isSitemapVisible(
+      post("a", { datePublished: new Date("2999-01-01") }),
+      NOW,
+      "blogPosts",
+    ),
+    false,
+  );
+  assert.equal(
+    isSitemapVisible({ id: "-index", data: { title: "X" } }, NOW, "pages"),
+    false,
+  );
+  // A type that is noindex by config default is out even with NO
+  // frontmatter value; an explicit robotsindex: true opts it back in.
+  assert.equal(
+    isSitemapVisible({ id: "jane", data: { title: "Jane" } }, NOW, "authors"),
+    false,
+  );
+  assert.equal(
+    isSitemapVisible(
+      { id: "jane", data: { title: "Jane", robotsindex: true } },
+      NOW,
+      "authors",
+    ),
+    true,
+  );
+  assert.equal(
+    isSitemapVisible({ id: "x", data: { title: "X" } }, NOW, "categories"),
+    false,
+  );
+  assert.equal(
+    isSitemapVisible({ id: "x", data: { title: "X" } }, NOW, "pages"),
+    true,
   );
 });
 
@@ -629,9 +661,9 @@ test("postsToEntries: absolute canonical URLs, custom slugs, exclusions", () => 
   const entries = postsToEntries(
     [
       post("a"),
-      post("b", { slug: "My Guide!" }),
+      post("b", { CustomSlug: "My Guide!" }),
       post("c", { draft: true }),
-      post("d", { noindex: true }),
+      post("d", { robotsindex: false }),
       post("e", { datePublished: new Date("2999-01-01") }),
       post("f", { canonical: "https://example.com/x" }),
       post("g", { canonical: "/blog/elsewhere" }),
@@ -662,7 +694,7 @@ test("postsToEntries: duplicate slugs throw", () => {
   assert.throws(
     () =>
       postsToEntries(
-        [post("a", { slug: "same" }), post("same")],
+        [post("a", { CustomSlug: "same" }), post("same")],
         liveSettings(),
         NOW,
       ),
@@ -670,18 +702,19 @@ test("postsToEntries: duplicate slugs throw", () => {
   );
 });
 
-test("authorsToEntries: id-based URLs, noindex dropped", () => {
+test("authorsToEntries: noindex by config default — only explicit robotsindex: true is listed", () => {
   const entries = authorsToEntries(
     [
       { id: "jane-doe", data: { title: "Jane" } },
-      { id: "hidden", data: { title: "H", noindex: true } },
+      { id: "hidden", data: { title: "H", robotsindex: false } },
+      { id: "shown", data: { title: "S", robotsindex: true } },
     ],
     liveSettings(),
     NOW,
   );
   assert.deepEqual(
     entries.map((e) => e.loc),
-    [`${BASE}/authors/jane-doe`],
+    [`${BASE}/authors/shown`],
   );
 });
 
@@ -692,6 +725,7 @@ test("authorsToEntries: lastmod is dateModified, else dateCreated (no datePublis
         id: "edited",
         data: {
           title: "Edited",
+          robotsindex: true,
           dateCreated: new Date("2026-11-14T21:23:35Z"),
           dateModified: new Date("2026-11-15T09:00:00Z"),
         },
@@ -700,10 +734,11 @@ test("authorsToEntries: lastmod is dateModified, else dateCreated (no datePublis
         id: "plain",
         data: {
           title: "Plain",
+          robotsindex: true,
           dateCreated: new Date("2026-11-14T21:23:35Z"),
         },
       },
-      { id: "undated", data: { title: "Undated" } },
+      { id: "undated", data: { title: "Undated", robotsindex: true } },
     ],
     liveSettings(),
     NOW,
@@ -713,30 +748,25 @@ test("authorsToEntries: lastmod is dateModified, else dateCreated (no datePublis
   assert.equal(entries[2].lastmod, undefined);
 });
 
-test("categoriesToEntries/tagsToEntries: archive URLs from taxonomy slugs", () => {
+test("categoriesToEntries/tagsToEntries: noindex by config default — no entries unless the type is flipped to index", () => {
+  // Categories and tags are noindex by config default, so both
+  // collectors return nothing; the exclude filter still applies when
+  // the type is indexable, which only a config change can make true.
   assert.deepEqual(
-    categoriesToEntries(["astro", "design-systems"], liveSettings()).map(
-      (e) => e.loc,
-    ),
-    [`${BASE}/categories/astro`, `${BASE}/categories/design-systems`],
+    categoriesToEntries(["astro", "design-systems"], liveSettings()),
+    [],
   );
-  assert.deepEqual(
-    tagsToEntries(["rss", "seo"], liveSettings()).map((e) => e.loc),
-    [`${BASE}/tags/rss`, `${BASE}/tags/seo`],
-  );
+  assert.deepEqual(tagsToEntries(["rss", "seo"], liveSettings()), []);
   const withDraft = resolveSitemapSettings({ exclude: ["/tags/draft"] });
-  assert.deepEqual(
-    tagsToEntries(["draft", "seo"], withDraft).map((e) => e.loc),
-    [`${BASE}/tags/seo`],
-  );
+  assert.deepEqual(tagsToEntries(["draft", "seo"], withDraft), []);
 });
 
-test("imagesToEntries: og_image wins, page image only, drafts skipped", () => {
+test("imagesToEntries: ogImage wins, page image only, drafts skipped", () => {
   const entries = imagesToEntries(
     [
       post("a"),
-      post("b", { image: "/images/b.webp", og_image: undefined }),
-      post("c", { image: undefined, og_image: undefined }),
+      post("b", { image: "/images/b.webp", ogImage: undefined }),
+      post("c", { image: undefined, ogImage: undefined }),
       post("d", { draft: true }),
     ],
     liveSettings(),
@@ -749,12 +779,12 @@ test("imagesToEntries: og_image wins, page image only, drafts skipped", () => {
   assert.equal(entries[1].images[0].loc, `${BASE}/images/b.webp`);
 });
 
-test("pagesToEntries: home, indexes, pagination and standalone pages", () => {
+test("pagesToEntries: noindex types stay out — home, about and standalone pages only", () => {
   const entries = pagesToEntries(
     {
       regularPages: [
         page("privacy-policy"),
-        page("hidden", { noindex: true }),
+        page("hidden", { robotsindex: false }),
         page("ext", { canonical: "https://example.com/x" }),
       ],
       aboutIndex: indexEntry({ title: "About" }),
@@ -768,16 +798,31 @@ test("pagesToEntries: home, indexes, pagination and standalone pages", () => {
   );
   assert.deepEqual(
     entries.map((e) => e.loc).sort(),
+    [`${BASE}/`, `${BASE}/about`, `${BASE}/privacy-policy`].sort(),
+  );
+});
+
+test("pagesToEntries: explicit robotsindex: true opts the blog archive and authors index back in", () => {
+  const entries = pagesToEntries(
+    {
+      regularPages: [],
+      aboutIndex: null,
+      contactIndex: null,
+      blogIndex: indexEntry({ title: "Blog", robotsindex: true }),
+      authorsIndex: indexEntry({ title: "Authors", robotsindex: true }),
+      blogTotalPages: 3,
+    },
+    liveSettings(),
+    NOW,
+  );
+  assert.deepEqual(
+    entries.map((e) => e.loc).sort(),
     [
       `${BASE}/`,
-      `${BASE}/about`,
       `${BASE}/authors`,
       `${BASE}/blog`,
       `${BASE}/blog/page/2`,
       `${BASE}/blog/page/3`,
-      `${BASE}/categories`,
-      `${BASE}/privacy-policy`,
-      `${BASE}/tags`,
     ].sort(),
   );
 });
@@ -797,13 +842,7 @@ test("pagesToEntries: draft about index drops /about; one blog page means no pag
   );
   assert.deepEqual(
     entries.map((e) => e.loc).sort(),
-    [
-      `${BASE}/`,
-      `${BASE}/blog`,
-      `${BASE}/categories`,
-      `${BASE}/contact`,
-      `${BASE}/tags`,
-    ].sort(),
+    [`${BASE}/`, `${BASE}/contact`].sort(),
   );
 });
 
@@ -838,7 +877,7 @@ test("extractBodyImagePaths: markdown refs + img srcs, fences skipped, external/
   ]);
 });
 
-test("postImageUrls: image, og_image, then body refs — absolute and deduped", () => {
+test("postImageUrls: image, ogImage, then body refs — absolute and deduped", () => {
   const urls = postImageUrls(
     post(
       "a",
@@ -852,15 +891,15 @@ test("postImageUrls: image, og_image, then body refs — absolute and deduped", 
     `${BASE}/images/blog/a-diagram-1.webp`,
     `${BASE}/images/blog/a-diagram-2.webp`,
   ]);
-  // og_image equal to image dedupes; no images at all yields none.
+  // ogImage equal to image dedupes; no images at all yields none.
   assert.deepEqual(
     postImageUrls(
-      post("b", { og_image: "/images/blog/my-post-feature.webp" }),
+      post("b", { ogImage: "/images/blog/my-post-feature.webp" }),
     ),
     [`${BASE}/images/blog/my-post-feature.webp`],
   );
   assert.deepEqual(
-    postImageUrls(post("c", { image: undefined, og_image: undefined })),
+    postImageUrls(post("c", { image: undefined, ogImage: undefined })),
     [],
   );
 });
@@ -871,7 +910,7 @@ test("postsToEntries: attaches <image:loc>-only images; existence gate filters; 
   const entries = postsToEntries(
     [
       post("a", {}, body),
-      post("b", { image: undefined, og_image: undefined }),
+      post("b", { image: undefined, ogImage: undefined }),
     ],
     liveSettings(),
     NOW,
@@ -955,9 +994,11 @@ test("pagesToEntries: homepage banner, about image, page image attached; imagele
     [`${BASE}/images/privacy.webp`],
   );
   assert.equal(byLoc.get(`${BASE}/contact`).images, undefined);
-  assert.equal(byLoc.get(`${BASE}/blog`).images, undefined);
   assert.equal(byLoc.get(`${BASE}/elements`).images, undefined);
-  assert.equal(byLoc.get(`${BASE}/categories`).images, undefined);
+  // /blog and /categories are noindex by config default, so they are
+  // not in the sitemap at all now.
+  assert.equal(byLoc.get(`${BASE}/blog`), undefined);
+  assert.equal(byLoc.get(`${BASE}/categories`), undefined);
 });
 
 test("engine: post/page sitemaps declare the image namespace only when they carry images", () => {
@@ -998,7 +1039,7 @@ test("images sitemap: format unchanged — one OG image per post, no multi-image
   const entries = imagesToEntries(
     [
       post("a"),
-      post("b", { image: "/images/b.webp", og_image: undefined }),
+      post("b", { image: "/images/b.webp", ogImage: undefined }),
     ],
     liveSettings(),
     NOW,
