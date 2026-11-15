@@ -1,0 +1,22 @@
+{
+  "name": "Astroplate",
+  "short_name": "Astroplate",
+  "description": "Astro and Tailwind boilerplate",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "100x100",
+      "type": "image/png"
+    }
+  ]
+}

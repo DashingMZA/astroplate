@@ -14,7 +14,10 @@ const testimonial = await getListPage("testimonialSection", "testimonial");
 const { banner, features } = homepage.data;
 ---
 
-<Base>
+<Base
+  title={plainify(banner.title).trim()}
+  description={plainify(banner.content).trim()}
+>
   <!-- Banner -->
   <section class="section pt-14">
     <div class="container">

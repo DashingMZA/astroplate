@@ -29,15 +29,39 @@ const canonicalField = z
   })
   .optional();
 
+// Independent social metadata fields (optional; empty string / null /
+// undefined all count as missing). camelCase names are canonical; the
+// snake_case spellings are legacy aliases kept working for existing
+// content. All fallback chains live in src/lib/utils/social.ts —
+// nothing here re-implements them.
+const socialFields = {
+  seoTitle: z.string().optional(),
+  seoDescription: z.string().optional(),
+  ogTitle: z.string().optional(),
+  ogDescription: z.string().optional(),
+  ogImage: z.string().optional(),
+  ogImageAlt: z.string().optional(),
+  twitterTitle: z.string().optional(),
+  twitterDescription: z.string().optional(),
+  twitterImage: z.string().optional(),
+  twitterImageAlt: z.string().optional(),
+  pinterestTitle: z.string().optional(),
+  pinterestDescription: z.string().optional(),
+  pinterestImage: z.string().optional(),
+  pinterestImageAlt: z.string().optional(),
+  // Legacy snake_case aliases.
+  og_title: z.string().optional(),
+  og_description: z.string().optional(),
+  og_image: z.string().optional(),
+  og_image_alt: z.string().optional(),
+};
+
 // SEO fields shared by the page-like collections (pages, about, contact).
 // Blog has the same fields inline (plus excerpt/featured/authors).
 const seoFields = {
   // Custom URL slug (overrides the filename-derived id; see src/lib/utils/slug.ts).
   slug: z.string().optional(),
-  og_title: z.string().optional(),
-  og_description: z.string().optional(),
-  // Social-share image; falls back to `image` when unset.
-  og_image: z.string().optional(),
+  ...socialFields,
   canonical: canonicalField,
   noindex: z.boolean().optional(),
 };
@@ -57,10 +81,8 @@ const blogCollection = defineCollection({
     datePublished: z.coerce.date().optional(),
     dateModified: z.coerce.date().optional(),
     image: z.string().optional(),
-    // Social-share image; falls back to `image` when unset.
-    og_image: z.string().optional(),
-    og_title: z.string().optional(),
-    og_description: z.string().optional(),
+    // Independent social metadata (optional); see `socialFields` above.
+    ...socialFields,
     author: z.string().default("Admin"),
     // Multi-author support; `author` above stays as the single-author fallback.
     authors: z.array(z.string()).optional(),
@@ -79,6 +101,7 @@ const authorsCollection = defineCollection({
   loader: glob({ pattern: "**/*.{md,mdx}", base: "src/content/authors" }),
   schema: z.object({
     ...commonFields,
+    ...socialFields,
     // Present in author files and the Sitepins authors schema; was silently
     // dropped by validation because it was missing here.
     email: z.string().optional(),

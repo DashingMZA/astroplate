@@ -22,8 +22,8 @@
   },
 
   "social": {
-    "twitter_site": "",
-    "twitter_creator": ""
+    "twitter_site": "@Dashing_ZB",
+    "twitter_creator": "@Dashing_ZB"
   },
 
   "settings": {
@@ -72,6 +72,7 @@
   "metadata": {
     "meta_author": "cSofts",
     "meta_image": "/images/og-image.webp",
+    "meta_twitter_image": "/images/og-image.webp",
     "meta_image_alt": "Astroplate",
     "meta_description": "Astro and Tailwind boilerplate"
   },

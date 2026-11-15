@@ -26,8 +26,32 @@ export async function getStaticPaths() {
 }
 
 const { author } = Astro.props;
-const { title, social, meta_title, description, image, canonical, noindex } =
-  author.data;
+const {
+  title,
+  social,
+  meta_title,
+  seoTitle,
+  description,
+  seoDescription,
+  image,
+  og_title,
+  ogTitle,
+  og_description,
+  ogDescription,
+  og_image,
+  ogImage,
+  ogImageAlt,
+  twitterTitle,
+  twitterDescription,
+  twitterImage,
+  twitterImageAlt,
+  pinterestTitle,
+  pinterestDescription,
+  pinterestImage,
+  pinterestImageAlt,
+  canonical,
+  noindex,
+} = author.data;
 const { Content } = await render(author);
 
 // get all posts by author — resolved by author file id (legacy
@@ -56,9 +80,26 @@ const breadcrumbJsonLd = buildBreadcrumbJsonLd([
 <Base
   title={title}
   meta_title={meta_title}
+  seoTitle={seoTitle}
   description={description}
+  seoDescription={seoDescription}
   image={image}
+  og_title={og_title}
+  ogTitle={ogTitle}
+  og_description={og_description}
+  ogDescription={ogDescription}
+  og_image={og_image}
+  ogImage={ogImage}
+  ogImageAlt={ogImageAlt}
   image_alt={title}
+  twitterTitle={twitterTitle}
+  twitterDescription={twitterDescription}
+  twitterImage={twitterImage}
+  twitterImageAlt={twitterImageAlt}
+  pinterestTitle={pinterestTitle}
+  pinterestDescription={pinterestDescription}
+  pinterestImage={pinterestImage}
+  pinterestImageAlt={pinterestImageAlt}
   canonical={canonical}
   noindex={noindex}
   jsonLd={[personJsonLd, breadcrumbJsonLd]}

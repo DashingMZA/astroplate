@@ -11,7 +11,29 @@ import { render } from "astro:content";
 
 const aboutIndex = await getListPage("about", "-index");
 const { Content } = await render(aboutIndex);
-const { title, description, meta_title, image } = aboutIndex.data;
+const {
+  title,
+  description,
+  seoDescription,
+  meta_title,
+  seoTitle,
+  image,
+  og_title,
+  ogTitle,
+  og_description,
+  ogDescription,
+  og_image,
+  ogImage,
+  ogImageAlt,
+  twitterTitle,
+  twitterDescription,
+  twitterImage,
+  twitterImageAlt,
+  pinterestTitle,
+  pinterestDescription,
+  pinterestImage,
+  pinterestImageAlt,
+} = aboutIndex.data;
 const dates = resolveContentDates(aboutIndex.data);
 const updatedDate = lastChangeDate(dates);
 const pageJsonLd = buildWebPageJsonLd({
@@ -32,8 +54,26 @@ if (!buildDrafts && aboutIndex.data.draft) {
 <Base
   title={title}
   meta_title={meta_title}
+  seoTitle={seoTitle}
   description={description}
+  seoDescription={seoDescription}
   image={image}
+  og_title={og_title}
+  ogTitle={ogTitle}
+  og_description={og_description}
+  ogDescription={ogDescription}
+  og_image={og_image}
+  ogImage={ogImage}
+  ogImageAlt={ogImageAlt}
+  image_alt={title}
+  twitterTitle={twitterTitle}
+  twitterDescription={twitterDescription}
+  twitterImage={twitterImage}
+  twitterImageAlt={twitterImageAlt}
+  pinterestTitle={pinterestTitle}
+  pinterestDescription={pinterestDescription}
+  pinterestImage={pinterestImage}
+  pinterestImageAlt={pinterestImageAlt}
   jsonLd={[pageJsonLd]}
 >
   <section class="section-sm">
@@ -50,9 +90,9 @@ if (!buildDrafts && aboutIndex.data.draft) {
               format="webp"
             />
           )}
-          <h2 class="h3 mb-6">
+          <h1 class="h3 mb-6">
             <span set:html={markdownify(title)} />
-          </h2>
+          </h1>
           <div class="content">
             <Content />
           </div>

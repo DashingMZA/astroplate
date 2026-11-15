@@ -6,6 +6,7 @@ import Base from "@/layouts/Base.astro";
 import { getListPage, getSinglePage } from "@/lib/contentParser";
 import { getAllTaxonomy, getTaxonomy } from "@/lib/taxonomyParser";
 import { sortByDate } from "@/lib/utils/sortFunctions";
+import { canonicalFor } from "@/lib/utils/seo";
 import PageHeader from "@/partials/PageHeader.astro";
 import PostSidebar from "@/partials/PostSidebar.astro";
 
@@ -30,6 +31,22 @@ const indexOfLastPost = currentPage * config.settings.pagination;
 const indexOfFirstPost = indexOfLastPost - config.settings.pagination;
 const currentPosts = sortedPosts.slice(indexOfFirstPost, indexOfLastPost);
 
+// Pagination pages get their own title/description (page 1's "Blog Posts"
+// must not repeat on pages 2+) plus rel=prev/next. Page 2's prev is the
+// blog index itself, never /blog/page/1.
+const pageTitle = `${postIndex.data.title} — Page ${currentPage}`;
+const pageDescription = `${postIndex.data.description} (Page ${currentPage} of ${totalPages})`;
+const prevPageUrl =
+  currentPage > 2
+    ? canonicalFor(`/blog/page/${currentPage - 1}`)
+    : currentPage === 2
+      ? canonicalFor("/blog")
+      : undefined;
+const nextPageUrl =
+  currentPage < totalPages
+    ? canonicalFor(`/blog/page/${currentPage + 1}`)
+    : undefined;
+
 export async function getStaticPaths() {
   const BLOG_FOLDER = "blog";
   const posts = await getSinglePage(BLOG_FOLDER);
@@ -48,12 +65,14 @@ export async function getStaticPaths() {
 ---
 
 <Base
-  title={postIndex.data.title}
+  title={pageTitle}
   meta_title={postIndex.data.meta_title}
   image={postIndex.data.image}
-  description={postIndex.data.description}
+  description={pageDescription}
+  prevUrl={prevPageUrl}
+  nextUrl={nextPageUrl}
 >
-  <PageHeader title={postIndex.data.title} />
+  <PageHeader title={pageTitle} />
   <section class="section">
     <div class="container">
       <div class="row gx-5">

@@ -31,6 +31,14 @@ const {
   authors,
   categories,
   image,
+  og_image,
+  ogImage,
+  twitterTitle,
+  twitterDescription,
+  twitterImage,
+  pinterestTitle,
+  pinterestDescription,
+  pinterestImage,
   datePublished,
   dateModified,
   tags,
@@ -163,6 +171,13 @@ const resolvedAuthors = resolveAuthors(
               slug={postSlug(post)}
               url={canonicalFor(postUrl(post))}
               image={image}
+              ogImage={ogImage ?? og_image}
+              twitterTitle={twitterTitle}
+              twitterDescription={twitterDescription}
+              twitterImage={twitterImage}
+              pinterestTitle={pinterestTitle}
+              pinterestDescription={pinterestDescription}
+              pinterestImage={pinterestImage}
             />
           </div>
         </div>

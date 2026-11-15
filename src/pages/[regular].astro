@@ -33,11 +33,25 @@ const { page } = Astro.props;
 const {
   title,
   meta_title,
+  seoTitle,
   description,
+  seoDescription,
   image,
   og_title,
+  ogTitle,
   og_description,
+  ogDescription,
   og_image,
+  ogImage,
+  ogImageAlt,
+  twitterTitle,
+  twitterDescription,
+  twitterImage,
+  twitterImageAlt,
+  pinterestTitle,
+  pinterestDescription,
+  pinterestImage,
+  pinterestImageAlt,
   dateCreated,
   datePublished,
   dateModified,
@@ -66,11 +80,26 @@ const breadcrumbJsonLd = buildBreadcrumbJsonLd([
 <Base
   title={title}
   meta_title={meta_title}
+  seoTitle={seoTitle}
   description={description}
-  image={og_image ?? image}
+  seoDescription={seoDescription}
+  image={image}
   og_title={og_title}
+  ogTitle={ogTitle}
   og_description={og_description}
+  ogDescription={ogDescription}
+  og_image={og_image}
+  ogImage={ogImage}
+  ogImageAlt={ogImageAlt}
   image_alt={title}
+  twitterTitle={twitterTitle}
+  twitterDescription={twitterDescription}
+  twitterImage={twitterImage}
+  twitterImageAlt={twitterImageAlt}
+  pinterestTitle={pinterestTitle}
+  pinterestDescription={pinterestDescription}
+  pinterestImage={pinterestImage}
+  pinterestImageAlt={pinterestImageAlt}
   canonical={canonical}
   noindex={noindex}
   jsonLd={[pageJsonLd, breadcrumbJsonLd]}

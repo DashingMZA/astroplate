@@ -34,12 +34,26 @@ const { post } = Astro.props;
 const {
   title,
   meta_title,
+  seoTitle,
   og_title,
+  ogTitle,
   og_description,
+  ogDescription,
   excerpt,
   description,
+  seoDescription,
   image,
   og_image,
+  ogImage,
+  ogImageAlt,
+  twitterTitle,
+  twitterDescription,
+  twitterImage,
+  twitterImageAlt,
+  pinterestTitle,
+  pinterestDescription,
+  pinterestImage,
+  pinterestImageAlt,
   dateCreated,
   datePublished,
   dateModified,
@@ -105,12 +119,27 @@ const breadcrumbJsonLd = buildBreadcrumbJsonLd([
 <Base
   title={title}
   meta_title={meta_title}
+  seoTitle={seoTitle}
   description={description}
+  seoDescription={seoDescription}
   excerpt={excerpt}
-  image={seoImage}
+  image={image}
   og_title={og_title}
+  ogTitle={ogTitle}
   og_description={og_description}
+  ogDescription={ogDescription}
+  og_image={og_image}
+  ogImage={ogImage}
+  ogImageAlt={ogImageAlt}
   image_alt={title}
+  twitterTitle={twitterTitle}
+  twitterDescription={twitterDescription}
+  twitterImage={twitterImage}
+  twitterImageAlt={twitterImageAlt}
+  pinterestTitle={pinterestTitle}
+  pinterestDescription={pinterestDescription}
+  pinterestImage={pinterestImage}
+  pinterestImageAlt={pinterestImageAlt}
   ogType="article"
   article={{
     publishedTime: dates.datePublished,

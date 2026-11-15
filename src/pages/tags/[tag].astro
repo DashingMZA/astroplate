@@ -29,7 +29,7 @@ const sortedPosts = sortByDate(filterByTags);
 const tagName = humanize(tag ?? "");
 ---
 
-<Base title={tagName} description={`All posts tagged ${tagName}.`}>
+<Base title={`${tagName} — Tag`} description={`All posts tagged ${tagName}.`}>
   <PageHeader title={tagName} />
   <div class="section-sm pb-0">
     <div class="container">

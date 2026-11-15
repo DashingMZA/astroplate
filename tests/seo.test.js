@@ -30,6 +30,7 @@ const repoRoot = path.resolve(
 // a static import resolves before register() runs.)
 register("./json-hooks.mjs", import.meta.url);
 const seo = await import("../src/lib/utils/seo.ts");
+const social = await import("../src/lib/utils/social.ts");
 const authorsMod = await import("../src/lib/utils/authors.ts");
 const { displayAuthorNames, resolveAuthors, postBelongsToAuthor } = authorsMod;
 const {
@@ -214,11 +215,271 @@ test("resolveOgImage: R2 https URLs pass through unchanged; local paths get the 
   assert.equal(fallback.isPageImage, false);
 });
 
-test("resolveTwitterHandles: no handles configured means no invented tags", () => {
+test("resolveTwitterHandles: configured handles are emitted (from the linked X profile)", () => {
   assert.deepEqual(seo.resolveTwitterHandles(), {
-    site: undefined,
-    creator: undefined,
+    site: "@Dashing_ZB",
+    creator: "@Dashing_ZB",
   });
+});
+
+// ─── Centralized social metadata resolver ────────────────────────────────
+// Spec cases 1–14. Cases 15–16 (no duplicate meta tags; correct metadata
+// in production HTML) are covered by scripts/validate-seo.mjs, exercised
+// by the dist test at the end of this section.
+
+test("social 1: only title + description — every platform uses them, images fall back to the global default", async () => {
+  const meta = await social.resolveSocialMeta({
+    title: "My Guide",
+    description: "A guide.",
+  });
+  assert.equal(meta.title, "My Guide");
+  assert.equal(meta.description, "A guide.");
+  assert.equal(meta.og.title, "My Guide");
+  assert.equal(meta.twitter.title, "My Guide");
+  assert.equal(meta.pinterest.title, "My Guide");
+  assert.equal(meta.og.description, "A guide.");
+  assert.equal(meta.twitter.description, "A guide.");
+  assert.equal(meta.pinterest.description, "A guide.");
+  for (const image of [meta.og.image, meta.twitter.image, meta.pinterest.image]) {
+    assert.equal(image.url, "https://astroplate.jadoo.bond/images/og-image.webp");
+    assert.equal(image.source, "default");
+  }
+});
+
+test("social 2: seoTitle/seoDescription win for SEO and are inherited by OG", async () => {
+  const meta = await social.resolveSocialMeta({
+    title: "My Guide",
+    description: "A guide.",
+    seoTitle: "SEO Title",
+    seoDescription: "SEO description.",
+  });
+  assert.equal(meta.title, "SEO Title");
+  assert.equal(meta.description, "SEO description.");
+  assert.equal(meta.og.title, "SEO Title");
+  assert.equal(meta.og.description, "SEO description.");
+  assert.equal(meta.twitter.title, "SEO Title");
+  assert.equal(meta.pinterest.title, "SEO Title");
+});
+
+test("social 3: only ogTitle + ogImage — Twitter and Pinterest inherit both", async () => {
+  const meta = await social.resolveSocialMeta({
+    title: "My Guide",
+    description: "A guide.",
+    ogTitle: "OG Title",
+    ogImage: "https://example.com/og.jpg",
+  });
+  assert.equal(meta.title, "My Guide");
+  assert.equal(meta.og.title, "OG Title");
+  assert.equal(meta.twitter.title, "OG Title");
+  assert.equal(meta.pinterest.title, "OG Title");
+  assert.equal(meta.og.image.url, "https://example.com/og.jpg");
+  assert.equal(meta.twitter.image.url, "https://example.com/og.jpg");
+  assert.equal(meta.pinterest.image.url, "https://example.com/og.jpg");
+  assert.equal(meta.twitter.image.source, "inherited");
+  assert.equal(meta.pinterest.image.source, "inherited");
+});
+
+test("social 4: only twitterTitle + twitterImage — only Twitter overrides", async () => {
+  const meta = await social.resolveSocialMeta({
+    title: "My Guide",
+    description: "A guide.",
+    image: "/images/blog/x-feature.webp",
+    twitterTitle: "X Title",
+    twitterImage: "https://example.com/x.jpg",
+  });
+  assert.equal(meta.title, "My Guide");
+  assert.equal(meta.og.title, "My Guide");
+  assert.equal(meta.pinterest.title, "My Guide");
+  assert.equal(meta.twitter.title, "X Title");
+  assert.equal(meta.twitter.image.url, "https://example.com/x.jpg");
+  assert.equal(meta.twitter.image.source, "dedicated");
+  assert.equal(meta.og.image.url, "https://astroplate.jadoo.bond/images/blog/x-feature.webp");
+  assert.equal(meta.pinterest.image.url, "https://astroplate.jadoo.bond/images/blog/x-feature.webp");
+});
+
+test("social 5: only pinterestTitle + pinterestImage — only Pinterest overrides", async () => {
+  const meta = await social.resolveSocialMeta({
+    title: "My Guide",
+    description: "A guide.",
+    image: "/images/blog/x-feature.webp",
+    pinterestTitle: "Pin Title",
+    pinterestImage: "https://example.com/pin.jpg",
+  });
+  assert.equal(meta.og.title, "My Guide");
+  assert.equal(meta.twitter.title, "My Guide");
+  assert.equal(meta.pinterest.title, "Pin Title");
+  assert.equal(meta.pinterest.image.url, "https://example.com/pin.jpg");
+  assert.equal(meta.pinterest.image.source, "dedicated");
+  assert.equal(meta.twitter.image.url, "https://astroplate.jadoo.bond/images/blog/x-feature.webp");
+  assert.equal(meta.og.image.url, "https://astroplate.jadoo.bond/images/blog/x-feature.webp");
+});
+
+test("social 6+7: OG image is inherited by Twitter and Pinterest", async () => {
+  const meta = await social.resolveSocialMeta({
+    title: "T",
+    description: "D",
+    ogImage: "https://example.com/og.jpg",
+  });
+  assert.equal(meta.twitter.image.url, "https://example.com/og.jpg");
+  assert.equal(meta.pinterest.image.url, "https://example.com/og.jpg");
+});
+
+test("social 8: twitterImage overrides only Twitter", async () => {
+  const meta = await social.resolveSocialMeta({
+    title: "T",
+    description: "D",
+    ogImage: "https://example.com/og.jpg",
+    twitterImage: "https://example.com/x.jpg",
+  });
+  assert.equal(meta.twitter.image.url, "https://example.com/x.jpg");
+  assert.equal(meta.og.image.url, "https://example.com/og.jpg");
+  assert.equal(meta.pinterest.image.url, "https://example.com/og.jpg");
+});
+
+test("social 9: pinterestImage overrides only Pinterest", async () => {
+  const meta = await social.resolveSocialMeta({
+    title: "T",
+    description: "D",
+    ogImage: "https://example.com/og.jpg",
+    pinterestImage: "https://example.com/pin.jpg",
+  });
+  assert.equal(meta.pinterest.image.url, "https://example.com/pin.jpg");
+  assert.equal(meta.og.image.url, "https://example.com/og.jpg");
+  assert.equal(meta.twitter.image.url, "https://example.com/og.jpg");
+});
+
+test("social 10: all platform-specific fields supplied — each platform gets its own", async () => {
+  const meta = await social.resolveSocialMeta({
+    title: "T",
+    description: "D",
+    seoTitle: "SEO",
+    seoDescription: "SEO D",
+    ogTitle: "OG",
+    ogDescription: "OG D",
+    ogImage: "https://example.com/og.jpg",
+    twitterTitle: "X",
+    twitterDescription: "X D",
+    twitterImage: "https://example.com/x.jpg",
+    pinterestTitle: "Pin",
+    pinterestDescription: "Pin D",
+    pinterestImage: "https://example.com/pin.jpg",
+  });
+  assert.equal(meta.title, "SEO");
+  assert.equal(meta.og.title, "OG");
+  assert.equal(meta.twitter.title, "X");
+  assert.equal(meta.pinterest.title, "Pin");
+  assert.equal(meta.description, "SEO D");
+  assert.equal(meta.og.description, "OG D");
+  assert.equal(meta.twitter.description, "X D");
+  assert.equal(meta.pinterest.description, "Pin D");
+  assert.equal(meta.og.image.url, "https://example.com/og.jpg");
+  assert.equal(meta.twitter.image.url, "https://example.com/x.jpg");
+  assert.equal(meta.pinterest.image.url, "https://example.com/pin.jpg");
+  assert.equal(meta.twitter.card, "summary_large_image");
+});
+
+test("social 11: empty strings, null and undefined are all missing", async () => {
+  const meta = await social.resolveSocialMeta({
+    title: "T",
+    description: "D",
+    seoTitle: "",
+    seoDescription: null,
+    ogTitle: undefined,
+    ogImage: "",
+    twitterImage: "   ",
+    image: "",
+  });
+  assert.equal(meta.title, "T");
+  assert.equal(meta.description, "D");
+  assert.equal(meta.og.title, "T");
+  assert.equal(meta.og.image.source, "default");
+  assert.equal(meta.twitter.image.source, "default");
+});
+
+test("social 12: missing featured image falls back to the verified global default", async () => {
+  const meta = await social.resolveSocialMeta({ title: "T", description: "D" });
+  assert.equal(meta.og.image.url, "https://astroplate.jadoo.bond/images/og-image.webp");
+  assert.equal(meta.og.image.width, 1200);
+  assert.equal(meta.og.image.height, 630);
+  assert.equal(meta.og.image.type, "image/webp");
+  assert.ok(meta.og.image.sizeBytes > 0 && meta.og.image.sizeBytes < 300 * 1024);
+  assert.equal(meta.og.image.secureUrl, "https://astroplate.jadoo.bond/images/og-image.webp");
+});
+
+test("social 13: missing alt text falls back to the page title, then the site default", async () => {
+  const withTitle = await social.resolveSocialMeta({ title: "My Guide", description: "D" });
+  assert.equal(withTitle.og.image.alt, "My Guide");
+  assert.equal(withTitle.twitter.image.alt, "My Guide");
+  const explicit = await social.resolveSocialMeta({
+    title: "My Guide",
+    description: "D",
+    ogImageAlt: "Custom alt",
+    twitterImageAlt: "X alt",
+  });
+  assert.equal(explicit.og.image.alt, "Custom alt");
+  assert.equal(explicit.twitter.image.alt, "X alt");
+  assert.equal(explicit.pinterest.image.alt, "Custom alt");
+});
+
+test("social 14: invalid image URLs — absolute URL kept, no invented dimensions", async () => {
+  const missing = await social.resolveSocialMeta({
+    title: "T",
+    description: "D",
+    ogImage: "/images/does-not-exist.webp",
+  });
+  assert.equal(
+    missing.og.image.url,
+    "https://astroplate.jadoo.bond/images/does-not-exist.webp",
+  );
+  assert.equal(missing.og.image.width, undefined);
+  assert.equal(missing.og.image.height, undefined);
+  assert.equal(missing.og.image.type, undefined);
+  assert.equal(missing.og.image.alt, "T");
+  const remote = await social.resolveSocialMeta({
+    title: "T",
+    description: "D",
+    ogImage: "https://example.com/og.jpg",
+  });
+  assert.equal(remote.og.image.url, "https://example.com/og.jpg");
+  assert.equal(remote.og.image.secureUrl, "https://example.com/og.jpg");
+  assert.equal(remote.og.image.width, undefined);
+  assert.equal(remote.og.image.type, undefined);
+  const issues = social.validateResolvedMeta(missing);
+  assert.ok(
+    issues.some((i) => i.code === "unverified-image-dimensions"),
+    "missing local file warns instead of inventing dimensions",
+  );
+});
+
+test("social: validateResolvedMeta flags an oversized image and a wrong OG ratio", async () => {
+  const meta = await social.resolveSocialMeta({
+    title: "T",
+    description: "D",
+    image: "/images/about-banner.webp",
+  });
+  // about-banner is 2736x912 (3:1) — valid, but off the 1.91:1 OG ratio.
+  const issues = social.validateResolvedMeta(meta);
+  assert.ok(issues.some((i) => i.code === "image-aspect-ratio"));
+});
+
+// Cases 15–16: no duplicate meta tags + correct metadata in generated
+// HTML. These need a production build, so they run the dist validator
+// when dist/ exists and skip otherwise (CI runs tests before the build;
+// `pnpm seo:check` runs the same validator after the build).
+test("social 15+16: dist HTML has no duplicate meta tags and correct metadata", (t) => {
+  if (!fs.existsSync(path.join(repoRoot, "dist", "index.html"))) {
+    t.skip("dist/ not built yet — run pnpm build, then pnpm seo:check");
+    return;
+  }
+  const run = spawnSync("node", ["scripts/validate-seo.mjs"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  });
+  assert.equal(
+    run.status,
+    0,
+    `validate-seo.mjs failed:\n${run.stdout}\n${run.stderr}`,
+  );
 });
 
 // ─── JSON-LD ───────────────────────────────────────────────────────────────

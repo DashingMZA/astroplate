@@ -3,16 +3,8 @@ import JsonLd from "@/components/JsonLd.astro";
 import TwSizeIndicator from "@/components/TwSizeIndicator.astro";
 import config from "@/config/config.json";
 import theme from "@/config/theme.json";
-import {
-  absoluteUrl,
-  buildCanonical,
-  resolveOgDescription,
-  resolveOgImage,
-  resolveOgTitle,
-  resolvePageDescription,
-  resolvePageTitle,
-  resolveTwitterHandles,
-} from "@/lib/utils/seo";
+import { absoluteUrl, buildCanonical } from "@/lib/utils/seo";
+import { resolveSocialMeta } from "@/lib/utils/social";
 import {
   buildOrganizationJsonLd,
   buildWebsiteJsonLd,
@@ -63,6 +55,26 @@ export interface Props {
   og_image_alt?: string;
   /** Alias of og_image_alt, kept for call sites that pass `image_alt`. */
   image_alt?: string;
+  /** Independent social metadata (all optional; see social.ts for the
+   * exact fallback chains). snake_case spellings above are legacy
+   * aliases and keep working. */
+  seoTitle?: string;
+  seoDescription?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  ogImageAlt?: string;
+  twitterTitle?: string;
+  twitterDescription?: string;
+  twitterImage?: string;
+  twitterImageAlt?: string;
+  pinterestTitle?: string;
+  pinterestDescription?: string;
+  pinterestImage?: string;
+  pinterestImageAlt?: string;
+  /** Pagination neighbours (absolute URLs); emitted as rel=prev/next. */
+  prevUrl?: string;
+  nextUrl?: string;
   noindex?: boolean;
   canonical?: string;
   ogType?: "website" | "article";
@@ -82,6 +94,22 @@ const {
   og_image,
   og_image_alt,
   image_alt,
+  seoTitle,
+  seoDescription,
+  ogTitle: ogTitleProp,
+  ogDescription: ogDescriptionProp,
+  ogImage: ogImageProp,
+  ogImageAlt: ogImageAltProp,
+  twitterTitle,
+  twitterDescription,
+  twitterImage,
+  twitterImageAlt,
+  pinterestTitle,
+  pinterestDescription,
+  pinterestImage,
+  pinterestImageAlt,
+  prevUrl,
+  nextUrl,
   noindex,
   canonical,
   ogType,
@@ -89,22 +117,43 @@ const {
   jsonLd,
 } = Astro.props;
 
-// <title>: meta_title > title > site title. og_title is NOT a title fallback.
-// plainify() leaves a trailing newline from marked's block output — trim it
-// so it never lands inside a <title> or meta content attribute.
-const pageTitle = plainify(resolvePageTitle({ meta_title, title })).trim();
-// meta description: description > excerpt > site default.
-const pageDescription = plainify(
-  resolvePageDescription({ description, excerpt }),
-).trim();
-// og:title: og_title > meta_title > title > site title.
-// og:description: og_description > description > excerpt > site default.
-const ogTitle = plainify(
-  resolveOgTitle({ og_title, meta_title, title }),
-).trim();
-const ogDescription = plainify(
-  resolveOgDescription({ og_description, description, excerpt }),
-).trim();
+// All titles / descriptions / images (OG, Twitter, Pinterest) come from
+// the single centralized resolver in src/lib/utils/social.ts — see its
+// header comment for the exact fallback chains. plainify() strips any
+// Markdown so it never lands inside a <title> or meta content attribute
+// (it leaves a trailing newline from marked's block output — trim it).
+const social = await resolveSocialMeta({
+  title,
+  meta_title,
+  seoTitle,
+  description,
+  excerpt,
+  seoDescription,
+  image,
+  og_title,
+  ogTitle: ogTitleProp,
+  og_description,
+  ogDescription: ogDescriptionProp,
+  og_image,
+  ogImage: ogImageProp,
+  og_image_alt,
+  ogImageAlt: ogImageAltProp,
+  image_alt,
+  twitterTitle,
+  twitterDescription,
+  twitterImage,
+  twitterImageAlt,
+  pinterestTitle,
+  pinterestDescription,
+  pinterestImage,
+  pinterestImageAlt,
+});
+const pageTitle = plainify(social.title).trim();
+const pageDescription = plainify(social.description).trim();
+const ogTitle = plainify(social.og.title).trim();
+const ogDescription = plainify(social.og.description).trim();
+const twitterTitleResolved = plainify(social.twitter.title).trim();
+const twitterDescriptionResolved = plainify(social.twitter.description).trim();
 
 // Canonical: always emitted. An explicit `canonical` prop overrides the
 // page's own public URL (absolute URLs are trailing-slash normalised,
@@ -118,20 +167,14 @@ const ogUrl = canonicalUrl;
 // "website" otherwise.
 const resolvedOgType = ogType ?? (article ? "article" : "website");
 
-// OG / Twitter image: og_image > image > site default. Absolute URLs (e.g.
-// R2/CDN) are never prefixed with base_url.
-const { url: ogImage, isPageImage } = resolveOgImage({ og_image, image });
-// No og:image:width/height is emitted: image dimensions are not known at
-// render time, and the previous hardcoded 1200x630 was wrong even for the
-// default OG image (3600x2400). Invented dimensions are worse than none.
-const twitterCard = ogImage ? "summary_large_image" : "summary";
-// Alt follows the image source: a page-specific image gets the page's alt
-// (og_image_alt / image_alt / page title); the site-default image keeps the
-// configured default alt.
-const ogImageAlt = isPageImage
-  ? (og_image_alt ?? image_alt ?? title ?? config.metadata.meta_image_alt)
-  : config.metadata.meta_image_alt;
-const twitterHandles = resolveTwitterHandles();
+// Image metadata (URL + verified width/height/MIME/alt) comes from the
+// resolver: dimensions are probed from the actual file with sharp at
+// build time. Remote images carry no dimensions — invented dimensions
+// are worse than none.
+const ogImage = social.og.image;
+const twitterImageMeta = social.twitter.image;
+const ogImageAlt = plainify(ogImage.alt).trim();
+const twitterImageAltText = plainify(twitterImageMeta.alt).trim();
 
 const articleAuthors = article?.author
   ? Array.isArray(article.author)
@@ -174,6 +217,8 @@ const jsonLdGraph = {
     )}
     <!-- favicon -->
     <link rel="shortcut icon" href={config.site.favicon} />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <!-- theme meta -->
     <meta name="theme-name" content="astroplate" />
     <meta name="msapplication-TileColor" content="#000000" />
@@ -188,7 +233,7 @@ const jsonLdGraph = {
       content="#000"
     />
     <meta name="generator" content={Astro.generator} />
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta charset="utf-8" />
 
     <!-- google font css - Astro 6 built-in Font API -->
     {fontEntries.map(([key]) => {
@@ -213,6 +258,8 @@ const jsonLdGraph = {
 
     <!-- canonical url (always emitted; defaults to this page's own URL) -->
     <link rel="canonical" href={canonicalUrl} />
+    {prevUrl && <link rel="prev" href={prevUrl} />}
+    {nextUrl && <link rel="next" href={nextUrl} />}
 
     <!-- rss feed -->
     <link
@@ -282,21 +329,33 @@ const jsonLdGraph = {
       </>
     )}
 
-    <!-- og-image -->
-    <meta property="og:image" content={ogImage} />
+    <!-- og-image (dimensions/MIME verified from the actual file; omitted when unverifiable) -->
+    <meta property="og:image" content={ogImage.url} />
+    {ogImage.secureUrl && (
+      <meta property="og:image:secure_url" content={ogImage.secureUrl} />
+    )}
+    {ogImage.type && <meta property="og:image:type" content={ogImage.type} />}
+    {ogImage.width && (
+      <meta property="og:image:width" content={String(ogImage.width)} />
+    )}
+    {ogImage.height && (
+      <meta property="og:image:height" content={String(ogImage.height)} />
+    )}
     {ogImageAlt && <meta property="og:image:alt" content={ogImageAlt} />}
 
-    <!-- twitter -->
-    <meta name="twitter:card" content={twitterCard} />
-    <meta name="twitter:title" content={ogTitle} />
-    <meta name="twitter:description" content={ogDescription} />
-    <meta name="twitter:image" content={ogImage} />
-    {ogImageAlt && <meta name="twitter:image:alt" content={ogImageAlt} />}
-    {twitterHandles.site && (
-      <meta name="twitter:site" content={twitterHandles.site} />
+    <!-- twitter (independent fields; each falls back through OG when unset — see social.ts) -->
+    <meta name="twitter:card" content={social.twitter.card} />
+    <meta name="twitter:title" content={twitterTitleResolved} />
+    <meta name="twitter:description" content={twitterDescriptionResolved} />
+    <meta name="twitter:image" content={twitterImageMeta.url} />
+    {twitterImageAltText && (
+      <meta name="twitter:image:alt" content={twitterImageAltText} />
     )}
-    {twitterHandles.creator && (
-      <meta name="twitter:creator" content={twitterHandles.creator} />
+    {social.twitter.site && (
+      <meta name="twitter:site" content={social.twitter.site} />
+    )}
+    {social.twitter.creator && (
+      <meta name="twitter:creator" content={social.twitter.creator} />
     )}
 
     <!-- structured data (one @graph block per page) -->

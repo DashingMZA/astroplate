@@ -3,8 +3,13 @@
 All SEO output is generated at build time from `src/config/config.json`
 and post frontmatter. The single source of truth is
 `src/layouts/Base.astro`, which every page renders through; post
-pages add article metadata in `src/pages/blog/[single].astro`, and
-URL helpers live in `src/lib/utils/seo.ts`.
+pages add article metadata in `src/pages/blog/[single].astro`, URL
+helpers live in `src/lib/utils/seo.ts`, and ALL social metadata
+(titles, descriptions, images, alt text — OG, Twitter/X and
+Pinterest) is resolved by the single centralized resolver in
+`src/lib/utils/social.ts`. No layout, component or page re-implements
+a fallback chain; see that file's header comment for the exact
+priorities.
 
 ## What is emitted per page type
 
@@ -12,23 +17,29 @@ URL helpers live in `src/lib/utils/seo.ts`.
 
 | Tag | Value / rule |
 | --- | --- |
-| `<title>` | `meta_title`, else `title`, else site title (plain-text, HTML stripped) |
+| `<meta charset>` | `utf-8` |
+| `<title>` | `seoTitle`, else `meta_title`, else `title`, else site title (plain-text, HTML stripped) |
 | `<link rel="canonical">` | Always emitted. Defaults to the page's own URL (`base_url` + `base_path` + pathname, honouring `trailing_slash`); an explicit `canonical` prop overrides it (absolute URL or site-relative path) |
-| `<meta name="description">` | Post/page `description`, else `excerpt`, else site `metadata.meta_description` |
+| `<link rel="prev">` / `<link rel="next">` | Blog listing pagination only (`/blog` → page 2, page N ↔ N±1; page 2's prev is `/blog`, never `/blog/page/1`) |
+| `<meta name="description">` | `seoDescription`, else `description`, else `excerpt`, else site `metadata.meta_description` |
 | `<meta name="author">` | Site `metadata.meta_author` |
-| `og:title` | `og_title`, else `meta_title`, else `title`, else site title |
-| `og:description` | `og_description`, else `description`, else `excerpt`, else site default |
+| `og:title` | `ogTitle` (or legacy `og_title`), else `seoTitle` / `meta_title`, else `title`, else site title |
+| `og:description` | `ogDescription` (or `og_description`), else `seoDescription`, else `description`, else `excerpt`, else site default |
 | `og:type` | `"website"`, except `"article"` on blog posts |
 | `og:url` | The canonical URL |
 | `og:site_name` | Site title |
 | `og:locale` | Site `locale` (default `"en_US"`) |
-| `og:image` / `twitter:image` | Post `og_image`, else post `image`, else site `metadata.meta_image` — resolved to an absolute URL. Absolute URLs are never prefixed with the site domain |
-| `og:image:width` / `og:image:height` | **Not emitted.** Dimensions are not known at render time and the old hardcoded 1200×630 was wrong for most images; no dimensions is better than invented ones |
-| `og:image:alt` / `twitter:image:alt` | Page-specific image: `og_image_alt` / `image_alt` / page title; site-default image: `metadata.meta_image_alt` |
-| `twitter:card` | `summary_large_image` when an image exists, else `summary` |
-| `twitter:title` / `twitter:description` | Same as `og:title` / `og:description` above |
-| `twitter:site` / `twitter:creator` | From `config.social` (`twitter_site` / `twitter_creator`); omitted when unconfigured — never invented |
-| RSS autodiscovery | `<link rel="alternate" type="application/rss+xml" href="<base_url>/rss.xml">` |
+| `og:image` | `ogImage` (or `og_image`), else `image`, else site `metadata.meta_image` — resolved to an absolute URL. Absolute URLs are never prefixed with the site domain |
+| `og:image:secure_url` | Same as `og:image` when the URL is https |
+| `og:image:type` / `:width` / `:height` | Verified from the actual image file with sharp at build time (default OG image: 1200×630 `image/webp`). Remote images carry no dimensions — omitted, never invented |
+| `og:image:alt` | Platform alt → OG alt → image alt → page title → site `metadata.meta_image_alt` |
+| `twitter:card` | `summary_large_image` (an image always resolves — at minimum the configured default) |
+| `twitter:title` / `twitter:description` | Independent fields (`twitterTitle` / `twitterDescription`), each falling back through OG → SEO → title/description |
+| `twitter:image` / `twitter:image:alt` | Independent (`twitterImage` → `ogImage` → featured → site `metadata.meta_twitter_image`); alt follows the same chain as OG |
+| `twitter:site` / `twitter:creator` | From `config.social` (`twitter_site` / `twitter_creator`); currently `@Dashing_ZB` (the linked X profile). Omitted when unconfigured — never invented |
+| Pinterest | No standard Pinterest meta tags exist — Pinterest reads the OG tags above. The Pin button (`Share.astro`) uses the resolved Pinterest title / description / image (`pinterestTitle` → `ogTitle` → …; `pinterestImage` → `ogImage` → …). No dedicated vertical Pin image is configured, so Pins inherit the OG image |
+| Favicon / touch icon / manifest | `config.site.favicon` (`rel="shortcut icon"`), `/apple-touch-icon.png` (180×180, generated from the favicon), `/manifest.webmanifest` |
+| RSS / Atom / JSON discovery | `<link rel="alternate">` for `/rss.xml`, `/atom.xml`, `/feed.json` |
 | `<html lang>` | Site `language` (default `"en"`) |
 | Skip link | “Skip to content” link to `#main-content` (first focusable element) |
 | `<meta name="robots">` | Only when a page sets `noindex: true`: `noindex,follow`. The page is also excluded from the sitemap, RSS, search index, and LLM docs |
@@ -245,10 +256,15 @@ Frontmatter fields (full reference in [CONTENT_SCHEMA.md](CONTENT_SCHEMA.md)):
 ---
 title: "How to Build a Modern Application with Next.js and Tailwind CSS"
 meta_title: "Build a Modern App with Next.js and Tailwind CSS"
-og_title: "Build a Modern App with Next.js + Tailwind"
+seoTitle: "Build a Modern App with Next.js and Tailwind CSS"
+ogTitle: "Build a Modern App with Next.js + Tailwind"
+twitterTitle: "Build a Modern App with Next.js + Tailwind"
 description: "A practical guide to building a modern web application with Next.js and Tailwind CSS."
+seoDescription: "Build a modern web application with Next.js and Tailwind CSS — a practical guide."
 image: "/images/image-placeholder.png"
-og_image: "/images/og-image.jpg"
+ogImage: "/images/og-image.jpg"
+twitterImage: "/images/twitter-image.jpg"
+pinterestImage: "/images/pin-image.jpg"
 dateCreated: 2022-04-04T05:00:00Z
 datePublished: 2022-04-04T05:00:00Z
 dateModified: 2022-04-10T05:00:00Z
@@ -261,24 +277,40 @@ noindex: false
 ---
 ```
 
+All social fields are optional; empty strings, `null` and
+`undefined` all count as missing. The exact fallback chains live in
+`src/lib/utils/social.ts` — nothing below duplicates them:
+
 Rules:
 
-- **`meta_title`** sets the browser `<title>`. Without it, `title`
-  is used. `og_title` does **not** fall back into `<title>` — it is
-  the social title only (see below).
-- **`og_title`** sets `og:title` / `twitter:title`. Priority:
-  `og_title` > `meta_title` > `title` > site title.
+- **`seoTitle` / `meta_title`** set the browser `<title>`:
+  `seoTitle` > `meta_title` > `title` > site title. `ogTitle` does
+  **not** fall back into `<title>` — it is the social title only.
+- **`seoDescription`** sets the meta description:
+  `seoDescription` > `description` > `excerpt` > site default.
+- **`ogTitle`** sets `og:title`: `ogTitle` > `seoTitle` >
+  `title` > site title. (Legacy `og_title` still works as an alias.)
+- **`ogDescription`** sets `og:description`: `ogDescription` >
+  `seoDescription` > `description` > `excerpt` > site default.
+- **`twitterTitle` / `twitterDescription` / `twitterImage`** are
+  independent: each falls back through OG → SEO → title/description/
+  featured image. If only `ogImage` is set, Twitter inherits it; a
+  `twitterImage` overrides Twitter only, never OG or Pinterest.
+- **`pinterestTitle` / `pinterestDescription` / `pinterestImage`**
+  are independent the same way (`pinterestImage` → `ogImage` →
+  featured → site default). Pinterest reads the OG tags for its card;
+  the Pin button also uses these resolved values. Recommended Pin
+  size is 1000×1500 (2:3); no dedicated Pin image is configured yet,
+  so Pins currently inherit the 1200×630 OG image.
 - **`description`** is the source for the meta description, RSS
   description, and JSON-LD description. Keep it under ~160 characters.
-- **`og_description`** sets `og:description` /
-  `twitter:description`. Priority: `og_description` > `description` >
-  `excerpt` > site default. Use it when the social description should
-  differ from the on-page description.
-- **`image` vs `og_image`**: `image` is the on-page hero image;
-  `og_image` is what social shares show and wins for OG/Twitter and
-  JSON-LD. Set `og_image` when the share image should differ from
+- **`image` vs `ogImage`**: `image` is the on-page hero image;
+  `ogImage` is what social shares show and wins for OG/Twitter and
+  JSON-LD. Set `ogImage` when the share image should differ from
   the hero (e.g. a 1200×630 card vs a tall hero). Either may be a
   local path or an absolute URL — see [IMAGE_STORAGE.md](IMAGE_STORAGE.md).
+  Image dimensions/MIME are verified from the actual file at build
+  time; remote images carry no width/height/type.
 - **`canonical`** accepts an absolute URL (`https://…`) or a
   site-relative path (`/blog/x`), resolved against `base_url` at
   render time. Use it when the same content exists elsewhere (e.g.
@@ -300,8 +332,9 @@ Rules:
   Vercel builds agree.
 
 Site-wide fallbacks live in `config.json` → `metadata`
-(`meta_author`, `meta_image`, `meta_image_alt`,
-`meta_description`) and `publisher`. See
+(`meta_author`, `meta_image`, `meta_twitter_image`,
+`meta_image_alt`, `meta_description`), `social`
+(`twitter_site` / `twitter_creator`) and `publisher`. See
 [CONFIGURATION.md](CONFIGURATION.md).
 
 ## Drafts and future posts — exclusion rules
@@ -329,7 +362,14 @@ All checks run against `dist/` after `pnpm build` — no live server
 needed. `dist/` currently contains 30 HTML pages.
 
 ```bash
-# Canonical + OG/Twitter + JSON-LD on a post
+# Full automated check: titles, descriptions, canonical, OG/Twitter,
+# image dimensions vs the actual files, alt text, H1, links, JSON-LD,
+# structured-data dates vs RSS + sitemap, sitemap coverage
+pnpm seo:check
+```
+
+```bash
+# Canonical + OG/Twitter + JSON-LD on a post (manual spot checks)
 grep -o '<link rel="canonical" href="[^"]*"' dist/blog/post-1/index.html
 grep -o '<meta property="og:[^>]*>' dist/blog/post-1/index.html
 grep -o '<meta name="twitter:[^>]*>' dist/blog/post-1/index.html
@@ -354,17 +394,31 @@ grep -o "<item>" dist/rss.xml | wc -l   # expect 5
 After deploying, re-run the same checks against the live URLs and
 spot-check one post with the social debuggers / rich-results test of
 your choice (Facebook Sharing Debugger, X Card Validator, Google
-Rich Results Test). Social platforms cache OG data — use their
-refresh tools after changing images or titles.
+Rich Results Test, Schema.org Validator, Google Search Console).
+Social platforms cache OG data — use their refresh tools after
+changing images or titles. These external validators need a public
+URL and are manual steps; nothing in this repo claims rich-result
+eligibility is guaranteed.
 
 ## Known SEO gaps (honest list)
 
 - `featured` is accepted but has no featured-post UI — setting it
   changes nothing visible.
+- No dedicated Pinterest vertical image (1000×1500, 2:3) is
+  configured — Pins inherit the 1200×630 OG image.
+- Three author files describe the same person
+  (`muhammad-zaheer.md`, `muhammad-zaheer-ahmad.md`,
+  `zaheer-ahmad.md`) with the identical title, so the validator
+  reports duplicate titles for the three author pages. Consolidating
+  them is a content decision, still open.
 - No `SearchAction` JSON-LD: search is a client-side modal, not a
   search-results page.
 - No multilingual / hreflang support — the site is single-language
   (`site.language` / `site.locale` only set `lang` and `og:locale`).
+  No hreflang is emitted, deliberately: there are no alternate
+  language versions to link to.
+- No LocalBusiness schema — the site is a blog/theme, not a local
+  business; no address, phone or coordinates exist to publish.
 - Security headers are configured in the repo (see
   [SECURITY.md](SECURITY.md)), but they are served by the host, not
   by the theme — verify them against the live deployment, and note

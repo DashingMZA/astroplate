@@ -312,6 +312,9 @@ importers:
       node-html-parser:
         specifier: ^9.0.7
         version: 9.0.7
+      parse5:
+        specifier: ^8.1.1
+        version: 8.1.1
       prettier:
         specifier: ^3.10.1
         version: 3.10.1

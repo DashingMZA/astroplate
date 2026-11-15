@@ -29,16 +29,27 @@ any entry whose id starts with `-`.
 | Field | Type | Required | Default | Notes |
 | --- | --- | --- | --- | --- |
 | `title` | string | yes | — | Post title; also the `<h1>` and fallback `<title>` |
-| `meta_title` | string | no | `title` | `<title>` tag. Falls back to `title`, then site title |
-| `og_title` | string | no | — | Social-share title. Priority: `og_title` > `meta_title` > `title` for `og:title` / `twitter:title` |
+| `meta_title` | string | no | `title` | `<title>` tag (legacy alias of `seoTitle`). Falls back to `title`, then site title |
+| `seoTitle` | string | no | `meta_title` | `<title>` tag. Priority: `seoTitle` > `meta_title` > `title` > site title |
+| `seoDescription` | string | no | `description` | `<meta name="description">`. Priority: `seoDescription` > `description` > `excerpt` > site default |
+| `ogTitle` | string | no | — | Social-share title. Priority: `ogTitle` > `seoTitle` > `title` for `og:title` (legacy alias: `og_title`) |
+| `ogDescription` | string | no | `description` | Social-share description. Priority: `ogDescription` > `seoDescription` > `description` > `excerpt` > site default (legacy alias: `og_description`) |
+| `ogImage` | string | no | `image` | Social-share image. Wins over `image` for OG/Twitter/Pinterest; also used in JSON-LD (legacy alias: `og_image`) |
+| `ogImageAlt` | string | no | page title | Alt text for the OG image (legacy alias: `og_image_alt`) |
+| `twitterTitle` | string | no | `ogTitle` | X title. Priority: `twitterTitle` > `ogTitle` > `seoTitle` > `title` |
+| `twitterDescription` | string | no | `ogDescription` | X description. Priority: `twitterDescription` > `ogDescription` > `seoDescription` > `description` |
+| `twitterImage` | string | no | `ogImage` | X image. Priority: `twitterImage` > `ogImage` > `image` > site default Twitter image |
+| `twitterImageAlt` | string | no | `ogImageAlt` | Alt text for the X image |
+| `pinterestTitle` | string | no | `ogTitle` | Pin title. Priority: `pinterestTitle` > `ogTitle` > `seoTitle` > `title` |
+| `pinterestDescription` | string | no | `ogDescription` | Pin description. Priority: `pinterestDescription` > `ogDescription` > `seoDescription` > `description` |
+| `pinterestImage` | string | no | `ogImage` | Pin image (1000×1500, 2:3 recommended). Priority: `pinterestImage` > `ogImage` > `image` > site default OG image |
+| `pinterestImageAlt` | string | no | `ogImageAlt` | Alt text for the Pin image |
 | `description` | string | no | site `meta_description` | `<meta name="description">`, OG/Twitter description, RSS item description, JSON-LD description |
 | `excerpt` | string | no | `description`/body | Short summary for cards and search; falls back to description/body at render |
 | `dateCreated` | date | yes* | — | Creation date, set once, never changes. Accepts a Date or ISO string (`z.coerce.date()`). See [CONTENT_DATES.md](CONTENT_DATES.md) |
 | `datePublished` | date | yes* | — | First publication date, set once, never changes. Drafts have none. Future dates are excluded from the build (see below) |
 | `dateModified` | date | yes* | — | Latest meaningful modification; drives `article:modified_time`, JSON-LD `dateModified`, sitemap `<lastmod>` and the feeds |
 | `image` | string | no | site `meta_image` | Hero image. Local path (`/images/….png`) or absolute URL (see [IMAGE_STORAGE.md](IMAGE_STORAGE.md)) |
-| `og_image` | string | no | `image` | Social-share image. Wins over `image` for OG/Twitter; also used in JSON-LD |
-| `og_description` | string | no | `description` | Social-share description. Priority: `og_description` > `description` > `excerpt` > site default for `og:description` / `twitter:description` |
 | `author` | string | no | `"Admin"` | Single-author name; fallback when `authors` is absent. Resolved to an author file by id first, display-name slug second (see Authors) |
 | `authors` | string[] | no | — | Multi-author list. When non-empty it replaces `author` for display, OG `article:author` tags, and JSON-LD authors |
 | `categories` | string[] | no | `["others"]` | Taxonomy; first category becomes OG `article:section` |
