@@ -5,7 +5,7 @@ description: "General information only: Astroplate's content is provided as-is, 
 draft: false
 dateCreated: 2026-11-14T22:14:06Z
 datePublished: 2026-11-14T22:14:06Z
-dateModified: 2026-11-15T20:32:46Z
+dateModified: 2026-11-15T20:33:56Z
 ---
 
 ## General Information Only
