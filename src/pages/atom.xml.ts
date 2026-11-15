@@ -17,6 +17,14 @@ export const GET: APIRoute = async () => {
   const homeUrl = absoluteUrl("/").replace(/\/+$/, "");
   const feedUrl = absoluteUrl(FEED_PATH);
   const language = toBcp47(config.site.locale, config.site.language);
+  // Feed brand images (config-driven, so they can be swapped by path):
+  // - feedIcon is square: the feeds-specific icon, falling back to the
+  //   (square) site favicon. The site logo (154x28) is not square.
+  // - atomLogo is 2:1, as Atom <logo> requires. The site logo is far
+  //   wider than 2:1, so there is no fallback to site.logo — a missing
+  //   feeds.atom_logo omits <logo> instead of emitting a wrong-ratio one.
+  const feedIcon = config.feeds?.icon ?? config.site.favicon;
+  const atomLogo = config.feeds?.atom_logo;
   const { entries, updated } = await getFeedEntries();
 
   const entriesXml = entries.map((e) =>
@@ -54,12 +62,8 @@ export const GET: APIRoute = async () => {
     `<id>${escapeXml(feedUrl)}</id>`,
     `<updated>${updated.toISOString()}</updated>`,
     `<generator>Astro</generator>`,
-    config.site.favicon
-      ? `<icon>${escapeXml(absoluteUrl(config.site.favicon))}</icon>`
-      : "",
-    config.site.logo
-      ? `<logo>${escapeXml(absoluteUrl(config.site.logo))}</logo>`
-      : "",
+    feedIcon ? `<icon>${escapeXml(absoluteUrl(feedIcon))}</icon>` : "",
+    atomLogo ? `<logo>${escapeXml(absoluteUrl(atomLogo))}</logo>` : "",
     // Feed-level author: valid fallback for entries without their own.
     `<author><name>${escapeXml(config.site.title)}</name></author>`,
     ...entriesXml,

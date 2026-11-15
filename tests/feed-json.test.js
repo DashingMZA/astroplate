@@ -28,7 +28,8 @@ test("feed.json.ts: JSON Feed 1.1 structure from the shared pipeline", () => {
     'home_page_url: absoluteUrl("/")',
     "feed_url: absoluteUrl(FEED_PATH)",
     "language: toBcp47(config.site.locale",
-    "icon: absoluteUrl(config.site.logo)",
+    "const feedIcon = config.feeds?.icon ?? config.site.favicon;",
+    "icon: absoluteUrl(feedIcon)",
     "favicon: absoluteUrl(config.site.favicon)",
     "id: e.url",
     "url: e.url",
@@ -55,6 +56,10 @@ test("feed.json.ts: no non-standard top-level description, no emails, no hard-co
   );
   assert.ok(!src.includes("jadoo.bond"), "must not hard-code the domain");
   assert.ok(!src.includes("mailto:"), "must not expose emails");
+  assert.ok(
+    !src.includes("config.site.logo"),
+    "JSON Feed icon must not use the site logo (154x28, not square)",
+  );
   assert.ok(
     !src.includes("getCollection("),
     "entries must come from the shared pipeline (getFeedEntries)",

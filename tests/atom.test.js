@@ -33,8 +33,8 @@ test("atom.xml.ts: Atom 1.0 structure from the shared pipeline", () => {
     "<id>${escapeXml(feedUrl)}</id>",
     "<updated>${updated.toISOString()}</updated>",
     "<generator>Astro</generator>",
-    "<icon>${escapeXml(absoluteUrl(config.site.favicon))}</icon>",
-    "<logo>${escapeXml(absoluteUrl(config.site.logo))}</logo>",
+    "<icon>${escapeXml(absoluteUrl(feedIcon))}</icon>",
+    "<logo>${escapeXml(absoluteUrl(atomLogo))}</logo>",
     "<entry>",
     '<link rel="alternate" type="text/html"',
     "<published>${e.published.toISOString()}</published>",
@@ -66,6 +66,51 @@ test("atom.xml.ts: no hard-coded domain, no emails, no second render", () => {
     !src.includes('new URL("/", site'),
     "home URL must keep base_path (absoluteUrl, not new URL)",
   );
+});
+
+// ─── Feed brand images ─────────────────────────────────────────────────────
+
+test("atom.xml.ts: feed icon/logo come from config.feeds, not site.logo", () => {
+  const src = read("src/pages/atom.xml.ts");
+  for (const marker of [
+    "const feedIcon = config.feeds?.icon ?? config.site.favicon;",
+    "const atomLogo = config.feeds?.atom_logo;",
+    // The site logo (154x28) is neither square nor 2:1, so it must
+    // never feed <icon> or <logo>.
+    "absoluteUrl(feedIcon)",
+    "absoluteUrl(atomLogo)",
+  ]) {
+    assert.ok(src.includes(marker), `atom.xml.ts must contain: ${marker}`);
+  }
+  assert.ok(
+    !src.includes("absoluteUrl(config.site.logo)"),
+    "Atom <logo> must not use the site logo (wrong ratio)",
+  );
+});
+
+test("config.json + images: Atom logo is 2:1, feed icon is square", async () => {
+  const sharp = (await import("sharp")).default;
+  const cfg = JSON.parse(read("src/config/config.json"));
+  assert.equal(cfg.feeds.atom_logo, "/images/atom-logo.png");
+  assert.equal(cfg.feeds.icon, "/images/feed-icon.png");
+  const logoPath = path.join(
+    repoRoot,
+    "public",
+    cfg.feeds.atom_logo.replace(/^\//, ""),
+  );
+  const iconPath = path.join(
+    repoRoot,
+    "public",
+    cfg.feeds.icon.replace(/^\//, ""),
+  );
+  const logo = await sharp(logoPath).metadata();
+  assert.equal(
+    logo.width / logo.height,
+    2,
+    "Atom <logo> must be twice as wide as it is tall (2:1)",
+  );
+  const icon = await sharp(iconPath).metadata();
+  assert.equal(icon.width, icon.height, "feed icon must be square");
 });
 
 // ─── Shared pipeline ───────────────────────────────────────────────────────

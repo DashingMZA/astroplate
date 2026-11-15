@@ -13,6 +13,11 @@ const FEED_PATH = "/feed.json";
 export const GET: APIRoute = async () => {
   const { entries } = await getFeedEntries();
 
+  // JSON Feed icon SHOULD be square: the feeds-specific icon, falling
+  // back to the (square) site favicon. The site logo (154x28) is not
+  // square, so it is never used here.
+  const feedIcon = config.feeds?.icon ?? config.site.favicon;
+
   const feed = {
     version: "https://jsonfeed.org/version/1.1",
     title: config.site.title,
@@ -21,7 +26,7 @@ export const GET: APIRoute = async () => {
     home_page_url: absoluteUrl("/").replace(/\/+$/, ""),
     feed_url: absoluteUrl(FEED_PATH),
     language: toBcp47(config.site.locale, config.site.language),
-    ...(config.site.logo ? { icon: absoluteUrl(config.site.logo) } : {}),
+    ...(feedIcon ? { icon: absoluteUrl(feedIcon) } : {}),
     ...(config.site.favicon
       ? { favicon: absoluteUrl(config.site.favicon) }
       : {}),

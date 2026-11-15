@@ -89,6 +89,8 @@
   },
 
   "feeds": {
-    "limit": 20
+    "limit": 20,
+    "atom_logo": "/images/atom-logo.png",
+    "icon": "/images/feed-icon.png"
   }
 }
