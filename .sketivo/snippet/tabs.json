@@ -1,0 +1,5 @@
+{
+  "label": "Tabs",
+  "schema": [],
+  "code": "<Tabs client:load>\n\n<Tab name=\"Tab 1\">\n\nContent here...\n\n</Tab>\n\n<Tab name=\"Tab 2\">\n\nContent here...\n\n</Tab>\n\n</Tabs>\n"
+}

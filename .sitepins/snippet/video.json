@@ -1,5 +1,5 @@
 {
   "label": "Video",
   "schema": [],
-  "code": "<Video width=\"100%\" src=\"\" />\n"
+  "code": "<Video title=\"\" width=\"100%\" src=\"\" />\n"
 }

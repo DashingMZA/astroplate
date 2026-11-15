@@ -24,6 +24,12 @@
       "value": ""
     },
     {
+      "name": "seoDescription",
+      "label": "SEO Description",
+      "type": "string",
+      "value": ""
+    },
+    {
       "name": "excerpt",
       "label": "Excerpt",
       "type": "string",
@@ -69,6 +75,12 @@
       "value": ""
     },
     {
+      "name": "ogImageAlt",
+      "label": "Social Share Image Alt (OG Image Alt)",
+      "type": "string",
+      "value": ""
+    },
+    {
       "name": "ogTitle",
       "label": "Social Share Title (OG Title)",
       "type": "string",
@@ -78,6 +90,42 @@
       "name": "ogDescription",
       "label": "Social Share Description (OG Description)",
       "type": "string",
+      "value": ""
+    },
+    {
+      "name": "twitterTitle",
+      "label": "Twitter Title",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "name": "twitterDescription",
+      "label": "Twitter Description",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "name": "twitterImage",
+      "label": "Twitter Image",
+      "type": "media",
+      "value": ""
+    },
+    {
+      "name": "twitterImageAlt",
+      "label": "Twitter Image Alt",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "name": "pinterestDescription",
+      "label": "Pinterest Description",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "name": "pinterestImage",
+      "label": "Pinterest Image",
+      "type": "media",
       "value": ""
     },
     {

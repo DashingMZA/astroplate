@@ -12,8 +12,8 @@
       "isRequired": true
     },
     {
-      "name": "meta_title",
-      "label": "Meta Title",
+      "name": "seoTitle",
+      "label": "SEO Title",
       "type": "string",
       "value": ""
     },
@@ -24,34 +24,40 @@
       "value": ""
     },
     {
+      "name": "seoDescription",
+      "label": "SEO Description",
+      "type": "string",
+      "value": ""
+    },
+    {
       "name": "excerpt",
       "label": "Excerpt",
       "type": "string",
       "value": ""
     },
     {
-      "name": "slug",
+      "name": "CustomSlug",
       "label": "Custom Slug",
       "type": "string",
       "value": ""
     },
     {
-      "name": "date",
-      "label": "Date",
+      "name": "dateCreated",
+      "label": "Date Created",
       "type": "Date",
       "value": "",
       "alwaysUseCurrentDate": false
     },
     {
-      "name": "updated",
-      "label": "Updated Date",
+      "name": "datePublished",
+      "label": "Date Published",
       "type": "Date",
       "value": "",
       "alwaysUseCurrentDate": false
     },
     {
-      "name": "lastmod",
-      "label": "Last Modified Date",
+      "name": "dateModified",
+      "label": "Date Modified",
       "type": "Date",
       "value": "",
       "alwaysUseCurrentDate": false
@@ -63,34 +69,64 @@
       "value": ""
     },
     {
-      "name": "og_image",
+      "name": "ogImage",
       "label": "Social Share Image (OG Image)",
       "type": "media",
       "value": ""
     },
     {
-      "name": "og_title",
+      "name": "ogImageAlt",
+      "label": "Social Share Image Alt (OG Image Alt)",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "name": "ogTitle",
       "label": "Social Share Title (OG Title)",
       "type": "string",
       "value": ""
     },
     {
-      "name": "og_description",
+      "name": "ogDescription",
       "label": "Social Share Description (OG Description)",
       "type": "string",
       "value": ""
     },
     {
-      "name": "author",
-      "label": "Author",
+      "name": "twitterTitle",
+      "label": "Twitter Title",
       "type": "string",
-      "value": "Admin",
-      "isDropdown": true,
-      "referenceType": "folder",
-      "referencePath": "src/content/authors",
-      "referenceInclude": "*.md",
-      "referenceExclude": "_*.md",
-      "referenceField": "title"
+      "value": ""
+    },
+    {
+      "name": "twitterDescription",
+      "label": "Twitter Description",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "name": "twitterImage",
+      "label": "Twitter Image",
+      "type": "media",
+      "value": ""
+    },
+    {
+      "name": "twitterImageAlt",
+      "label": "Twitter Image Alt",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "name": "pinterestDescription",
+      "label": "Pinterest Description",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "name": "pinterestImage",
+      "label": "Pinterest Image",
+      "type": "media",
+      "value": ""
     },
     {
       "name": "authors",
@@ -132,10 +168,10 @@
       "value": ""
     },
     {
-      "name": "noindex",
-      "label": "Noindex",
+      "name": "robotsindex",
+      "label": "Robots Index",
       "type": "boolean",
-      "value": false
+      "value": true
     },
     {
       "name": "draft",
