@@ -4,6 +4,8 @@
 // The rules live in the host configs (not in code: this is a static
 // build with no server middleware), plus a dist scan proving no
 // internal link emits a trailing slash in the first place.
+// The dist tests skip when dist/ is not built yet — CI runs tests
+// before the production build, on a fresh checkout with no dist/.
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
@@ -48,8 +50,14 @@ test("public/_redirects: one rule strips the trailing slash (301), root untouche
     .filter((line) => line && !line.startsWith("#"));
   assert.deepEqual(lines, ["/*/ /:splat 301"]);
   // The same file is copied to dist/ by the build — the deployed copy
-  // is what Cloudflare / Netlify read.
-  assert.equal(read("dist/_redirects").trim().split("\n").pop(), "/*/ /:splat 301");
+  // is what Cloudflare / Netlify read. Skip the dist check when dist/
+  // is not built yet (CI runs tests before the build).
+  if (fs.existsSync(path.join(distRoot, "_redirects"))) {
+    assert.equal(
+      read("dist/_redirects").trim().split("\n").pop(),
+      "/*/ /:splat 301",
+    );
+  }
 });
 
 test("wrangler.jsonc: Cloudflare drops the trailing slash natively", () => {
@@ -82,7 +90,12 @@ test("nginx: server rewrite strips the trailing slash (301)", () => {
   );
 });
 
-test("dist: no internal link or canonical ends with a trailing slash (except the root)", () => {
+test("dist: no internal link or canonical ends with a trailing slash (except the root)", (t) => {
+  // Needs a production build; CI runs tests before the build.
+  if (!fs.existsSync(path.join(distRoot, "index.html"))) {
+    t.skip("dist/ not built yet — run pnpm build first");
+    return;
+  }
   const htmlFiles = [];
   const walk = (dir) => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -119,14 +132,17 @@ test("dist: no internal link or canonical ends with a trailing slash (except the
   assert.deepEqual(bad, []);
 });
 
-test("dist: post breadcrumb is Home → Blog → Category → Title (visible trail matches JSON-LD)", () => {
-  const html = fs.readFileSync(
-    path.join(
-      distRoot,
-      "blog/improve-core-web-vitals-astro-websites/index.html",
-    ),
-    "utf8",
+test("dist: post breadcrumb is Home → Blog → Category → Title (visible trail matches JSON-LD)", (t) => {
+  // Needs a production build; CI runs tests before the build.
+  const postHtml = path.join(
+    distRoot,
+    "blog/improve-core-web-vitals-astro-websites/index.html",
   );
+  if (!fs.existsSync(postHtml)) {
+    t.skip("dist/ not built yet — run pnpm build first");
+    return;
+  }
+  const html = fs.readFileSync(postHtml, "utf8");
   const nav = html.match(
     /<nav aria-label="Breadcrumb">([\s\S]*?)<\/nav>/,
   );
