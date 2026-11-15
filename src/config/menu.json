@@ -14,31 +14,20 @@
       "children": []
     },
     {
-      "name": "Elements",
-      "url": "/elements"
+      "name": "Contact",
+      "url": "/contact"
     },
     {
-      "name": "Pages",
-      "url": "",
-      "hasChildren": true,
-      "children": [
-        {
-          "name": "Contact",
-          "url": "/contact"
-        },
-        {
-          "name": "Authors",
-          "url": "/authors"
-        },
-        {
-          "name": "Categories",
-          "url": "/categories"
-        },
-        {
-          "name": "Tags",
-          "url": "/tags"
-        }
-      ]
+      "name": "Authors",
+      "url": "/authors"
+    },
+    {
+      "name": "Categories",
+      "url": "/categories"
+    },
+    {
+      "name": "Tags",
+      "url": "/tags"
     }
   ],
   "footer": [
