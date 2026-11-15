@@ -25,24 +25,24 @@ export const DEFAULT_MAX_BYTES = 50 * 1024 * 1024;
 // routes or data), so enabling them would generate empty sitemaps. */
 export const DEFAULT_SITEMAP_SETTINGS: SitemapSettings = {
   enable: true,
-  index_filename: "sitemap-index.xml",
+  index_filename: "sitemap_index.xml",
   lastmod: true,
   exclude: ["/404"],
   exclude_segments: ["draft", "drafts", "preview", "private"],
   max_urls_per_sitemap: 1000,
   max_bytes: DEFAULT_MAX_BYTES,
   types: {
-    pages: { enable: true, filename: "sitemap-page.xml" },
-    posts: { enable: true, filename: "sitemap-post.xml" },
-    categories: { enable: true, filename: "sitemap-categories.xml" },
-    tags: { enable: true, filename: "sitemap-tags.xml" },
-    authors: { enable: true, filename: "sitemap-authors.xml" },
-    images: { enable: true, filename: "sitemap-images.xml" },
-    videos: { enable: false, filename: "sitemap-videos.xml" },
-    news: { enable: false, filename: "sitemap-news.xml" },
-    products: { enable: false, filename: "sitemap-products.xml" },
-    locales: { enable: false, filename: "sitemap-locales.xml" },
-    locations: { enable: false, filename: "sitemap-locations.xml" },
+    pages: { enable: true, filename: "page-sitemap.xml" },
+    posts: { enable: true, filename: "post-sitemap.xml" },
+    categories: { enable: true, filename: "category-sitemap.xml" },
+    tags: { enable: true, filename: "post_tag-sitemap.xml" },
+    authors: { enable: true, filename: "author-sitemap.xml" },
+    images: { enable: true, filename: "image-sitemap.xml" },
+    videos: { enable: false, filename: "video-sitemap.xml" },
+    news: { enable: false, filename: "news-sitemap.xml" },
+    products: { enable: false, filename: "product-sitemap.xml" },
+    locales: { enable: false, filename: "locales-sitemap.xml" },
+    locations: { enable: false, filename: "locations-sitemap.xml" },
   },
 };
 
@@ -174,6 +174,35 @@ export function resolveSitemapSettings(raw: unknown): SitemapSettings {
   claim(settings.index_filename, "index");
   for (const key of SITEMAP_TYPE_KEYS) {
     claim(settings.types[key].filename, `types.${key}`);
+  }
+
+  // A configured filename must never equal a chunk filename of any
+  // type: chunks are named `<stem>1.xml`, `<stem>2.xml`, … where
+  // `<stem>` is a type filename without `.xml`. Such a collision would
+  // make a chunk overwrite (or be overwritten by) the other file.
+  const chunkStems = SITEMAP_TYPE_KEYS.map((key) =>
+    settings.types[key].filename.replace(/\.xml$/, ""),
+  );
+  const chunkStemOf = (filename: string): string | null => {
+    const match = /^(.+?)(\d+)\.xml$/.exec(filename);
+    if (!match) {
+      return null;
+    }
+    return chunkStems.includes(match[1]) ? match[1] : null;
+  };
+  const checkChunkCollision = (filename: string, owner: string) => {
+    const stem = chunkStemOf(filename);
+    if (stem) {
+      fail(
+        `filename "${filename}" (${owner}) collides with a chunk filename ` +
+          `of the "${stem}" sitemap type (chunks are named "<stem>1.xml", ` +
+          `"<stem>2.xml", ...). Choose a different filename.`,
+      );
+    }
+  };
+  checkChunkCollision(settings.index_filename, "index");
+  for (const key of SITEMAP_TYPE_KEYS) {
+    checkChunkCollision(settings.types[key].filename, `types.${key}`);
   }
   return settings;
 }

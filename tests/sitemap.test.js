@@ -35,6 +35,10 @@ const {
   contentLastmod,
   isSitemapVisible,
   isExternalCanonical,
+  stripFencedCodeBlocks,
+  extractBodyImagePaths,
+  postImageUrls,
+  isPublicFile,
   postsToEntries,
   authorsToEntries,
   categoriesToEntries,
@@ -61,8 +65,9 @@ const collected = (overrides = {}) => ({
   ...overrides,
 });
 
-const post = (id, data = {}) => ({
+const post = (id, data = {}, body = undefined) => ({
   id,
+  body,
   data: {
     title: "My Post",
     date: new Date("2026-11-14T05:00:00Z"),
@@ -97,7 +102,7 @@ const byteLength = (text) => new TextEncoder().encode(text).length;
 test("config defaults: missing sitemap object yields the documented defaults", () => {
   const s = resolveSitemapSettings(undefined);
   assert.equal(s.enable, true);
-  assert.equal(s.index_filename, "sitemap-index.xml");
+  assert.equal(s.index_filename, "sitemap_index.xml");
   assert.equal(s.lastmod, true);
   assert.deepEqual(s.exclude, ["/404"]);
   assert.deepEqual(s.exclude_segments, ["draft", "drafts", "preview", "private"]);
@@ -109,16 +114,16 @@ test("config defaults: missing sitemap object yields the documented defaults", (
   for (const key of ["videos", "news", "products", "locales", "locations"]) {
     assert.equal(s.types[key].enable, false, `${key} must default off`);
   }
-  assert.equal(s.types.posts.filename, "sitemap-post.xml");
-  assert.equal(s.types.images.filename, "sitemap-images.xml");
+  assert.equal(s.types.posts.filename, "post-sitemap.xml");
+  assert.equal(s.types.images.filename, "image-sitemap.xml");
 });
 
 test("config defaults: live config.json matches the defaults (6 types on, 5 off)", () => {
   const s = getSitemapSettings();
   assert.equal(s.enable, true);
-  assert.equal(s.index_filename, "sitemap-index.xml");
+  assert.equal(s.index_filename, "sitemap_index.xml");
   assert.equal(s.types.posts.enable, true);
-  assert.equal(s.types.posts.filename, "sitemap-post.xml");
+  assert.equal(s.types.posts.filename, "post-sitemap.xml");
   assert.equal(s.types.videos.enable, false);
   assert.equal(s.types.news.enable, false);
   assert.equal(s.types.products.enable, false);
@@ -136,7 +141,7 @@ test("config: partial objects merge with defaults; unknown keys ignored", () => 
   assert.equal(s.types.pages.enable, true);
   assert.equal(s.max_urls_per_sitemap, 100);
   assert.equal(s.max_bytes, 52428800);
-  assert.equal(s.types.posts.filename, "sitemap-post.xml");
+  assert.equal(s.types.posts.filename, "post-sitemap.xml");
 });
 
 // ─── Config validation ─────────────────────────────────────────────────────
@@ -153,7 +158,7 @@ test("config validation: filenames must be plain .xml names", () => {
   assert.throws(
     () =>
       resolveSitemapSettings({
-        types: { posts: { filename: "dir/sitemap-post.xml" } },
+        types: { posts: { filename: "dir/post-sitemap.xml" } },
       }),
     /plain \.xml filename/,
   );
@@ -167,14 +172,43 @@ test("config validation: duplicate filenames fail (index vs type, type vs type)"
   assert.throws(
     () =>
       resolveSitemapSettings({
-        types: { posts: { filename: "sitemap-page.xml" } },
+        types: { posts: { filename: "page-sitemap.xml" } },
       }),
-    /duplicate filename "sitemap-page\.xml"/,
+    /duplicate filename "page-sitemap\.xml"/,
   );
   assert.throws(
-    () => resolveSitemapSettings({ index_filename: "sitemap-post.xml" }),
-    /duplicate filename "sitemap-post\.xml"/,
+    () => resolveSitemapSettings({ index_filename: "post-sitemap.xml" }),
+    /duplicate filename "post-sitemap\.xml"/,
   );
+});
+
+test("config validation: filenames colliding with chunk names fail", () => {
+  // Chunks are <stem>1.xml, <stem>2.xml, ... — a file whose name equals
+  // another type's chunk name would be overwritten when that type splits.
+  assert.throws(
+    () =>
+      resolveSitemapSettings({
+        types: { videos: { filename: "post-sitemap1.xml" } },
+      }),
+    /collides with a chunk filename/,
+  );
+  assert.throws(
+    () =>
+      resolveSitemapSettings({ index_filename: "page-sitemap2.xml" }),
+    /collides with a chunk filename/,
+  );
+  // A filename ending in digits that matches no type stem is fine, and
+  // a type's own digit-suffixed name is fine too: posts as
+  // "post-sitemap1.xml" chunks to "post-sitemap11.xml", ... — it
+  // collides with nothing.
+  const s = resolveSitemapSettings({
+    types: { posts: { filename: "posts2.xml" } },
+  });
+  assert.equal(s.types.posts.filename, "posts2.xml");
+  const own = resolveSitemapSettings({
+    types: { posts: { filename: "post-sitemap1.xml" } },
+  });
+  assert.equal(own.types.posts.filename, "post-sitemap1.xml");
 });
 
 test("config validation: bad limits and wrong types fail clearly", () => {
@@ -292,15 +326,15 @@ test("xml: empty urlset is valid; empty index throws; invalid loc throws", () =>
 
 test("xml: sitemap index lists files with newest lastmod", () => {
   const xml = serializeSitemapIndex([
-    { loc: `${BASE}/sitemap-post.xml`, lastmod: new Date("2026-11-14T05:00:00.000Z") },
-    { loc: `${BASE}/sitemap-page.xml` },
+    { loc: `${BASE}/post-sitemap.xml`, lastmod: new Date("2026-11-14T05:00:00.000Z") },
+    { loc: `${BASE}/page-sitemap.xml` },
   ]);
   assert.ok(
     xml.includes('<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'),
   );
   assert.deepEqual(locsIn(xml), [
-    `${BASE}/sitemap-post.xml`,
-    `${BASE}/sitemap-page.xml`,
+    `${BASE}/post-sitemap.xml`,
+    `${BASE}/page-sitemap.xml`,
   ]);
   assert.equal((xml.match(/<lastmod>/g) ?? []).length, 1);
   assert.ok(xml.includes("<lastmod>2026-11-14T05:00:00.000Z</lastmod>"));
@@ -323,9 +357,9 @@ test("engine: a disabled type generates no file and no index entry", () => {
       pages: [entry(`${BASE}/`)],
     }),
   );
-  assert.equal(files.has("sitemap-post.xml"), false);
-  assert.equal(files.has("sitemap-page.xml"), true);
-  assert.ok(!files.get("sitemap-index.xml").includes("sitemap-post.xml"));
+  assert.equal(files.has("post-sitemap.xml"), false);
+  assert.equal(files.has("page-sitemap.xml"), true);
+  assert.ok(!files.get("sitemap_index.xml").includes("post-sitemap.xml"));
 });
 
 test("engine: all types disabled generates no index", () => {
@@ -342,9 +376,9 @@ test("engine: enabled type with no entries generates no file; all empty means no
     liveSettings(),
     collected({ pages: [entry(`${BASE}/`)] }),
   );
-  assert.equal(files.has("sitemap-page.xml"), true);
-  assert.equal(files.has("sitemap-index.xml"), true);
-  assert.equal(files.has("sitemap-post.xml"), false);
+  assert.equal(files.has("page-sitemap.xml"), true);
+  assert.equal(files.has("sitemap_index.xml"), true);
+  assert.equal(files.has("post-sitemap.xml"), false);
 });
 
 test("engine: enabled type missing from collected throws", () => {
@@ -386,14 +420,14 @@ test("engine: index references only generated files, with newest lastmod per fil
     }),
   );
   assert.deepEqual([...files.keys()], [
-    "sitemap-index.xml",
-    "sitemap-page.xml",
-    "sitemap-post.xml",
+    "sitemap_index.xml",
+    "page-sitemap.xml",
+    "post-sitemap.xml",
   ]);
-  const indexXml = files.get("sitemap-index.xml");
+  const indexXml = files.get("sitemap_index.xml");
   assert.deepEqual(locsIn(indexXml), [
-    `${BASE}/sitemap-page.xml`,
-    `${BASE}/sitemap-post.xml`,
+    `${BASE}/page-sitemap.xml`,
+    `${BASE}/post-sitemap.xml`,
   ]);
   assert.equal((indexXml.match(/<lastmod>/g) ?? []).length, 1);
   assert.ok(indexXml.includes("<lastmod>2026-11-14T05:00:00.000Z</lastmod>"));
@@ -424,14 +458,16 @@ test("engine: custom filenames are used in files and index", () => {
   );
   assert.equal(files.has("index.xml"), true);
   assert.equal(files.has("posts.xml"), true);
-  assert.equal(files.has("sitemap-page.xml"), true);
+  assert.equal(files.has("page-sitemap.xml"), true);
   assert.ok(files.get("index.xml").includes(`${BASE}/posts.xml`));
 });
 
-test("engine: chunkFilename names chunks -2, -3 (first chunk keeps the name)", () => {
-  assert.equal(chunkFilename("sitemap-post.xml", 0), "sitemap-post.xml");
-  assert.equal(chunkFilename("sitemap-post.xml", 1), "sitemap-post-2.xml");
-  assert.equal(chunkFilename("sitemap-post.xml", 2), "sitemap-post-3.xml");
+test("engine: chunkFilename numbers chunks from 1 with no hyphen (single file keeps the name)", () => {
+  assert.equal(chunkFilename("post-sitemap.xml", 0, 1), "post-sitemap.xml");
+  assert.equal(chunkFilename("post-sitemap.xml", 0, 2), "post-sitemap1.xml");
+  assert.equal(chunkFilename("post-sitemap.xml", 1, 2), "post-sitemap2.xml");
+  assert.equal(chunkFilename("post-sitemap.xml", 2, 3), "post-sitemap3.xml");
+  assert.equal(chunkFilename("page-sitemap.xml", 0, 2), "page-sitemap1.xml");
 });
 
 test("engine: chunkEntries splits at max_urls_per_sitemap", () => {
@@ -446,32 +482,33 @@ test("engine: chunkEntries splits at max_urls_per_sitemap", () => {
   );
 });
 
-test("engine: chunking splits at max_urls_per_sitemap with -2/-3 names, all URLs present once", () => {
+test("engine: chunking splits at max_urls_per_sitemap into 1/2/3 names, no bare file, all URLs present once", () => {
   const s = resolveSitemapSettings({ max_urls_per_sitemap: 3 });
   const all = Array.from({ length: 7 }, (_, i) =>
     entry(`${BASE}/blog/p${i + 1}`),
   );
   const files = buildSitemapFiles(s, collected({ posts: all }));
-  assert.equal(files.has("sitemap-post.xml"), true);
-  assert.equal(files.has("sitemap-post-2.xml"), true);
-  assert.equal(files.has("sitemap-post-3.xml"), true);
-  assert.equal(urlCountIn(files.get("sitemap-post.xml")), 3);
-  assert.equal(urlCountIn(files.get("sitemap-post-2.xml")), 3);
-  assert.equal(urlCountIn(files.get("sitemap-post-3.xml")), 1);
+  assert.equal(files.has("post-sitemap.xml"), false);
+  assert.equal(files.has("post-sitemap1.xml"), true);
+  assert.equal(files.has("post-sitemap2.xml"), true);
+  assert.equal(files.has("post-sitemap3.xml"), true);
+  assert.equal(urlCountIn(files.get("post-sitemap1.xml")), 3);
+  assert.equal(urlCountIn(files.get("post-sitemap2.xml")), 3);
+  assert.equal(urlCountIn(files.get("post-sitemap3.xml")), 1);
   const listed = [
-    ...locsIn(files.get("sitemap-post.xml")),
-    ...locsIn(files.get("sitemap-post-2.xml")),
-    ...locsIn(files.get("sitemap-post-3.xml")),
+    ...locsIn(files.get("post-sitemap1.xml")),
+    ...locsIn(files.get("post-sitemap2.xml")),
+    ...locsIn(files.get("post-sitemap3.xml")),
   ].sort();
   assert.deepEqual(
     listed,
     all.map((e) => e.loc).sort(),
   );
-  const indexLocs = locsIn(files.get("sitemap-index.xml"));
+  const indexLocs = locsIn(files.get("sitemap_index.xml"));
   assert.deepEqual(indexLocs, [
-    `${BASE}/sitemap-post.xml`,
-    `${BASE}/sitemap-post-2.xml`,
-    `${BASE}/sitemap-post-3.xml`,
+    `${BASE}/post-sitemap1.xml`,
+    `${BASE}/post-sitemap2.xml`,
+    `${BASE}/post-sitemap3.xml`,
   ]);
 });
 
@@ -482,7 +519,7 @@ test("engine: chunking splits at max_bytes and never truncates", () => {
   );
   const files = buildSitemapFiles(s, collected({ posts: all }));
   const postFiles = [...files.keys()].filter((name) =>
-    name.startsWith("sitemap-post"),
+    name.startsWith("post-sitemap"),
   );
   assert.ok(postFiles.length > 1, `expected a byte split, got ${postFiles}`);
   for (const name of postFiles) {
@@ -507,25 +544,27 @@ test("engine: default max_urls_per_sitemap is 1000 and the configured value is r
     entry(`${BASE}/blog/p${i + 1}`),
   );
   const files = buildSitemapFiles(s, collected({ posts: all }));
-  assert.equal(urlCountIn(files.get("sitemap-post.xml")), 1000);
-  assert.equal(urlCountIn(files.get("sitemap-post-2.xml")), 1);
-  assert.equal(files.has("sitemap-post-3.xml"), false);
+  assert.equal(files.has("post-sitemap.xml"), false);
+  assert.equal(urlCountIn(files.get("post-sitemap1.xml")), 1000);
+  assert.equal(urlCountIn(files.get("post-sitemap2.xml")), 1);
+  assert.equal(files.has("post-sitemap3.xml"), false);
   // A configured limit of 100 splits 250 entries into 100 + 100 + 50.
   const s100 = resolveSitemapSettings({ max_urls_per_sitemap: 100 });
   const entries250 = Array.from({ length: 250 }, (_, i) =>
     entry(`${BASE}/blog/q${i + 1}`),
   );
   const files100 = buildSitemapFiles(s100, collected({ posts: entries250 }));
-  assert.equal(files100.has("sitemap-post.xml"), true);
-  assert.equal(files100.has("sitemap-post-2.xml"), true);
-  assert.equal(files100.has("sitemap-post-3.xml"), true);
-  assert.equal(files100.has("sitemap-post-4.xml"), false);
-  assert.equal(urlCountIn(files100.get("sitemap-post.xml")), 100);
-  assert.equal(urlCountIn(files100.get("sitemap-post-3.xml")), 50);
+  assert.equal(files100.has("post-sitemap.xml"), false);
+  assert.equal(files100.has("post-sitemap1.xml"), true);
+  assert.equal(files100.has("post-sitemap2.xml"), true);
+  assert.equal(files100.has("post-sitemap3.xml"), true);
+  assert.equal(files100.has("post-sitemap4.xml"), false);
+  assert.equal(urlCountIn(files100.get("post-sitemap1.xml")), 100);
+  assert.equal(urlCountIn(files100.get("post-sitemap3.xml")), 50);
   const listed = [
-    ...locsIn(files100.get("sitemap-post.xml")),
-    ...locsIn(files100.get("sitemap-post-2.xml")),
-    ...locsIn(files100.get("sitemap-post-3.xml")),
+    ...locsIn(files100.get("post-sitemap1.xml")),
+    ...locsIn(files100.get("post-sitemap2.xml")),
+    ...locsIn(files100.get("post-sitemap3.xml")),
   ].sort();
   assert.deepEqual(
     listed,
@@ -729,6 +768,217 @@ test("pagesToEntries: draft about index drops /about; one blog page means no pag
   );
 });
 
+// ─── Image embedding ─────────────────────────────────────────────────────
+
+test("stripFencedCodeBlocks: ``` and ~~~ fences are removed, the rest kept", () => {
+  const body = "before\n```js\nconst x = 1;\n```\nbetween\n~~~md\n# hi\n~~~\nafter";
+  assert.equal(stripFencedCodeBlocks(body), "before\nbetween\nafter");
+});
+
+test("extractBodyImagePaths: markdown refs + img srcs, fences skipped, external/relative dropped, deduped", () => {
+  const body = [
+    "![Diagram one](/images/blog/a-diagram-1.webp)",
+    "![Diagram two](/images/blog/a-diagram-2.webp)",
+    "![Diagram one again](/images/blog/a-diagram-1.webp)",
+    '<img src="/images/blog/a-photo.webp" alt="photo">',
+    '![Titled](/images/blog/titled.webp "A title")',
+    "![External](https://example.com/x.webp)",
+    "![Relative](images/relative.webp)",
+    "![No ext](/images/blog/noext)",
+    "```astro",
+    "![In a code sample](/images/blog/code-sample.webp)",
+    '<img src="/images/blog/code-img.webp">',
+    "```",
+    "![After the fence](/images/blog/a-diagram-2.webp)",
+  ].join("\n");
+  assert.deepEqual(extractBodyImagePaths(body), [
+    "/images/blog/a-diagram-1.webp",
+    "/images/blog/a-diagram-2.webp",
+    "/images/blog/a-photo.webp",
+    "/images/blog/titled.webp",
+  ]);
+});
+
+test("postImageUrls: image, og_image, then body refs — absolute and deduped", () => {
+  const urls = postImageUrls(
+    post(
+      "a",
+      {},
+      "![D1](/images/blog/a-diagram-1.webp)\n![D2](/images/blog/a-diagram-2.webp)\n![D1 again](/images/blog/a-diagram-1.webp)",
+    ),
+  );
+  assert.deepEqual(urls, [
+    `${BASE}/images/blog/my-post-feature.webp`,
+    `${BASE}/images/blog/my-post-og.webp`,
+    `${BASE}/images/blog/a-diagram-1.webp`,
+    `${BASE}/images/blog/a-diagram-2.webp`,
+  ]);
+  // og_image equal to image dedupes; no images at all yields none.
+  assert.deepEqual(
+    postImageUrls(
+      post("b", { og_image: "/images/blog/my-post-feature.webp" }),
+    ),
+    [`${BASE}/images/blog/my-post-feature.webp`],
+  );
+  assert.deepEqual(
+    postImageUrls(post("c", { image: undefined, og_image: undefined })),
+    [],
+  );
+});
+
+test("postsToEntries: attaches <image:loc>-only images; existence gate filters; no images means no image tags", () => {
+  const body =
+    "![D1](/images/blog/a-diagram-1.webp)\n![D2](/images/blog/a-diagram-2.webp)";
+  const entries = postsToEntries(
+    [
+      post("a", {}, body),
+      post("b", { image: undefined, og_image: undefined }),
+    ],
+    liveSettings(),
+    NOW,
+  );
+  assert.equal(entries[0].images.length, 4);
+  assert.deepEqual(
+    entries[0].images.map((img) => img.loc),
+    [
+      `${BASE}/images/blog/my-post-feature.webp`,
+      `${BASE}/images/blog/my-post-og.webp`,
+      `${BASE}/images/blog/a-diagram-1.webp`,
+      `${BASE}/images/blog/a-diagram-2.webp`,
+    ],
+  );
+  for (const img of entries[0].images) {
+    assert.equal(
+      img.title,
+      undefined,
+      "post image tags carry <image:loc> only, no title",
+    );
+  }
+  assert.equal(entries[1].images, undefined);
+  // The existence gate drops missing files.
+  const gated = postsToEntries(
+    [post("a", {}, body)],
+    liveSettings(),
+    NOW,
+    (url) => url.endsWith("-og.webp") || url.endsWith("-diagram-1.webp"),
+  );
+  assert.deepEqual(
+    gated[0].images.map((img) => img.loc),
+    [
+      `${BASE}/images/blog/my-post-og.webp`,
+      `${BASE}/images/blog/a-diagram-1.webp`,
+    ],
+  );
+});
+
+test("isPublicFile: real files under public/ found, everything else not", () => {
+  assert.equal(isPublicFile("/images/banner.webp"), true);
+  assert.equal(isPublicFile("/images/about-banner.webp"), true);
+  assert.equal(isPublicFile(`${BASE}/images/banner.webp`), true);
+  assert.equal(isPublicFile("/images/banner.webp?x=1"), true);
+  assert.equal(isPublicFile("/images/does-not-exist.webp"), false);
+  assert.equal(isPublicFile("https://example.com/images/banner.webp"), false);
+  assert.equal(isPublicFile("//images/banner.webp"), false);
+  assert.equal(isPublicFile("/images/../banner.webp"), false);
+});
+
+test("pagesToEntries: homepage banner, about image, page image attached; imageless pages have none", () => {
+  const entries = pagesToEntries(
+    {
+      regularPages: [
+        page("privacy-policy", { image: "/images/privacy.webp" }),
+        page("elements"),
+      ],
+      aboutIndex: indexEntry({
+        title: "About",
+        image: "/images/about-banner.webp",
+      }),
+      contactIndex: indexEntry({ title: "Contact", image: "" }),
+      blogIndex: indexEntry({ title: "Blog" }),
+      authorsIndex: indexEntry({ title: "Authors" }),
+      blogTotalPages: 1,
+      homepageBannerImage: "/images/banner.webp",
+    },
+    liveSettings(),
+    NOW,
+  );
+  const byLoc = new Map(entries.map((e) => [e.loc, e]));
+  assert.deepEqual(
+    byLoc.get(`${BASE}/`).images.map((i) => i.loc),
+    [`${BASE}/images/banner.webp`],
+  );
+  assert.deepEqual(
+    byLoc.get(`${BASE}/about`).images.map((i) => i.loc),
+    [`${BASE}/images/about-banner.webp`],
+  );
+  assert.deepEqual(
+    byLoc.get(`${BASE}/privacy-policy`).images.map((i) => i.loc),
+    [`${BASE}/images/privacy.webp`],
+  );
+  assert.equal(byLoc.get(`${BASE}/contact`).images, undefined);
+  assert.equal(byLoc.get(`${BASE}/blog`).images, undefined);
+  assert.equal(byLoc.get(`${BASE}/elements`).images, undefined);
+  assert.equal(byLoc.get(`${BASE}/categories`).images, undefined);
+});
+
+test("engine: post/page sitemaps declare the image namespace only when they carry images", () => {
+  const withImages = buildSitemapFiles(
+    liveSettings(),
+    collected({
+      posts: [
+        {
+          loc: `${BASE}/blog/a`,
+          images: [{ loc: `${BASE}/images/a.webp` }],
+        },
+      ],
+      pages: [entry(`${BASE}/`)],
+    }),
+  );
+  assert.ok(
+    withImages
+      .get("post-sitemap.xml")
+      .includes('xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"'),
+  );
+  assert.ok(
+    withImages
+      .get("post-sitemap.xml")
+      .includes(`<image:loc>${BASE}/images/a.webp</image:loc>`),
+  );
+  assert.ok(!withImages.get("page-sitemap.xml").includes("xmlns:image"));
+  const withoutImages = buildSitemapFiles(
+    liveSettings(),
+    collected({ posts: [entry(`${BASE}/blog/a`)] }),
+  );
+  assert.ok(!withoutImages.get("post-sitemap.xml").includes("xmlns:image"));
+});
+
+test("images sitemap: format unchanged — one OG image per post, no multi-image embedding", () => {
+  // image-sitemap.xml stays as it was: each entry is a post URL with
+  // exactly one <image:image> (the OG image, with title). The new
+  // multi-image embedding applies to post/page sitemaps only.
+  const entries = imagesToEntries(
+    [
+      post("a"),
+      post("b", { image: "/images/b.webp", og_image: undefined }),
+    ],
+    liveSettings(),
+    NOW,
+  );
+  const files = buildSitemapFiles(
+    liveSettings(),
+    collected({ images: entries }),
+  );
+  const xml = files.get("image-sitemap.xml");
+  assert.equal(urlCountIn(xml), 2);
+  assert.equal((xml.match(/<image:image>/g) ?? []).length, 2);
+  assert.ok(
+    xml.includes(
+      `<image:loc>${BASE}/images/blog/my-post-og.webp</image:loc>`,
+    ),
+  );
+  assert.ok(xml.includes(`<image:loc>${BASE}/images/b.webp</image:loc>`));
+});
+
 // ─── Route + config file markers ───────────────────────────────────────────
 
 test("route: single dynamic route serves enabled sitemaps as XML", () => {
@@ -750,7 +1000,7 @@ test("config: config.json carries the sitemap object with 11 types (+ index = 12
     fs.readFileSync(path.join(repoRoot, "src/config/config.json"), "utf8"),
   );
   assert.equal(config.sitemap.enable, true);
-  assert.equal(config.sitemap.index_filename, "sitemap-index.xml");
+  assert.equal(config.sitemap.index_filename, "sitemap_index.xml");
   assert.equal(Object.keys(config.sitemap.types).length, 11);
   for (const key of ["pages", "posts", "categories", "tags", "authors", "images"]) {
     assert.equal(config.sitemap.types[key].enable, true, `${key} on`);

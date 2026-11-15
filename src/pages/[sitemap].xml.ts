@@ -2,10 +2,12 @@
 //
 // `getStaticPaths()` returns exactly the filenames the engine built from
 // `src/config/config.json`, so Astro generates them as static files in
-// `dist/` during `astro build`. No SSR, no server functions, no runtime
-// filesystem access: the collectors read the content collections through
-// Astro's data layer. Disabled types produce no path (and therefore no
-// file); a disabled master switch produces no paths at all.
+// `dist/` during `astro build`. No SSR, no server functions, nothing is
+// read at request time: the collectors read the content collections
+// through Astro's data layer, and image references are existence-checked
+// against `public/` once, at build time. Disabled types produce no path
+// (and therefore no file); a disabled master switch produces no paths
+// at all.
 //
 // The file map is built once per build process and cached in module scope:
 // `getStaticPaths()` runs first and each `GET` would otherwise re-run

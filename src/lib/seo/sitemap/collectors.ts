@@ -13,6 +13,13 @@
 //     in the routes and the old `seoManifest`);
 //   - lastmod is `updated ?? lastmod ?? date`, a genuine content date
 //     only — never the build date.
+//   - post entries carry their images (`image`, `og_image`, body refs)
+//     and page entries carry their page image (homepage banner, about
+//     banner, …) as `<image:image>` blocks — `<image:loc>` only, no
+//     title. Only images that resolve to a real file under `public/`
+//     are emitted (a build-time existence check); a stale reference
+//     can never ship. The images sitemap itself is untouched: one OG
+//     image per post, as before.
 //
 // The transforms (`*ToEntries`) are pure functions over plain entry
 // objects so `tests/sitemap.test.js` can exercise every exclusion rule
@@ -21,18 +28,27 @@
 // `locales` / `locations` have no collector — this project has no such
 // content — and enabling one of them fails the build clearly (see
 // `collectAllEntries`).
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { getCollection } from "astro:content";
 import config from "@/config/config.json";
 import { getSinglePage } from "@/lib/contentParser";
 import { isExcludedPath } from "@/lib/seo/sitemap/config";
 import type {
   SitemapEntry,
+  SitemapImage,
   SitemapSettings,
   SitemapTypeKey,
 } from "@/lib/seo/sitemap/types";
 import { SITEMAP_TYPE_KEYS } from "@/lib/seo/sitemap/types";
 import { getTaxonomy } from "@/lib/taxonomyParser";
-import { canonicalFor, isAbsoluteUrl, resolveOgImage } from "@/lib/utils/seo";
+import {
+  absoluteUrl,
+  canonicalFor,
+  isAbsoluteUrl,
+  resolveOgImage,
+} from "@/lib/utils/seo";
 import {
   authorUrl,
   checkDuplicateSlugs,
@@ -43,6 +59,8 @@ import {
 /** The entry shape the pure transforms need (a structural subset of a collection entry). */
 export interface SitemapContentEntry {
   id: string;
+  /** Raw Markdown/MDX body (posts) — image refs are extracted from it. */
+  body?: string | null;
   data: {
     slug?: string | null;
     draft?: boolean | null;
@@ -129,11 +147,179 @@ function entryLastmod(
   return settings.lastmod ? contentLastmod(entry.data) : undefined;
 }
 
-/** Published blog posts, as sitemap entries. */
+/** Image file extensions accepted for body image references. */
+const IMAGE_EXTENSIONS = new Set([
+  "webp",
+  "avif",
+  "jpg",
+  "jpeg",
+  "png",
+  "gif",
+  "svg",
+]);
+
+/**
+ * Raw Markdown with fenced code blocks removed. An image reference
+ * inside a code sample is not an image on the page (it is text showing
+ * how to write one), so it must not end up in the sitemap.
+ */
+export function stripFencedCodeBlocks(body: string): string {
+  const lines = body.split("\n");
+  const kept: string[] = [];
+  let inFence = false;
+  let fenceChar = "";
+  for (const line of lines) {
+    const match = /^\s*(`{3,}|~{3,})/.exec(line);
+    if (match) {
+      const marker = match[1];
+      if (!inFence) {
+        inFence = true;
+        fenceChar = marker[0];
+      } else if (marker[0] === fenceChar) {
+        inFence = false;
+        fenceChar = "";
+      }
+      continue;
+    }
+    if (!inFence) {
+      kept.push(line);
+    }
+  }
+  return kept.join("\n");
+}
+
+/**
+ * Site-relative image paths referenced in a post body: Markdown
+ * `![alt](path)` refs and `<img src="path">` tags, in document order,
+ * deduplicated. Only site-local absolute paths (`/images/...`) are
+ * returned — external URLs, relative paths, data URIs and non-image
+ * targets are not page images.
+ */
+export function extractBodyImagePaths(body: string): string[] {
+  const found: string[] = [];
+  const seen = new Set<string>();
+  const add = (raw: string | undefined) => {
+    if (!raw) {
+      return;
+    }
+    const clean = raw.trim();
+    if (
+      !clean.startsWith("/") ||
+      clean.startsWith("//") ||
+      clean.toLowerCase().startsWith("data:")
+    ) {
+      return;
+    }
+    const pathOnly = clean.split(/[?#]/, 1)[0];
+    const ext = pathOnly.split(".").pop()?.toLowerCase() ?? "";
+    if (!IMAGE_EXTENSIONS.has(ext)) {
+      return;
+    }
+    if (!seen.has(pathOnly)) {
+      seen.add(pathOnly);
+      found.push(pathOnly);
+    }
+  };
+  const text = stripFencedCodeBlocks(body);
+  const refPattern =
+    /!\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)|<img\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/gi;
+  for (const match of text.matchAll(refPattern)) {
+    add(match[1] ?? match[2]);
+  }
+  return found;
+}
+
+/**
+ * Candidate image URLs for a post, absolute and deduplicated:
+ * frontmatter `image` (featured), `og_image`, then the images
+ * referenced in the body, in document order. No existence check here —
+ * the caller filters (see `postsToEntries`).
+ */
+export function postImageUrls(post: SitemapContentEntry): string[] {
+  const found: string[] = [];
+  const seen = new Set<string>();
+  const add = (value: string | null | undefined) => {
+    if (!value) {
+      return;
+    }
+    const url = absoluteUrl(value);
+    if (!seen.has(url)) {
+      seen.add(url);
+      found.push(url);
+    }
+  };
+  add(post.data.image);
+  add(post.data.og_image);
+  for (const pathOnly of extractBodyImagePaths(post.body ?? "")) {
+    add(pathOnly);
+  }
+  return found;
+}
+
+/**
+ * True when a site URL or site-relative path resolves to a real file
+ * under `public/` — a build-time check (the sitemap is generated
+ * during `astro build`, never at request time). External URLs,
+ * protocol-relative URLs and paths escaping `public/` are never
+ * "found", so a stale or invented image reference can never ship.
+ * Follows the same candidates as `localImageDimensions` in rss.ts.
+ */
+export function isPublicFile(pathnameOrUrl: string): boolean {
+  const baseUrl = String(config.site.base_url ?? "").replace(/\/+$/, "");
+  const basePathRaw = String(config.site.base_path ?? "/");
+  const basePath =
+    basePathRaw === "/" ? "" : `/${basePathRaw.replace(/^\/+|\/+$/g, "")}`;
+  const prefix = `${baseUrl}${basePath}`;
+  let pathname: string | null = null;
+  if (prefix && pathnameOrUrl.startsWith(`${prefix}/`)) {
+    pathname = pathnameOrUrl.slice(prefix.length);
+  } else if (pathnameOrUrl.startsWith("/") && !pathnameOrUrl.startsWith("//")) {
+    pathname = pathnameOrUrl;
+  }
+  if (!pathname) {
+    return false;
+  }
+  let clean: string;
+  try {
+    clean = decodeURIComponent(pathname.split(/[?#]/, 1)[0]);
+  } catch {
+    return false;
+  }
+  if (clean.split("/").includes("..")) {
+    return false;
+  }
+  const candidates = [
+    path.join(process.cwd(), "public", clean),
+    path.join(
+      path.dirname(fileURLToPath(import.meta.url)),
+      "..",
+      "..",
+      "..",
+      "..",
+      "public",
+      clean,
+    ),
+  ];
+  return candidates.some((file) => {
+    try {
+      return fs.existsSync(file) && fs.statSync(file).isFile();
+    } catch {
+      return false;
+    }
+  });
+}
+
+/**
+ * Published blog posts, as sitemap entries — each with its images
+ * (`<image:loc>` only, no title). `imageExists` gates the images: in
+ * production it is `isPublicFile` (only real files under `public/`
+ * ship); tests pass a stub or the default, which keeps everything.
+ */
 export function postsToEntries(
   posts: SitemapContentEntry[],
   settings: SitemapSettings,
   now: Date,
+  imageExists: (url: string) => boolean = () => true,
 ): SitemapEntry[] {
   const visible = posts.filter(
     (post) =>
@@ -147,6 +333,12 @@ export function postsToEntries(
     const lastmod = entryLastmod(post, settings);
     if (lastmod) {
       entry.lastmod = lastmod;
+    }
+    const images = postImageUrls(post)
+      .filter((url) => imageExists(url))
+      .map((loc) => ({ loc }));
+    if (images.length > 0) {
+      entry.images = images;
     }
     return entry;
   });
@@ -250,6 +442,8 @@ export interface PageCollectionInput {
   authorsIndex?: SitemapContentEntry | null;
   /** Total blog pagination pages (page 1 is `/blog` itself). */
   blogTotalPages: number;
+  /** Homepage banner image (`banner.image`), shown on `/`. */
+  homepageBannerImage?: string | null;
 }
 
 /**
@@ -259,10 +453,19 @@ export interface PageCollectionInput {
  * the old manifest treated them); the blog/authors indexes are gated
  * on draft only, matching their routes, which do not apply `noindex`.
  */
+/**
+ * Homepage + index/listing pages + standalone pages. Page entries carry
+ * their page image when they have one (homepage banner on `/`, the
+ * about/contact/blog/authors `-index` image on their routes, a regular
+ * page's `image` frontmatter) — `<image:loc>` only, no title. Listing
+ * and pagination pages have no image. `imageExists` gates the images
+ * (see `postsToEntries`).
+ */
 export function pagesToEntries(
   input: PageCollectionInput,
   settings: SitemapSettings,
   now: Date,
+  imageExists: (url: string) => boolean = () => true,
 ): SitemapEntry[] {
   const entries: SitemapEntry[] = [];
   const add = (
@@ -272,6 +475,7 @@ export function pagesToEntries(
       updated?: Date | string | null;
       lastmod?: Date | string | null;
     },
+    imagePaths?: (string | null | undefined)[],
   ) => {
     if (isExcludedPath(path, settings)) {
       return;
@@ -283,11 +487,27 @@ export function pagesToEntries(
         entry.lastmod = lastmod;
       }
     }
+    const seen = new Set<string>();
+    const images: SitemapImage[] = [];
+    for (const value of imagePaths ?? []) {
+      if (!value) {
+        continue;
+      }
+      const url = absoluteUrl(value);
+      if (seen.has(url) || !imageExists(url)) {
+        continue;
+      }
+      seen.add(url);
+      images.push({ loc: url });
+    }
+    if (images.length > 0) {
+      entry.images = images;
+    }
     entries.push(entry);
   };
 
   // Homepage — always generated; the homepage collection has no dates.
-  add("/");
+  add("/", undefined, [input.homepageBannerImage]);
   // Listing index pages (their routes have no draft gate).
   add("/categories");
   add("/tags");
@@ -299,7 +519,7 @@ export function pagesToEntries(
   );
   checkDuplicateSlugs(visiblePages, pageUrl, "page");
   for (const page of visiblePages) {
-    add(pageUrl(page), page.data);
+    add(pageUrl(page), page.data, [page.data.image]);
   }
 
   // Single-page collections, gated like their routes.
@@ -310,16 +530,16 @@ export function pagesToEntries(
     !isExternalCanonical(index.data.canonical) &&
     (!index.data.date || new Date(index.data.date) <= now);
   if (single(input.aboutIndex)) {
-    add("/about", input.aboutIndex!.data);
+    add("/about", input.aboutIndex!.data, [input.aboutIndex!.data.image]);
   }
   if (single(input.contactIndex)) {
-    add("/contact", input.contactIndex!.data);
+    add("/contact", input.contactIndex!.data, [input.contactIndex!.data.image]);
   }
   if (input.blogIndex && !input.blogIndex.data.draft) {
-    add("/blog", input.blogIndex.data);
+    add("/blog", input.blogIndex.data, [input.blogIndex.data.image]);
   }
   if (input.authorsIndex && !input.authorsIndex.data.draft) {
-    add("/authors", input.authorsIndex.data);
+    add("/authors", input.authorsIndex.data, [input.authorsIndex.data.image]);
   }
 
   // Blog pagination pages 2..N (page 1 is /blog itself).
@@ -338,7 +558,7 @@ async function collectPosts(
   const posts = await getCollection("blog", ({ data, id }) =>
     isSitemapVisible({ id, data }, now),
   );
-  return postsToEntries(posts, settings, now);
+  return postsToEntries(posts, settings, now, isPublicFile);
 }
 
 async function collectPages(
@@ -352,6 +572,7 @@ async function collectPages(
     blogEntries,
     authorsEntries,
     blogPosts,
+    homepageEntries,
   ] = await Promise.all([
     getSinglePage("pages"),
     getCollection("about"),
@@ -359,6 +580,7 @@ async function collectPages(
     getCollection("blog"),
     getCollection("authors"),
     getSinglePage("blog"),
+    getCollection("homepage"),
   ]);
   const findIndex = (
     entries: SitemapContentEntry[],
@@ -369,6 +591,7 @@ async function collectPages(
   const perPage =
     Number.isInteger(configured) && configured > 0 ? configured : 2;
   const blogTotalPages = Math.max(1, Math.ceil(blogPosts.length / perPage));
+  const homepageIndex = homepageEntries.find((entry) => entry.id === "-index");
   return pagesToEntries(
     {
       regularPages,
@@ -377,9 +600,11 @@ async function collectPages(
       blogIndex: findIndex(blogEntries),
       authorsIndex: findIndex(authorsEntries),
       blogTotalPages,
+      homepageBannerImage: homepageIndex?.data.banner?.image ?? null,
     },
     settings,
     now,
+    isPublicFile,
   );
 }
 

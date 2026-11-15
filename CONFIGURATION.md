@@ -195,11 +195,11 @@ URL rules.
 | Key | Type | Default | What it controls |
 | --- | --- | --- | --- |
 | `enable` | boolean | `true` | Master switch: `false` generates no sitemap files at all |
-| `index_filename` | string | `"sitemap-index.xml"` | Filename of the sitemap index (also the `Sitemap:` line in `robots.txt`) |
+| `index_filename` | string | `"sitemap_index.xml"` | Filename of the sitemap index (also the `Sitemap:` line in `robots.txt`) |
 | `lastmod` | boolean | `true` | Emit `<lastmod>` from `updated ?? lastmod ?? date` when a date exists; `false` omits it everywhere |
 | `exclude` | string[] | `["/404"]` | Exact pathnames to exclude |
 | `exclude_segments` | string[] | `["draft", "drafts", "preview", "private"]` | Any URL whose path segments include one of these is excluded |
-| `max_urls_per_sitemap` | number | `1000` | Maximum URLs per sitemap file (protocol cap 50,000). Smaller values split a type into numbered chunks (`sitemap-post-2.xml`, …). Examples: `100`, `200`, `500`, `1000` |
+| `max_urls_per_sitemap` | number | `1000` | Maximum URLs per sitemap file (protocol cap 50,000). Smaller values split a type into numbered chunks (`post-sitemap1.xml`, `post-sitemap2.xml`, … — numbered from 1, no hyphen, and the bare file is not generated when chunked). Examples: `100`, `200`, `500`, `1000` |
 | `max_bytes` | number | `52428800` | Maximum uncompressed bytes per sitemap file (protocol cap 50 MB) |
 | `types.<type>.enable` | boolean | see below | Enable/disable one sitemap type |
 | `types.<type>.filename` | string | see below | Output filename for one sitemap type |
@@ -208,19 +208,20 @@ Types and their defaults (11 types; the index makes 12 files):
 
 | Type | Default | Contents |
 | --- | --- | --- |
-| `pages` | on, `sitemap-page.xml` | Homepage, standalone pages, `/blog`, `/blog/page/2…`, `/categories`, `/tags`, `/authors` |
-| `posts` | on, `sitemap-post.xml` | Published blog posts |
-| `categories` | on, `sitemap-categories.xml` | Category archive pages that exist |
-| `tags` | on, `sitemap-tags.xml` | Tag archive pages that exist |
-| `authors` | on, `sitemap-authors.xml` | Published author pages |
-| `images` | on, `sitemap-images.xml` | Post pages with their featured image (`og_image` else `image`) |
-| `videos` | off, `sitemap-videos.xml` | No video content exists — enabling it fails the build until a collector is added |
-| `news` | off, `sitemap-news.xml` | No news content exists — same as `videos` |
-| `products` | off, `sitemap-products.xml` | No product content exists — same as `videos` |
-| `locales` | off, `sitemap-locales.xml` | Single locale only — same as `videos` |
-| `locations` | off, `sitemap-locations.xml` | No location content exists — same as `videos` |
+| `pages` | on, `page-sitemap.xml` | Homepage, standalone pages, `/blog`, `/blog/page/2…`, `/categories`, `/tags`, `/authors` — with `<image:image>` for pages that have an image (homepage banner, about banner) |
+| `posts` | on, `post-sitemap.xml` | Published blog posts — each URL carries `<image:image>` (`<image:loc>` only) for its featured image, OG image and body images |
+| `categories` | on, `category-sitemap.xml` | Category archive pages that exist |
+| `tags` | on, `post_tag-sitemap.xml` | Tag archive pages that exist |
+| `authors` | on, `author-sitemap.xml` | Published author pages |
+| `images` | on, `image-sitemap.xml` | Post pages with their featured image (`og_image` else `image`) — one image per post, unchanged by the post/page embedding |
+| `videos` | off, `video-sitemap.xml` | No video content exists — enabling it fails the build until a collector is added |
+| `news` | off, `news-sitemap.xml` | No news content exists — same as `videos` |
+| `products` | off, `product-sitemap.xml` | No product content exists — same as `videos` |
+| `locales` | off, `locales-sitemap.xml` | Single locale only — same as `videos` |
+| `locations` | off, `locations-sitemap.xml` | No location content exists — same as `videos` |
 
-Invalid filenames, duplicate filenames, or a non-positive
+Invalid filenames, duplicate filenames, filenames colliding with a
+chunk name (`<stem>1.xml`, …), or a non-positive
 `max_urls_per_sitemap` fail the build with a clear error — the sitemap
 never silently generates the wrong files.
 

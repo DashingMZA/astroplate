@@ -43,7 +43,7 @@ export interface SitemapTypeSettings {
 export interface SitemapSettings {
   /** Master switch: false generates no sitemap files at all. */
   enable: boolean;
-  /** Filename of the sitemap index (default `sitemap-index.xml`). */
+  /** Filename of the sitemap index (default `sitemap_index.xml`). */
   index_filename: string;
   /** Emit `<lastmod>` when a genuine content date exists. */
   lastmod: boolean;

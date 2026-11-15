@@ -96,24 +96,24 @@
 
   "sitemap": {
     "enable": true,
-    "index_filename": "sitemap-index.xml",
+    "index_filename": "sitemap_index.xml",
     "lastmod": true,
     "exclude": ["/404"],
     "exclude_segments": ["draft", "drafts", "preview", "private"],
     "max_urls_per_sitemap": 1000,
     "max_bytes": 52428800,
     "types": {
-      "pages": { "enable": true, "filename": "sitemap-page.xml" },
-      "posts": { "enable": true, "filename": "sitemap-post.xml" },
-      "categories": { "enable": true, "filename": "sitemap-categories.xml" },
-      "tags": { "enable": true, "filename": "sitemap-tags.xml" },
-      "authors": { "enable": true, "filename": "sitemap-authors.xml" },
-      "images": { "enable": true, "filename": "sitemap-images.xml" },
-      "videos": { "enable": false, "filename": "sitemap-videos.xml" },
-      "news": { "enable": false, "filename": "sitemap-news.xml" },
-      "products": { "enable": false, "filename": "sitemap-products.xml" },
-      "locales": { "enable": false, "filename": "sitemap-locales.xml" },
-      "locations": { "enable": false, "filename": "sitemap-locations.xml" }
+      "pages": { "enable": true, "filename": "page-sitemap.xml" },
+      "posts": { "enable": true, "filename": "post-sitemap.xml" },
+      "categories": { "enable": true, "filename": "category-sitemap.xml" },
+      "tags": { "enable": true, "filename": "post_tag-sitemap.xml" },
+      "authors": { "enable": true, "filename": "author-sitemap.xml" },
+      "images": { "enable": true, "filename": "image-sitemap.xml" },
+      "videos": { "enable": false, "filename": "video-sitemap.xml" },
+      "news": { "enable": false, "filename": "news-sitemap.xml" },
+      "products": { "enable": false, "filename": "product-sitemap.xml" },
+      "locales": { "enable": false, "filename": "locales-sitemap.xml" },
+      "locations": { "enable": false, "filename": "locations-sitemap.xml" }
     }
   }
 }

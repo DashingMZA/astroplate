@@ -3,7 +3,7 @@
 // for any site: change `site.base_url` in `src/config/config.json` and the
 // `Sitemap:` line follows on the next build. No hard-coded domain lives here.
 // The sitemap index filename comes from `config.sitemap.index_filename`
-// (default `/sitemap-index.xml`).
+// (default `/sitemap_index.xml`).
 import type { APIRoute } from "astro";
 import { getSitemapSettings } from "@/lib/seo/sitemap/config";
 import { absoluteUrl } from "@/lib/utils/seo";

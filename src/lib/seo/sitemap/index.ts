@@ -11,10 +11,11 @@
 //   - An enabled type with no collected entries at all (e.g. a type
 //     enabled in config but with no collector) fails loudly.
 //   - Chunking: at most `max_urls_per_sitemap` URLs and `max_bytes`
-//     uncompressed bytes per file; chunks are named `<base>-2.xml`,
-//     `<base>-3.xml` (the first chunk keeps the configured filename).
-//     Never truncated: a single entry larger than the byte limit still
-//     gets its own chunk.
+//     uncompressed bytes per file; when a type splits, chunks are
+//     named `<stem>1.xml`, `<stem>2.xml`, … (numbered from 1, no
+//     hyphen) and the bare filename is not generated. A type that fits
+//     in one file keeps its configured filename. Never truncated: a
+//     single entry larger than the byte limit still gets its own chunk.
 //   - Every generated chunk is registered in the index. Index entries
 //     carry `<lastmod>` = the newest genuine lastmod inside that chunk
 //     (same as the old @astrojs/sitemap behaviour); never the build date.
@@ -41,12 +42,21 @@ import {
   urlsetHeader,
 } from "@/lib/seo/sitemap/xml";
 
-/** Chunk filename: chunk 0 keeps the name; chunk 1 becomes `<base>-2.xml`, etc. */
-export function chunkFilename(filename: string, chunkIndex: number): string {
-  if (chunkIndex === 0) {
+/**
+ * Chunk filename. A type that fits in one file keeps its configured
+ * filename. When it splits, every chunk is numbered from 1 with no
+ * hyphen — `<stem>1.xml`, `<stem>2.xml`, … — and the bare filename is
+ * NOT generated (Rank Math style: `post-sitemap1.xml`, ...).
+ */
+export function chunkFilename(
+  filename: string,
+  chunkIndex: number,
+  chunkCount: number,
+): string {
+  if (chunkCount <= 1) {
     return filename;
   }
-  return filename.replace(/\.xml$/, `-${chunkIndex + 1}.xml`);
+  return filename.replace(/\.xml$/, `${chunkIndex + 1}.xml`);
 }
 
 function byteLength(text: string): number {
@@ -145,12 +155,9 @@ export function buildSitemapFiles(
     const hasImages = dated.some(
       (entry) => entry.images && entry.images.length > 0,
     );
-    for (const [i, chunk] of chunkEntries(
-      dated,
-      settings,
-      hasImages,
-    ).entries()) {
-      const filename = chunkFilename(type.filename, i);
+    const chunks = chunkEntries(dated, settings, hasImages);
+    for (const [i, chunk] of chunks.entries()) {
+      const filename = chunkFilename(type.filename, i, chunks.length);
       files.set(filename, serializeUrlset(chunk));
       const lastmod = settings.lastmod ? newestLastmod(chunk) : undefined;
       indexEntries.push({

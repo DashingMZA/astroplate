@@ -482,11 +482,11 @@ test("robots.txt: GET renders a config-driven robots file", async () => {
   const base = String(config.site.base_url).replace(/\/+$/, "");
   assert.ok(body.startsWith("User-agent: *\nAllow: /\n"));
   assert.ok(
-    body.includes(`Sitemap: ${base}/sitemap-index.xml`),
+    body.includes(`Sitemap: ${base}/sitemap_index.xml`),
     `Sitemap line must follow config.site.base_url, got: ${body}`,
   );
   assert.ok(
     !body.includes("/sitemap.xml"),
-    "sitemap must be /sitemap-index.xml, not /sitemap.xml",
+    "sitemap must be /sitemap_index.xml, not /sitemap.xml",
   );
 });
