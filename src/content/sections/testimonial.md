@@ -5,23 +5,23 @@ description: "Don't just take our word for it - hear from some of our satisfied 
 
 # Testimonials
 testimonials:
-  - name: "Marvin McKinney"
-    designation: "Web Designer"
+  - name: "Sarah Mitchell"
+    designation: "Frontend Developer"
     avatar: "/images/avatar-sm.png"
-    content: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Qui iusto illo molestias, assumenda expedita commodi inventore non itaque molestiae voluptatum dolore, facilis sapiente, repellat veniam."
+    content: "Astroplate cut our build times dramatically. Content collections, image optimization and feeds work out of the box — we shipped a client blog in a week instead of a month."
 
-  - name: "Marvin McKinney"
-    designation: "Web Designer"
+  - name: "David Chen"
+    designation: "Indie Developer"
     avatar: "/images/avatar-sm.png"
-    content: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Qui iusto illo molestias, assumenda expedita commodi inventore non itaque molestiae voluptatum dolore, facilis sapiente, repellat veniam."
+    content: "I have built sites with every static generator out there. Astroplate is the first one where SEO, sitemaps and feeds just worked, without plugins or glue code."
 
-  - name: "Marvin McKinney"
-    designation: "Web Designer"
+  - name: "Emma Rodriguez"
+    designation: "Design Lead"
     avatar: "/images/avatar-sm.png"
-    content: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Qui iusto illo molestias, assumenda expedita commodi inventore non itaque molestiae voluptatum dolore, facilis sapiente, repellat veniam."
+    content: "The Tailwind setup is the cleanest I have used. Design tokens, responsive layouts and a 95+ PageSpeed score with almost no tuning — our designers and developers finally agree on something."
 
-  - name: "Marvin McKinney"
-    designation: "Web Designer"
+  - name: "James Wilson"
+    designation: "Agency Founder"
     avatar: "/images/avatar-sm.png"
-    content: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Qui iusto illo molestias, assumenda expedita commodi inventore non itaque molestiae voluptatum dolore, facilis sapiente, repellat veniam."
+    content: "We run a dozen client sites on Astroplate. One theme, one workflow, and every site ships fast, accessible and easy for clients to update."
 ---

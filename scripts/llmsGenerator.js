@@ -466,6 +466,57 @@ function normaliseHrefPath(href) {
   return p;
 }
 
+function hasClass(el, cls) {
+  const classes = (el.getAttribute?.("class") || "").split(/\s+/);
+  return classes.includes(cls);
+}
+
+function closestAncestor(el, predicate) {
+  let node = el.parentNode;
+  while (node) {
+    if (predicate(node)) return node;
+    node = node.parentNode;
+  }
+  return null;
+}
+
+/**
+ * Removes page furniture and code samples from the extracted content
+ * before it is converted to Markdown. The llms files carry clean prose
+ * an LLM — or an agent following the file's links in real time — can
+ * read and use:
+ * - code blocks (<pre>): the articles' samples are whole example files
+ *   (a full [id].astro, a full tokens.css); in a prose file they read
+ *   as source dumps, not content. Inline <code> stays — it is part of
+ *   sentences.
+ * - the Tags / Share row at the end of a blog post: tag links plus share
+ *   buttons that Turndown renders as empty `[]()` anchors.
+ * - the "Related Posts" card grid after a post: the related posts are
+ *   full entries elsewhere in this file, so the cards only duplicate
+ *   them (images, excerpts, read-more links).
+ * Matching is by visible text / structure, not theme classes, so a
+ * redesign that renames classes does not silently re-include the noise.
+ */
+export function stripLlmsContentNoise(contentElement) {
+  if (!contentElement) return;
+
+  contentElement.querySelectorAll("pre").forEach((el) => el.remove());
+
+  contentElement.querySelectorAll("span").forEach((span) => {
+    if (span.text.trim() === "Share :" || span.text.trim() === "Tags :") {
+      const row = closestAncestor(span, (el) => hasClass(el, "row"));
+      if (row && row.parentNode) row.remove();
+    }
+  });
+
+  contentElement.querySelectorAll("h2").forEach((h2) => {
+    if (h2.text.trim() === "Related Posts") {
+      const section = closestAncestor(h2, (el) => hasClass(el, "section"));
+      if (section && section.parentNode) section.remove();
+    }
+  });
+}
+
 async function processHtml(
   html,
   llmsConfig,
@@ -490,6 +541,10 @@ async function processHtml(
     contentElement
       .querySelectorAll("script, style, noscript, iframe, svg")
       .forEach((el) => el.remove());
+
+    // Page furniture and code samples do not belong in the llms files
+    // (see stripLlmsContentNoise): tags/share/related-posts and <pre>.
+    stripLlmsContentNoise(contentElement);
 
     // A noindex page must not leak through OTHER pages either: listing
     // pages carry BlogCards linking to it, and llms-full.txt concatenates
