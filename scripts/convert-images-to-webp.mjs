@@ -69,6 +69,28 @@
 // the checked-out repo is untouched — and `dist/` still gets only
 // the `.webp`, which is what is served.
 //
+// Rewriting stale references to already-converted images
+// --------------------------------------------------------
+// The rewrite above only covers images adopted in the CURRENT run.
+// A content file added or edited LATER can still mention an old
+// `.jpg` / `.jpeg` / `.png` path whose image was converted in an
+// earlier run (the original is long gone from `public/images/`,
+// only the `.webp` remains) — that reference would 404. So after
+// conversion, `rewriteStaleImageReferences` scans every `.md` /
+// `.mdx` file under `src/content/` for `/images/...` references
+// ending in a convertible extension and rewrites each one to
+// when that `.webp` file actually exists in `public/images/`. The
+// scan is scoped to `src/content/` on purpose: after the one-time
+// setup, authors and posts are the files that keep changing, while
+// the rest of `src/` only ever gets images once — and scanning all
+// of `src/` on every build costs time for nothing. No time window:
+// the existence check is the guard, so the pass is idempotent and
+// behaves identically on a local machine and on Vercel (where a
+// fresh clone makes every file look "recent", so an mtime window
+// would match everything). Fenced code blocks in `.md` / `.mdx`
+// and external URLs are left untouched, exactly as in the rewrite
+// above.
+//
 // Conversion rules (same as the one-off manual conversion of the
 // 40 blog images)
 // -----------------------------------------------
@@ -140,6 +162,13 @@ export const CONVERTIBLE_EXTS = new Set([".jpg", ".jpeg", ".png"]);
 export const SKIPPED_EXTS = new Set([".svg", ".gif"]);
 // Already optimised: copied through verbatim, never re-encoded.
 export const PASSTHROUGH_EXTS = new Set([".webp", ".avif"]);
+
+// References to `/images/...` ending in a convertible extension.
+// The lookahead requires a delimiter after the extension, so a
+// longer suffix (e.g. `.jpg2`, a trailing `.`, or `?query`) never
+// matches — those references are left alone.
+export const STALE_IMAGE_REF_RE =
+  /\/images\/[^\s"'\)\]]+?\.(jpg|jpeg|png)(?=[\s"'\)\],>]|$)/gi;
 
 /** Mirror a source path into the output tree, swapping the extension to `.webp`. */
 export function outputPathFor(sourcePath, sourceDir, outputDir) {
@@ -237,9 +266,23 @@ function isExternalUrl(text, index) {
 }
 
 /**
- * Replace each `from` with its `to`, but only for local paths —
- * occurrences that are part of an absolute URL are left untouched.
- * Returns the new text plus the replacements that actually applied.
+ * True when the occurrence of a path at `index` is nested inside a
+ * longer path (`../images/...`, `foo/images/...`, `/blog/images/...`,
+ * `//images/...`) rather than a bare `/images/...` reference: the
+ * character before it is a word character, a dot, or a slash. A
+ * plain substring replace would otherwise rewrite the nested path
+ * too, because it contains the bare path as a substring.
+ */
+function isNestedPath(text, index) {
+  if (index === 0) return false;
+  return /[\w./]/.test(text[index - 1]);
+}
+
+/**
+ * Replace each `from` with its `to`, but only for bare local paths —
+ * occurrences that are part of an absolute URL or nested inside a
+ * longer path are left untouched. Returns the new text plus the
+ * replacements that actually applied.
  */
 function applyReplacements(text, replacements) {
   let out = text;
@@ -250,7 +293,7 @@ function applyReplacements(text, replacements) {
     let idx;
     let did = false;
     while ((idx = out.indexOf(from, start)) !== -1) {
-      if (isExternalUrl(out, idx)) {
+      if (isExternalUrl(out, idx) || isNestedPath(out, idx)) {
         result += out.slice(start, idx + from.length);
       } else {
         result += out.slice(start, idx) + to;
@@ -338,6 +381,79 @@ export async function rewriteImageReferences({
 }
 
 /**
+ * Rewrite stale `.jpg` / `.jpeg` / `.png` references to `.webp` in
+ * every text file under `srcDir` — but ONLY for images whose `.webp`
+ * output already exists in `outputDir`.
+ *
+ * This is the pass for references to images converted in an EARLIER
+ * run: no adoption happened for them this run, so
+ * `rewriteImageReferences` (step 2) had nothing to rewrite, yet a
+ * content file added or edited since can still mention the old
+ * extension. The existence check is the whole guard — no time
+ * window, so the pass is idempotent and identical on a local
+ * machine and on Vercel. A reference whose `.webp` does not exist
+ * is left exactly as written (its image was never converted, so
+ * rewriting it would only trade one 404 for another).
+ *
+ * `.md` / `.mdx` files are rewritten outside fenced code blocks
+ * only. Any other file type is skipped entirely — this pass only
+ * ever fixes references inside content files, never code, config,
+ * or templates.
+ * Returns the list of files that were changed (absolute paths).
+ */
+export async function rewriteStaleImageReferences({
+  outputDir,
+  srcDir,
+  logger = console,
+} = {}) {
+  const changedFiles = [];
+  for (const file of await walkFiles(srcDir)) {
+    // Only .md/.mdx content files — nothing else is ever touched.
+    if (![".md", ".mdx"].includes(path.extname(file).toLowerCase())) {
+      continue;
+    }
+    let content;
+    try {
+      content = await fs.readFile(file, "utf8");
+    } catch {
+      continue; // Binary or unreadable — cannot hold a reference.
+    }
+    const found = new Map(); // from-path -> to-path, deduped
+    for (const match of content.matchAll(STALE_IMAGE_REF_RE)) {
+      const from = match[0];
+      // A bare /images/... path only: skip relative paths
+      // (../images/...) and absolute URLs (https://host/images/...),
+      // where the character before the match is a word character,
+      // a dot, or a slash.
+      const before = content[match.index - 1];
+      if (before !== undefined && /[\w./]/.test(before)) continue;
+      if (found.has(from)) continue;
+      const relative = from.slice("/images/".length);
+      const parsed = path.parse(relative);
+      const webpRelative = parsed.dir
+        ? `${parsed.dir}/${parsed.name}.webp`
+        : `${parsed.name}.webp`;
+      if (!fsSync.existsSync(path.join(outputDir, webpRelative))) continue;
+      found.set(from, `/images/${webpRelative}`);
+    }
+    if (found.size === 0) continue;
+    const replacements = [...found.entries()];
+    const { content: next, applied } = rewriteOutsideFences(
+      content,
+      replacements,
+    );
+    if (applied.length === 0) continue;
+    await fs.writeFile(file, next, "utf8");
+    const rel = path.relative(repoRoot, file);
+    logger.log(
+      `rewrite (stale): ${rel} (${applied.map(([from, to]) => `${from} -> ${to}`).join(", ")})`,
+    );
+    changedFiles.push(file);
+  }
+  return changedFiles;
+}
+
+/**
  * Convert one source file. Returns `{ width, height }` of the output
  * for a real conversion, `{ copied: true }` when the file was copied
  * through unchanged (already-optimised format), or `null` when it
@@ -383,10 +499,11 @@ export async function findStaleOutputs(sourceDir, outputDir) {
 
 /**
  * Adopt uploads from `outputDir`, rewrite their references in
- * `srcDir`, then convert every image under `sourceDir` into
- * `outputDir`.
+ * `srcDir`, convert every image under `sourceDir` into `outputDir`,
+ * then rewrite stale references (in `src/content/` only) to images
+ * converted in earlier runs.
  * Returns `{ converted, skipped, ignored, stale, errors, adopted,
- * duplicatesRemoved, rewrittenFiles }`.
+ * duplicatesRemoved, rewrittenFiles, staleRewrittenFiles }`.
  * `errors` is a list of `{ file, message }` — non-empty means the
  * caller must fail (the CLI exits 1).
  */
@@ -405,6 +522,7 @@ export async function convertImages({
     adopted: [],
     duplicatesRemoved: [],
     rewrittenFiles: [],
+    staleRewrittenFiles: [],
   };
 
   // 1. Adopt uploads dropped directly into public/images/ first,
@@ -465,6 +583,18 @@ export async function convertImages({
     }
   }
 
+  // 4. References to images converted in an EARLIER run (no
+  // adoption this run, so step 2 had nothing to rewrite) now point
+  // at their .webp outputs — but only where the .webp exists.
+  // Scoped to src/content/: that is where authors and posts live
+  // (all 25 .md/.mdx files); the rest of src/ only gets images
+  // once, at setup, so scanning it every build is wasted time.
+  stats.staleRewrittenFiles = await rewriteStaleImageReferences({
+    outputDir,
+    srcDir: path.join(srcDir, "content"),
+    logger,
+  });
+
   // v1 never deletes generated outputs: orphaned .webp files are
   // only warned about (the adopt step above is the one exception,
   // and it only ever removes public .jpg/.jpeg/.png duplicates —
@@ -508,6 +638,7 @@ async function main() {
       `${stats.ignored} ignored, ${stats.adopted.length} adopted, ` +
       `${stats.duplicatesRemoved.length} duplicate original(s) removed, ` +
       `${stats.rewrittenFiles.length} reference file(s) rewritten, ` +
+      `${stats.staleRewrittenFiles.length} stale reference file(s) rewritten, ` +
       `${stats.stale.length} stale output(s), ` +
       `${stats.errors.length} error(s)`,
   );

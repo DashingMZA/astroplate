@@ -28,6 +28,7 @@ const {
   isUpToDate,
   outputPathFor,
   rewriteImageReferences,
+  rewriteStaleImageReferences,
   rewriteOutsideFences,
   walkFiles,
 } = await import("../scripts/convert-images-to-webp.mjs");
@@ -774,5 +775,249 @@ test("logo renders as a plain <img> from the public/ root path", () => {
   assert.ok(
     fs.existsSync(path.join(repoRoot, "public/logo-darkmode.png")),
     "public/logo-darkmode.png must exist at the public/ root",
+  );
+});
+
+test("rewriteStaleImageReferences rewrites a .jpg ref whose webp already exists", async () => {
+  const { sourceDir, outputDir, srcDir } = tmpDirs();
+  // The image was converted in an earlier run: the webp exists in
+  // public/images/, the original stays in assets/images/.
+  await makeJpg(sourceDir, "blog/hero.jpg", 120, 80);
+  await convertImage(
+    path.join(sourceDir, "blog/hero.jpg"),
+    sourceDir,
+    outputDir,
+  );
+  await makePng(sourceDir, "blog/diagram.png", 64, 48);
+  await convertImage(
+    path.join(sourceDir, "blog/diagram.png"),
+    sourceDir,
+    outputDir,
+  );
+  // A post written AFTER the conversion, still naming the old
+  // extensions — frontmatter, body, and an uppercase .JPEG.
+  const file = await writeSrc(
+    srcDir,
+    "content/blog/post.md",
+    [
+      "---",
+      'image: "/images/blog/hero.jpg"',
+      "---",
+      "",
+      "![hero](/images/blog/hero.jpg)",
+      "",
+      "![diagram](/images/blog/diagram.PNG)",
+      "",
+      "![upper](/images/blog/hero.JPEG)",
+      "",
+    ].join("\n"),
+  );
+  const changed = await rewriteStaleImageReferences({
+    outputDir,
+    srcDir,
+    logger: silent,
+  });
+  assert.equal(changed.length, 1);
+  assert.equal(
+    fs.readFileSync(file, "utf8"),
+    [
+      "---",
+      'image: "/images/blog/hero.webp"',
+      "---",
+      "",
+      "![hero](/images/blog/hero.webp)",
+      "",
+      "![diagram](/images/blog/diagram.webp)",
+      "",
+      "![upper](/images/blog/hero.webp)",
+      "",
+    ].join("\n"),
+  );
+});
+
+test("rewriteStaleImageReferences leaves a .jpg ref alone when no webp exists", async () => {
+  const { outputDir, srcDir } = tmpDirs();
+  const file = await writeSrc(
+    srcDir,
+    "content/blog/post.md",
+    "![missing](/images/blog/missing.jpg)\n",
+  );
+  const changed = await rewriteStaleImageReferences({
+    outputDir,
+    srcDir,
+    logger: silent,
+  });
+  assert.deepEqual(changed, []);
+  assert.equal(
+    fs.readFileSync(file, "utf8"),
+    "![missing](/images/blog/missing.jpg)\n",
+  );
+});
+
+test("rewriteStaleImageReferences leaves fences, external URLs and relative paths untouched", async () => {
+  const { sourceDir, outputDir, srcDir } = tmpDirs();
+  await makeJpg(sourceDir, "hero.jpg", 120, 80);
+  await convertImage(path.join(sourceDir, "hero.jpg"), sourceDir, outputDir);
+  const md = [
+    "![hero](/images/hero.jpg)",
+    "",
+    "```astro",
+    'image: "/images/hero.jpg"',
+    "```",
+    "",
+    "See https://example.com/images/hero.jpg for the remote copy.",
+    "",
+    "![rel](../images/hero.jpg)",
+    "",
+  ].join("\n");
+  const file = await writeSrc(srcDir, "content/blog/post.md", md);
+  const changed = await rewriteStaleImageReferences({
+    outputDir,
+    srcDir,
+    logger: silent,
+  });
+  assert.equal(changed.length, 1);
+  const out = fs.readFileSync(file, "utf8");
+  // Outside fences: rewritten.
+  assert.ok(out.includes("![hero](/images/hero.webp)"));
+  // Inside fences: untouched.
+  assert.ok(out.includes('```astro\nimage: "/images/hero.jpg"\n```'));
+  // External URL: untouched.
+  assert.ok(out.includes("https://example.com/images/hero.jpg"));
+  assert.ok(!out.includes("https://example.com/images/hero.webp"));
+  // Relative path: untouched.
+  assert.ok(out.includes("![rel](../images/hero.jpg)"));
+});
+
+test("convertImages rewrites stale refs in a later run (image converted first, post written after)", async () => {
+  const { sourceDir, outputDir, srcDir } = tmpDirs();
+  // Run 1: the image is uploaded and converted; no content yet.
+  await makeJpg(sourceDir, "blog/hero.jpg", 120, 80);
+  const first = await convertImages({
+    sourceDir,
+    outputDir,
+    srcDir,
+    logger: silent,
+  });
+  assert.ok(fs.existsSync(path.join(outputDir, "blog/hero.webp")));
+  assert.deepEqual(first.staleRewrittenFiles, []);
+  // Run 2: a post written AFTER the conversion still names the .jpg.
+  await writeSrc(
+    srcDir,
+    "content/blog/post.md",
+    '---\nimage: "/images/blog/hero.jpg"\n---\n\n![hero](/images/blog/hero.jpg)\n',
+  );
+  const second = await convertImages({
+    sourceDir,
+    outputDir,
+    srcDir,
+    logger: silent,
+  });
+  assert.deepEqual(second.adopted, []);
+  assert.deepEqual(second.rewrittenFiles, []);
+  assert.equal(second.staleRewrittenFiles.length, 1);
+  assert.equal(
+    fs.readFileSync(path.join(srcDir, "content/blog/post.md"), "utf8"),
+    '---\nimage: "/images/blog/hero.webp"\n---\n\n![hero](/images/blog/hero.webp)\n',
+  );
+  // Run 3: idempotent — nothing left to rewrite.
+  const third = await convertImages({
+    sourceDir,
+    outputDir,
+    srcDir,
+    logger: silent,
+  });
+  assert.deepEqual(third.staleRewrittenFiles, []);
+});
+
+test("rewriteImageReferences leaves nested paths untouched (../images/..., /blog/images/...)", async () => {
+  const { srcDir } = tmpDirs();
+  await writeSrc(
+    srcDir,
+    "content/blog/post.md",
+    [
+      "![hero](/images/hero.jpg)",
+      "",
+      "![rel](../images/hero.jpg)",
+      "",
+      "![blog](/blog/images/hero.jpg)",
+      "",
+    ].join("\n"),
+  );
+  const changed = await rewriteImageReferences({
+    srcDir,
+    replacements: [["/images/hero.jpg", "/images/hero.webp"]],
+    logger: silent,
+  });
+  assert.equal(changed.length, 1);
+  const out = fs.readFileSync(
+    path.join(srcDir, "content/blog/post.md"),
+    "utf8",
+  );
+  assert.ok(out.includes("![hero](/images/hero.webp)"));
+  assert.ok(out.includes("![rel](../images/hero.jpg)"));
+  assert.ok(out.includes("![blog](/blog/images/hero.jpg)"));
+});
+
+test("convertImages stale pass only scans src/content, not the rest of src/", async () => {
+  const { sourceDir, outputDir, srcDir } = tmpDirs();
+  await makeJpg(sourceDir, "hero.jpg", 120, 80);
+  await convertImage(path.join(sourceDir, "hero.jpg"), sourceDir, outputDir);
+  // The same stale ref in two places: inside content/ and outside it.
+  await writeSrc(srcDir, "content/blog/post.md", "![hero](/images/hero.jpg)\n");
+  await writeSrc(srcDir, "other.md", "![hero](/images/hero.jpg)\n");
+  const stats = await convertImages({
+    sourceDir,
+    outputDir,
+    srcDir,
+    logger: silent,
+  });
+  assert.equal(stats.staleRewrittenFiles.length, 1);
+  assert.ok(
+    fs
+      .readFileSync(path.join(srcDir, "content/blog/post.md"), "utf8")
+      .includes("/images/hero.webp"),
+    "the ref inside content/ must be rewritten",
+  );
+  assert.ok(
+    fs
+      .readFileSync(path.join(srcDir, "other.md"), "utf8")
+      .includes("/images/hero.jpg"),
+    "the ref outside content/ must stay exactly as written",
+  );
+  assert.ok(
+    !fs
+      .readFileSync(path.join(srcDir, "other.md"), "utf8")
+      .includes("/images/hero.webp"),
+  );
+});
+
+test("rewriteStaleImageReferences only touches .md/.mdx files", async () => {
+  const { sourceDir, outputDir, srcDir } = tmpDirs();
+  await makeJpg(sourceDir, "hero.jpg", 120, 80);
+  await convertImage(path.join(sourceDir, "hero.jpg"), sourceDir, outputDir);
+  // The same stale ref in a .json file and in a .md file, both under
+  // content/ — only the .md file may be rewritten.
+  await writeSrc(
+    srcDir,
+    "content/data.json",
+    JSON.stringify({ logo: "/images/hero.jpg" }),
+  );
+  await writeSrc(srcDir, "content/blog/post.md", "![hero](/images/hero.jpg)\n");
+  const changed = await rewriteStaleImageReferences({
+    outputDir,
+    srcDir: path.join(srcDir, "content"),
+    logger: silent,
+  });
+  assert.equal(changed.length, 1);
+  assert.equal(
+    fs.readFileSync(path.join(srcDir, "content/data.json"), "utf8"),
+    JSON.stringify({ logo: "/images/hero.jpg" }),
+    "a non-md file must stay exactly as written",
+  );
+  assert.ok(
+    fs
+      .readFileSync(path.join(srcDir, "content/blog/post.md"), "utf8")
+      .includes("/images/hero.webp"),
   );
 });
