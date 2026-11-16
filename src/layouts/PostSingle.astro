@@ -2,8 +2,10 @@
 import BlogCard from "@/components/BlogCard.astro";
 import Breadcrumbs from "@/components/Breadcrumbs.astro";
 import Mermaid from "@/components/Mermaid.astro";
+import OpenRemarkComment from "@/components/OpenRemarkComment.astro";
 import Share from "@/components/Share.astro";
 import TableOfContents from "@/components/TableOfContents.astro";
+import config from "@/config/config.json";
 import { getSinglePage } from "@/lib/contentParser";
 import { displayAuthorNames, resolveAuthors } from "@/lib/utils/authors";
 import dateFormat from "@/lib/utils/dateFormat";
@@ -202,6 +204,12 @@ const resolvedAuthors = resolveAuthors(
           `{config.disqus.enable && (<Disqus className="mt-20" client:only="react" />)}`
           here. src/layouts/helpers/Disqus.tsx and the disqus-react
           dependency are kept so re-enabling is a small change. */}
+        {/* OpenRemark comments (self-hosted) — rendered where Disqus was. */}
+        {config["open-remark-comment"].enable && (
+          <OpenRemarkComment
+            siteKey={config["open-remark-comment"].siteKey}
+          />
+        )}
       </article>
     </div>
 

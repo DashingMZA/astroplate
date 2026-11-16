@@ -71,6 +71,11 @@
     "settings": {}
   },
 
+  "open-remark-comment": {
+    "enable": true,
+    "siteKey": "cmwegg6rg000607ld1tlt5ilh"
+  },
+
   "metadata": {
     "meta_author": "cSofts",
     "meta_image": "/images/og-image.webp",
