@@ -12,7 +12,7 @@ tags: ["tailwind", "responsive-design", "css"]
 draft: false
 dateCreated: 2026-11-09T05:00:00Z
 datePublished: 2026-11-09T05:00:00Z
-dateModified: 2026-11-16T01:20:55Z
+dateModified: 2026-11-16T01:33:09Z
 ---
 
 A responsive website stays usable and readable at every width, from a 360-pixel phone to a widescreen monitor, without a separate mobile version. Tailwind CSS fits that job because responsiveness is built into its utility classes: describe the small-screen layout first, then add prefixed utilities that change it as the screen grows. This guide walks through that workflow — breakpoints, grids, fluid type, images, container queries and testing — using Tailwind CSS v4 with Astro, the stack this site itself is built on.

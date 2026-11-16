@@ -12,7 +12,7 @@ tags: ["astro", "seo", "technical-seo"]
 draft: false
 dateCreated: 2026-11-12T05:00:00Z
 datePublished: 2026-11-12T05:00:00Z
-dateModified: 2026-11-16T01:20:55Z
+dateModified: 2026-11-16T01:33:09Z
 ---
 
 Astro already does a lot of the hard work for search engines: pages are prerendered to plain HTML at build time, so a crawler gets the full content without running JavaScript. But that head start only pays off if the technical plumbing around the pages is right. This guide covers the three pillars of technical SEO for an Astro site — sitemaps, canonical URLs and structured data — plus robots.txt and meta tags.

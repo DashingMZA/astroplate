@@ -12,7 +12,7 @@ tags: ["astro", "core-web-vitals", "performance"]
 draft: false
 dateCreated: 2026-11-10T05:00:00Z
 datePublished: 2026-11-10T05:00:00Z
-dateModified: 2026-11-16T01:20:55Z
+dateModified: 2026-11-16T01:33:09Z
 ---
 
 Core Web Vitals are the three numbers Google uses to judge how a page feels in real use: how fast its main content appears, how quickly it answers a tap or click, and how still it stays while it loads. Astro gives you a head start, because it ships static HTML with no client-side JavaScript unless you explicitly ask for it — but the images, fonts, islands and third-party scripts you add can still push a fast site over the line.

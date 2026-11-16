@@ -12,7 +12,7 @@ tags: ["astro", "images", "performance"]
 draft: false
 dateCreated: 2026-11-11T05:00:00Z
 datePublished: 2026-11-11T05:00:00Z
-dateModified: 2026-11-16T01:20:55Z
+dateModified: 2026-11-16T01:33:09Z
 ---
 
 Images are usually the heaviest part of a web page. A single uncompressed hero photograph can outweigh the HTML, CSS, and JavaScript combined. Image optimization for Astro is therefore one of the highest-value performance jobs on an Astro site, and Astro does most of it at build time, before a single visitor arrives.

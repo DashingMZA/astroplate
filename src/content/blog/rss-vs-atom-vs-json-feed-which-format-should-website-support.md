@@ -12,7 +12,7 @@ tags: ["rss", "atom", "json-feed"]
 draft: false
 dateCreated: 2026-11-07T05:00:00Z
 datePublished: 2026-11-07T05:00:00Z
-dateModified: 2026-11-16T01:20:55Z
+dateModified: 2026-11-16T01:33:09Z
 ---
 
 A web feed is a machine-readable list of your newest content that readers and apps can check on their own schedule. You publish a post once, and every subscriber finds out about it without visiting your homepage or handing over an email address. That simple idea has produced three competing formats: RSS 2.0, Atom, and JSON Feed. They all do the same job, and choosing badly means some of your audience never sees your work.

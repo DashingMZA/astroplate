@@ -12,7 +12,7 @@ tags: ["astro", "content-collections", "blogging"]
 draft: false
 dateCreated: 2026-11-14T05:00:00Z
 datePublished: 2026-11-14T05:00:00Z
-dateModified: 2026-11-16T01:20:55Z
+dateModified: 2026-11-16T01:33:09Z
 ---
 
 A blog that lives in a folder of Markdown files is easy to start and easy to break. One post is missing a date, another spells a tag differently, a third forgets its description, and nothing complains until a reader — or a search engine — finds the gap. Astro Content Collections fix that problem at the source: they turn a folder of files into a typed, validated, queryable content API, so a mistake in frontmatter becomes a build error instead of a broken page.

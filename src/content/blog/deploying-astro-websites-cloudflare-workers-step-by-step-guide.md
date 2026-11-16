@@ -12,7 +12,7 @@ tags: ["astro", "cloudflare", "deployment"]
 draft: false
 dateCreated: 2026-11-08T05:00:00Z
 datePublished: 2026-11-08T05:00:00Z
-dateModified: 2026-11-16T01:20:55Z
+dateModified: 2026-11-16T01:33:09Z
 ---
 
 Cloudflare Workers is now the recommended home for Astro sites on Cloudflare. A static Astro build can be served as Workers Static Assets with no server code at all, and the same project can grow into on-demand rendering, API routes and platform bindings without changing hosts. This guide walks through both paths, using the commands and configuration files from the official Astro and Cloudflare documentation as published on 14 November 2026.
