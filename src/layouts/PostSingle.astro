@@ -206,9 +206,7 @@ const resolvedAuthors = resolveAuthors(
           dependency are kept so re-enabling is a small change. */}
         {/* OpenRemark comments (self-hosted) — rendered where Disqus was. */}
         {config["open-remark-comment"].enable && (
-          <OpenRemarkComment
-            siteKey={config["open-remark-comment"].siteKey}
-          />
+          <OpenRemarkComment siteKey={config["open-remark-comment"].siteKey} />
         )}
       </article>
     </div>
