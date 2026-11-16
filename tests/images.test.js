@@ -146,9 +146,13 @@ test("no article body image points at a .jpg/.png blog image", () => {
     // Code samples may show image syntax as an example; only the real
     // rendered image refs (outside fenced blocks) count.
     const prose = content.replace(/```[\s\S]*?```/g, "");
-    const refs = [...prose.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)].map(
-      (m) => m[1],
-    );
+    // Body images are <img> tags now (inject-image-dimensions.mjs
+    // rewrites Markdown images to <img> with width/height + srcset);
+    // older content may still use Markdown image syntax. Both count.
+    const refs = [
+      ...[...prose.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)].map((m) => m[1]),
+      ...[...prose.matchAll(/<img[^>]+src="([^"]+)"/g)].map((m) => m[1]),
+    ];
     const blogRefs = refs.filter((r) => r.startsWith("/images/blog/"));
     assert.ok(blogRefs.length > 0, `${path.basename(file)} has diagram refs`);
     for (const ref of blogRefs) {

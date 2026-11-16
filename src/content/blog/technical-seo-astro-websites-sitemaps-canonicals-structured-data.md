@@ -12,7 +12,7 @@ tags: ["astro", "seo", "technical-seo"]
 draft: false
 dateCreated: 2026-11-12T05:00:00Z
 datePublished: 2026-11-12T05:00:00Z
-dateModified: 2026-11-12T05:00:00Z
+dateModified: 2026-11-16T01:20:55Z
 ---
 
 Astro already does a lot of the hard work for search engines: pages are prerendered to plain HTML at build time, so a crawler gets the full content without running JavaScript. But that head start only pays off if the technical plumbing around the pages is right. This guide covers the three pillars of technical SEO for an Astro site — sitemaps, canonical URLs and structured data — plus robots.txt and meta tags.
@@ -52,7 +52,7 @@ Without `site` set, the integration cannot build absolute URLs and will not prod
 
 On every build, the integration crawls your statically generated routes — including dynamic routes produced by `getStaticPaths()`, such as blog posts from a content collection — and writes `sitemap-index.xml` and `sitemap-0.xml` into your output directory. Past the default limit of 45,000 URLs per file, it splits the output into additional numbered files.
 
-![How the Astro sitemap integration builds sitemap-index.xml and sitemap-0.xml from your routes at build time](/images/blog/technical-seo-astro-websites-sitemaps-canonicals-structured-data-diagram-1.webp)
+<img src="/images/blog/technical-seo-astro-websites-sitemaps-canonicals-structured-data-diagram-1.webp" alt="How the Astro sitemap integration builds sitemap-index.xml and sitemap-0.xml from your routes at build time" width="1200" height="675" loading="lazy" decoding="async" srcset="/images/blog/technical-seo-astro-websites-sitemaps-canonicals-structured-data-diagram-1-800.webp 800w, /images/blog/technical-seo-astro-websites-sitemaps-canonicals-structured-data-diagram-1.webp 1200w" sizes="(max-width: 768px) 100vw, 768px" />
 
 ### Control what goes in
 
@@ -108,7 +108,7 @@ Google's Search Central documentation ranks the canonicalization methods by stre
 
 These methods stack: when the redirect, the canonical tag, the sitemap and your internal links all point at the same URL, the combined signal is far stronger than any one of them alone. And none of them is a command — Google describes canonicalization as a preference, not an instruction, and it can choose a different URL if its own analysis disagrees.
 
-![The canonical decision flow: duplicate URLs are grouped, signals are compared, and one representative URL is chosen for search results](/images/blog/technical-seo-astro-websites-sitemaps-canonicals-structured-data-diagram-2.webp)
+<img src="/images/blog/technical-seo-astro-websites-sitemaps-canonicals-structured-data-diagram-2.webp" alt="The canonical decision flow: duplicate URLs are grouped, signals are compared, and one representative URL is chosen for search results" width="1200" height="675" loading="lazy" decoding="async" srcset="/images/blog/technical-seo-astro-websites-sitemaps-canonicals-structured-data-diagram-2-800.webp 800w, /images/blog/technical-seo-astro-websites-sitemaps-canonicals-structured-data-diagram-2.webp 1200w" sizes="(max-width: 768px) 100vw, 768px" />
 
 ### The rules for a correct canonical tag
 

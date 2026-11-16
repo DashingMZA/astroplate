@@ -13,6 +13,15 @@ const { siteKey } = Astro.props;
 
 <script is:inline>
   function loadOpenRemark() {
+    const host = document.querySelector("[data-open-remark]");
+    // Guard against double-mounting: this runs once on initial load AND
+    // again on astro:page-load, and a second embed.js execution throws
+    // (attachShadow on a host that already has a shadow tree). Skip when
+    // this host is already mounted or loading; a fresh host (after a page
+    // transition) still mounts normally.
+    if (!host || host.shadowRoot || host.dataset.openRemarkLoading) return;
+    host.dataset.openRemarkLoading = "true";
+
     const oldScript = document.querySelector("script[data-open-remark-script]");
     if (oldScript) oldScript.remove();
 

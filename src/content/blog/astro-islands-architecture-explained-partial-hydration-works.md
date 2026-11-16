@@ -12,7 +12,7 @@ tags: ["astro", "islands", "performance"]
 draft: false
 dateCreated: 2026-11-13T05:00:00Z
 datePublished: 2026-11-13T05:00:00Z
-dateModified: 2026-11-13T05:00:00Z
+dateModified: 2026-11-16T01:20:55Z
 ---
 
 Most websites are mostly reading material: headings, paragraphs, images, and links that never need JavaScript to do their job. Yet many frameworks ship a JavaScript application for the whole page anyway, then re-run it in the browser just to make a search box or a carousel work. Astro islands architecture flips that default. The page is rendered to static HTML, and only the small interactive regions — the islands — get JavaScript, each on its own schedule.
@@ -27,7 +27,7 @@ Picture a page as a sea of static HTML. Floating in that sea are a few islands: 
 
 In Astro, there are two kinds of island. A **client island** is an interactive JavaScript UI component that is hydrated separately from the rest of the page. A **server island** is a UI component that server-renders its dynamic content separately from the rest of the page. Both exist so that expensive or slow work — whether it runs in the browser or on the server — happens per component, in isolation, instead of holding up the whole page.
 
-![A page rendered as a sea of static HTML with three glowing interactive islands — a menu, a carousel, and a form — floating above it](/images/blog/astro-islands-architecture-explained-partial-hydration-works-diagram-1.webp)
+<img src="/images/blog/astro-islands-architecture-explained-partial-hydration-works-diagram-1.webp" alt="A page rendered as a sea of static HTML with three glowing interactive islands — a menu, a carousel, and a form — floating above it" width="1200" height="675" loading="lazy" decoding="async" srcset="/images/blog/astro-islands-architecture-explained-partial-hydration-works-diagram-1-800.webp 800w, /images/blog/astro-islands-architecture-explained-partial-hydration-works-diagram-1.webp 1200w" sizes="(max-width: 768px) 100vw, 768px" />
 
 The contrast with the single-page application (SPA) model makes the idea concrete. In a typical SPA, the server sends a mostly empty HTML shell and a large JavaScript bundle, and the browser must download and run it before the page becomes interactive — even for text that never changes. Islands architecture keeps the component-based developer experience but removes the all-or-nothing hydration: the page arrives as finished HTML, and JavaScript is added back only where a component genuinely needs it. Search engines likewise receive complete HTML without a rendering step.
 
@@ -43,7 +43,7 @@ Here is what happens when Astro builds and serves a page with islands:
 4. **Astro wraps the island in an `<astro-island>` element.** In the delivered HTML, each island is wrapped in this custom element, which loads the island's JavaScript at the right moment and starts hydration. The server-rendered HTML inside is what the visitor sees first; hydration reuses it rather than re-rendering from scratch.
 5. **Each island hydrates on its own trigger, in parallel and in isolation.** Islands do not wait for each other. A heavy carousel lower down the page does not block the header menu from becoming interactive, and a failure in one island does not take down the others.
 
-![Flow diagram showing partial hydration: the server renders the full page to HTML, components without a directive stay static, marked islands are wrapped in astro-island elements and hydrate independently on their own triggers](/images/blog/astro-islands-architecture-explained-partial-hydration-works-diagram-2.webp)
+<img src="/images/blog/astro-islands-architecture-explained-partial-hydration-works-diagram-2.webp" alt="Flow diagram showing partial hydration: the server renders the full page to HTML, components without a directive stay static, marked islands are wrapped in astro-island elements and hydrate independently on their own triggers" width="1200" height="675" loading="lazy" decoding="async" srcset="/images/blog/astro-islands-architecture-explained-partial-hydration-works-diagram-2-800.webp 800w, /images/blog/astro-islands-architecture-explained-partial-hydration-works-diagram-2.webp 1200w" sizes="(max-width: 768px) 100vw, 768px" />
 
 A short example makes the boundary visible. Consider a blog post page with a header, an article, a newsletter form, and a comments section:
 

@@ -12,7 +12,7 @@ tags: ["rss", "atom", "json-feed"]
 draft: false
 dateCreated: 2026-11-07T05:00:00Z
 datePublished: 2026-11-07T05:00:00Z
-dateModified: 2026-11-07T05:00:00Z
+dateModified: 2026-11-16T01:20:55Z
 ---
 
 A web feed is a machine-readable list of your newest content that readers and apps can check on their own schedule. You publish a post once, and every subscriber finds out about it without visiting your homepage or handing over an email address. That simple idea has produced three competing formats: RSS 2.0, Atom, and JSON Feed. They all do the same job, and choosing badly means some of your audience never sees your work.
@@ -165,7 +165,7 @@ The table below states what each specification actually requires, not what a typ
 | Extension model | XML namespaces                  | XML namespaces                         | `_`-prefixed properties             |
 | Served as       | `application/rss+xml`           | `application/atom+xml`                 | `application/feed+json`             |
 
-![Comparison of RSS 2.0, Atom and JSON Feed across syntax, identifiers, dates, content and authors](/images/blog/rss-vs-atom-vs-json-feed-which-format-should-website-support-diagram-1.webp)
+<img src="/images/blog/rss-vs-atom-vs-json-feed-which-format-should-website-support-diagram-1.webp" alt="Comparison of RSS 2.0, Atom and JSON Feed across syntax, identifiers, dates, content and authors" width="1200" height="675" loading="lazy" decoding="async" srcset="/images/blog/rss-vs-atom-vs-json-feed-which-format-should-website-support-diagram-1-800.webp 800w, /images/blog/rss-vs-atom-vs-json-feed-which-format-should-website-support-diagram-1.webp 1200w" sizes="(max-width: 768px) 100vw, 768px" />
 
 RSS is the loosest and most widely supported. Atom is the strictest and most precise. JSON Feed is the simplest to produce and consume, and the least widely supported. No format wins on every row, which is why the practical answer is usually more than one format.
 
@@ -177,7 +177,7 @@ For most blogs, the sensible default is RSS first, then add the other two. RSS a
 
 That decides the implementation. Never maintain three separate feed templates that each query your content independently. Build one list of feed entries — title, URL, dates, rendered HTML, authors, image — and render it three ways. A new post then appears in all three feeds automatically, a correction updates all three at once, and the shared pipeline enforces the rules that matter in every format: stable IDs, absolute URLs, sanitised HTML, and no author emails.
 
-![One shared feed pipeline rendering the same entries as RSS, Atom and JSON Feed](/images/blog/rss-vs-atom-vs-json-feed-which-format-should-website-support-diagram-2.webp)
+<img src="/images/blog/rss-vs-atom-vs-json-feed-which-format-should-website-support-diagram-2.webp" alt="One shared feed pipeline rendering the same entries as RSS, Atom and JSON Feed" width="1200" height="675" loading="lazy" decoding="async" srcset="/images/blog/rss-vs-atom-vs-json-feed-which-format-should-website-support-diagram-2-800.webp 800w, /images/blog/rss-vs-atom-vs-json-feed-which-format-should-website-support-diagram-2.webp 1200w" sizes="(max-width: 768px) 100vw, 768px" />
 
 ## A real example: one pipeline, three feeds
 

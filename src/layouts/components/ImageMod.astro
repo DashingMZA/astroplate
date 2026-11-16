@@ -104,6 +104,28 @@ if (!isValidPath) {
 // and nothing left to re-encode.
 const isAlreadyOptimized =
   !isRemote && isValidPath && /\.(webp|avif)$/i.test(src.split(/[?#]/)[0]);
+
+// Responsive variants for already-optimized (webp/avif) sources: when
+// the caller passes `widths`, a pre-generated `-<w>.webp` variant
+// (scripts/generate-responsive-variants.mjs) is added to the srcset
+// when it exists under /public; the full-size source keeps its stable
+// URL as the largest entry. Without a matching variant there is no
+// srcset to build, so nothing changes.
+const responsiveSrcset = (() => {
+  if (!isAlreadyOptimized || !widths?.length) return undefined;
+  const clean = src.split(/[?#]/)[0];
+  const dot = clean.lastIndexOf(".");
+  if (dot === -1) return undefined;
+  const entries: string[] = [];
+  for (const w of widths) {
+    const variant = `${clean.slice(0, dot)}-${w}${clean.slice(dot)}`;
+    const key = variant.startsWith("/public/") ? variant : `/public${variant}`;
+    if (images[key]) entries.push(`${variant} ${w}w`);
+  }
+  if (entries.length === 0) return undefined;
+  entries.push(`${clean} ${width}w`);
+  return entries.join(", ");
+})();
 ---
 
 {isRemote || isAlreadyOptimized ? (
@@ -116,6 +138,7 @@ const isAlreadyOptimized =
     decoding={decoding}
     fetchpriority={fetchpriority}
     sizes={sizes}
+    srcset={responsiveSrcset}
     class={className}
     style={style}
     data-image-fallback="/images/image-placeholder.webp"

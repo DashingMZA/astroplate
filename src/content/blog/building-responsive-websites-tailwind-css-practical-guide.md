@@ -12,7 +12,7 @@ tags: ["tailwind", "responsive-design", "css"]
 draft: false
 dateCreated: 2026-11-09T05:00:00Z
 datePublished: 2026-11-09T05:00:00Z
-dateModified: 2026-11-09T05:00:00Z
+dateModified: 2026-11-16T01:20:55Z
 ---
 
 A responsive website stays usable and readable at every width, from a 360-pixel phone to a widescreen monitor, without a separate mobile version. Tailwind CSS fits that job because responsiveness is built into its utility classes: describe the small-screen layout first, then add prefixed utilities that change it as the screen grows. This guide walks through that workflow — breakpoints, grids, fluid type, images, container queries and testing — using Tailwind CSS v4 with Astro, the stack this site itself is built on.
@@ -61,7 +61,7 @@ Tailwind ships five breakpoints, each a minimum width expressed in `rem` in Tail
 
 Because the system is mobile-first, `md:grid-cols-2` means "two columns from 768px up", and it stays in effect until another prefixed class overrides it. To confine a style to a single range, stack a breakpoint variant with a `max-*` variant: `md:max-lg:flex` applies only between the `md` and `lg` breakpoints. For a one-off size, use an arbitrary variant such as `min-[900px]:grid-cols-3` — but if you write the same arbitrary width twice, promote it to a real breakpoint.
 
-![How Tailwind's mobile-first breakpoints cascade from small screens to large screens](/images/blog/building-responsive-websites-tailwind-css-practical-guide-diagram-1.webp)
+<img src="/images/blog/building-responsive-websites-tailwind-css-practical-guide-diagram-1.webp" alt="How Tailwind's mobile-first breakpoints cascade from small screens to large screens" width="1200" height="675" loading="lazy" decoding="async" srcset="/images/blog/building-responsive-websites-tailwind-css-practical-guide-diagram-1-800.webp 800w, /images/blog/building-responsive-websites-tailwind-css-practical-guide-diagram-1.webp 1200w" sizes="(max-width: 768px) 100vw, 768px" />
 
 Reserve breakpoints for genuine layout changes: a column count, a navigation pattern, a sidebar appearing or disappearing. If a heading only needs to be slightly larger on desktop, that is a job for fluid type (covered below), not a breakpoint.
 
@@ -171,7 +171,7 @@ Tailwind v4 supports container queries natively, with no plugin. Mark the parent
 
 Here the article stacks vertically by default and switches to a horizontal row when its container — not the viewport — reaches the `@md` container size. Note the scale differs from viewport breakpoints: container sizes run from `@3xs` (16rem / 256px) to `@7xl` (80rem / 1280px), and `@md` is 28rem (448px), not the 48rem of the `md:` viewport breakpoint. Like viewport variants, container queries are mobile-first: `@md:flex-row` applies at `@md` and above, and `@max-md:` applies below a size. You can name containers with `@container/main` and target them with `@sm/main:` when several are nested.
 
-![A card component switching from a stacked layout to a horizontal layout when its container widens, independent of the viewport width](/images/blog/building-responsive-websites-tailwind-css-practical-guide-diagram-2.webp)
+<img src="/images/blog/building-responsive-websites-tailwind-css-practical-guide-diagram-2.webp" alt="A card component switching from a stacked layout to a horizontal layout when its container widens, independent of the viewport width" width="1200" height="675" loading="lazy" decoding="async" srcset="/images/blog/building-responsive-websites-tailwind-css-practical-guide-diagram-2-800.webp 800w, /images/blog/building-responsive-websites-tailwind-css-practical-guide-diagram-2.webp 1200w" sizes="(max-width: 768px) 100vw, 768px" />
 
 Container queries shine in design systems, where the same component is reused in different slots: a card written once with container queries works in a sidebar, a modal and a full-width grid without a single viewport breakpoint. If you are standardising components across a site, read [how to build a scalable design system with Astro and Tailwind CSS](/blog/build-scalable-website-design-system-astro-tailwind-css) next — container queries are the mechanism that makes those components genuinely portable.
 

@@ -12,7 +12,7 @@ tags: ["astro", "content-collections", "blogging"]
 draft: false
 dateCreated: 2026-11-14T05:00:00Z
 datePublished: 2026-11-14T05:00:00Z
-dateModified: 2026-11-15T23:07:05Z
+dateModified: 2026-11-16T01:20:55Z
 ---
 
 A blog that lives in a folder of Markdown files is easy to start and easy to break. One post is missing a date, another spells a tag differently, a third forgets its description, and nothing complains until a reader — or a search engine — finds the gap. Astro Content Collections fix that problem at the source: they turn a folder of files into a typed, validated, queryable content API, so a mistake in frontmatter becomes a build error instead of a broken page.
@@ -33,7 +33,7 @@ Define a collection when your content has a repeated shape. A blog is the classi
 
 A collection has three moving parts: a loader, a schema, and the query API. The loader fetches raw entries from wherever they live. The schema validates each entry's data and gives it a TypeScript type. Astro stores the validated entries in a data store during the build, and your pages query that store with `getCollection()` or `getEntry()`. For Markdown and MDX entries, `render()` turns an entry's body into a component you can place in a layout, and returns its headings as well — useful for a table of contents.
 
-![How Astro content collections work: a loader fetches files, a Zod schema validates them, Astro stores the entries, and pages query them with getCollection and render](/images/blog/astro-content-collections-complete-guide-managing-blog-content-diagram-1.webp)
+<img src="/images/blog/astro-content-collections-complete-guide-managing-blog-content-diagram-1.webp" alt="How Astro content collections work: a loader fetches files, a Zod schema validates them, Astro stores the entries, and pages query them with getCollection and render" width="1200" height="675" loading="lazy" decoding="async" srcset="/images/blog/astro-content-collections-complete-guide-managing-blog-content-diagram-1-800.webp 800w, /images/blog/astro-content-collections-complete-guide-managing-blog-content-diagram-1.webp 1200w" sizes="(max-width: 768px) 100vw, 768px" />
 
 Two details catch people out. First, `getCollection()` does not guarantee the order of the entries it returns, so always sort the result yourself, usually by date, before rendering a list. Second, an entry's identifier is `id`, derived from the file path relative to the loader's base directory, without the extension. In Astro 5 and later, `entry.slug` no longer exists.
 
@@ -212,7 +212,7 @@ Most errors fall into a handful of patterns. **"Frontmatter does not match colle
 
 Publishing a post is a short, repeatable sequence. First, add the file — `src/content/blog/my-new-post.md` — with frontmatter matching the schema. Second, let the build validate it; a schema error here is the system working. Third, check the listing and the page: the blog index picks the post up through `getCollection()`, and the dynamic route generates its page through `getStaticPaths()`, with no routing code changes needed. Fourth, check the outputs that read the same collection — the sitemap, feeds, and search index all derive from the same entries, and on this site they are generated automatically. Fifth, mind the SEO fields: the description, image, and Open Graph fields are what search engines and social platforms display, so keep them specific to the post. For the full picture, see [technical SEO for Astro websites: sitemaps, canonicals and structured data](/blog/technical-seo-astro-websites-sitemaps-canonicals-structured-data).
 
-![Querying and rendering a collection: getCollection lists entries, getEntry loads one, render turns its body into a component, and getStaticPaths maps entries to pages](/images/blog/astro-content-collections-complete-guide-managing-blog-content-diagram-2.webp)
+<img src="/images/blog/astro-content-collections-complete-guide-managing-blog-content-diagram-2.webp" alt="Querying and rendering a collection: getCollection lists entries, getEntry loads one, render turns its body into a component, and getStaticPaths maps entries to pages" width="1200" height="675" loading="lazy" decoding="async" srcset="/images/blog/astro-content-collections-complete-guide-managing-blog-content-diagram-2-800.webp 800w, /images/blog/astro-content-collections-complete-guide-managing-blog-content-diagram-2.webp 1200w" sizes="(max-width: 768px) 100vw, 768px" />
 
 ## Frequently asked questions
 

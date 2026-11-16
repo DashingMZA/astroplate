@@ -12,7 +12,7 @@ tags: ["astro", "tailwind", "design-system"]
 draft: false
 dateCreated: 2026-11-05T05:00:00Z
 datePublished: 2026-11-05T05:00:00Z
-dateModified: 2026-11-05T05:00:00Z
+dateModified: 2026-11-16T01:20:55Z
 ---
 
 A design system is the difference between a website that grows gracefully and one that slowly falls apart. Every new page reuses the same buttons, spacing and type scale — until one day it does not, and you are maintaining five slightly different cards and three shades of blue. This guide shows how to build a design system that scales, using Astro components for structure and Tailwind CSS v4 for styling, with design tokens as the single source of truth.
@@ -51,7 +51,7 @@ src/
 
 The entry point, `main.css`, is deliberately thin. It imports Tailwind, then your token, base, component and utility files in that order. Tailwind v4 organises its own output into native CSS cascade layers — `theme`, `base`, `components`, `utilities` — in that order of increasing strength, so utilities always win over component styles without `!important`. Your files slot into the same layer order.
 
-![Design system architecture: tokens feed base styles, components and patterns](/images/blog/build-scalable-website-design-system-astro-tailwind-css-diagram-1.webp)
+<img src="/images/blog/build-scalable-website-design-system-astro-tailwind-css-diagram-1.webp" alt="Design system architecture: tokens feed base styles, components and patterns" width="1200" height="675" loading="lazy" decoding="async" srcset="/images/blog/build-scalable-website-design-system-astro-tailwind-css-diagram-1-800.webp 800w, /images/blog/build-scalable-website-design-system-astro-tailwind-css-diagram-1.webp 1200w" sizes="(max-width: 768px) 100vw, 768px" />
 
 The diagram shows the dependency rule that holds the whole system together: tokens feed everything, components consume tokens and base styles, and patterns consume components. Nothing reaches past its own layer. When you are tempted to put a hex colour directly in a component, that is the rule telling you to add a token instead.
 
@@ -234,7 +234,7 @@ const { title, description } = Astro.props;
 
 Layouts nest: a blog post layout wraps the base layout and adds the post header, a documentation layout wraps it and adds a sidebar. Each layer adds one concern and passes the rest through its slot. That nesting is the pattern layer of the system: pages compose layouts, layouts compose components, and nobody re-declares the document shell.
 
-![Page composition: layouts wrap components, components wrap tokens](/images/blog/build-scalable-website-design-system-astro-tailwind-css-diagram-2.webp)
+<img src="/images/blog/build-scalable-website-design-system-astro-tailwind-css-diagram-2.webp" alt="Page composition: layouts wrap components, components wrap tokens" width="1200" height="675" loading="lazy" decoding="async" srcset="/images/blog/build-scalable-website-design-system-astro-tailwind-css-diagram-2-800.webp 800w, /images/blog/build-scalable-website-design-system-astro-tailwind-css-diagram-2.webp 1200w" sizes="(max-width: 768px) 100vw, 768px" />
 
 Content is the other half of composition. A design system that only covers components will still drift, because every page will invent its own frontmatter. Define your content shape once with a [content collection schema](https://docs.astro.build/en/guides/content-collections/) — title, description, image, categories, tags, draft flag — and every entry is validated against it at build time. Invalid frontmatter becomes a build error instead of a broken page discovered after deployment. Our guide to [Astro content collections](/blog/astro-content-collections-complete-guide-managing-blog-content) walks through `defineCollection`, Zod schemas and the `glob` loader in detail: the collection schema is the content half of the same contract your components are the visual half of.
 

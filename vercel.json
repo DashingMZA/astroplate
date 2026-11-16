@@ -13,7 +13,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://openremark.bond; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://media.csofts.tech https://i.ytimg.com https://openremark.bond https://lh3.googleusercontent.com; media-src 'self' https://media.csofts.tech https://www.w3schools.com; font-src 'self'; connect-src 'self' https://openremark.bond; frame-src https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'self' https://formspree.io https://getform.io; frame-ancestors 'self'; upgrade-insecure-requests"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://openremark.bond; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://media.csofts.tech https://i.ytimg.com https://openremark.bond https://lh3.googleusercontent.com; media-src 'self' https://media.csofts.tech https://www.w3schools.com; font-src 'self' data:; connect-src 'self' https://openremark.bond; frame-src https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'self' https://formspree.io https://getform.io; frame-ancestors 'self'; upgrade-insecure-requests"
         },
         {
           "key": "X-Content-Type-Options",

@@ -12,7 +12,7 @@ tags: ["astro", "images", "performance"]
 draft: false
 dateCreated: 2026-11-11T05:00:00Z
 datePublished: 2026-11-11T05:00:00Z
-dateModified: 2026-11-11T05:00:00Z
+dateModified: 2026-11-16T01:20:55Z
 ---
 
 Images are usually the heaviest part of a web page. A single uncompressed hero photograph can outweigh the HTML, CSS, and JavaScript combined. Image optimization for Astro is therefore one of the highest-value performance jobs on an Astro site, and Astro does most of it at build time, before a single visitor arrives.
@@ -77,7 +77,7 @@ Remote images need explicit authorization: Astro only optimizes remote images fr
 
 In Markdown, standard `![alt](src)` syntax works for local images in `src/` and for remote images, and those images are processed and optimized. `<Image />` and `<Picture />` are not available in plain `.md` files; for their props in Markdown content, use MDX. On this site, the blog hero is handled by the post layout, which is why the frontmatter `image` field points at a file in `public/images/`.
 
-![The Astro image pipeline: a source image in src/ is imported, transformed by Sharp at build time, and emitted as hashed WebP and AVIF files with width and height in the markup.](/images/blog/image-optimization-astro-webp-avif-responsive-images-cdn-delivery-diagram-1.webp)
+<img src="/images/blog/image-optimization-astro-webp-avif-responsive-images-cdn-delivery-diagram-1.webp" alt="The Astro image pipeline: a source image in src/ is imported, transformed by Sharp at build time, and emitted as hashed WebP and AVIF files with width and height in the markup." width="1200" height="675" loading="lazy" decoding="async" srcset="/images/blog/image-optimization-astro-webp-avif-responsive-images-cdn-delivery-diagram-1-800.webp 800w, /images/blog/image-optimization-astro-webp-avif-responsive-images-cdn-delivery-diagram-1.webp 1200w" sizes="(max-width: 768px) 100vw, 768px" />
 
 ## Responsive images: srcset, sizes, and layout
 
@@ -114,7 +114,7 @@ The `sizes` value mirrors the grid: full width on a phone, half the viewport on 
 
 Art direction — a different crop per breakpoint, via `<source>` elements with `media` queries — is a separate case. Most images only need different widths of the same crop; a second crop doubles the files you must produce and check.
 
-![How the browser picks a responsive image: srcset lists candidate widths, sizes describes the displayed width at each breakpoint, and the browser combines them with viewport size and pixel density to choose the smallest fitting file.](/images/blog/image-optimization-astro-webp-avif-responsive-images-cdn-delivery-diagram-2.webp)
+<img src="/images/blog/image-optimization-astro-webp-avif-responsive-images-cdn-delivery-diagram-2.webp" alt="How the browser picks a responsive image: srcset lists candidate widths, sizes describes the displayed width at each breakpoint, and the browser combines them with viewport size and pixel density to choose the smallest fitting file." width="1200" height="675" loading="lazy" decoding="async" srcset="/images/blog/image-optimization-astro-webp-avif-responsive-images-cdn-delivery-diagram-2-800.webp 800w, /images/blog/image-optimization-astro-webp-avif-responsive-images-cdn-delivery-diagram-2.webp 1200w" sizes="(max-width: 768px) 100vw, 768px" />
 
 ## Loading, priority, and layout stability
 

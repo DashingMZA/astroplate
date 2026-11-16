@@ -366,10 +366,20 @@ test("public/images/blog/ holds no originals any more — only generated webp", 
   const webps = fs
     .readdirSync(blogDir)
     .filter((f) => path.extname(f).toLowerCase() === ".webp");
+  // 40 base outputs (10 posts x diagram-1/diagram-2/feature/og) plus
+  // one -800 responsive variant per base image (see
+  // scripts/generate-responsive-variants.mjs).
+  const variants = webps.filter((f) => f.endsWith("-800.webp"));
+  const base = webps.filter((f) => !f.endsWith("-800.webp"));
   assert.equal(
-    webps.length,
+    base.length,
     40,
-    `expected 40 blog webp outputs, found ${webps.length}`,
+    `expected 40 blog webp outputs, found ${base.length}`,
+  );
+  assert.equal(
+    variants.length,
+    40,
+    `expected 40 -800 variants, found ${variants.length}`,
   );
 });
 
@@ -519,6 +529,10 @@ test("repo state: every webp served from public/images/ has an original in asset
   for (const outputPath of await walkFiles(outputDir)) {
     if (path.extname(outputPath).toLowerCase() !== ".webp") continue;
     const relative = path.relative(outputDir, outputPath);
+    // Responsive -800 variants are derived from the served webp next
+    // to them (which has the original); they have no assets/ original
+    // of their own.
+    if (relative.endsWith("-800.webp")) continue;
     const base = relative.slice(0, -".webp".length);
     const hasSource = [".jpg", ".jpeg", ".png", ".webp", ".avif"].some((ext) =>
       fs.existsSync(path.join(sourceDir, `${base}${ext}`)),
