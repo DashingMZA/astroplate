@@ -12,6 +12,10 @@
 #   content only — remove with the demo video if it is ever dropped).
 # - formspree.io / getform.io: the documented contact-form providers
 #   (form-action only; narrow to the provider actually configured).
+# - openremark.bond: the self-hosted OpenRemark comment widget
+#   (script-src for embed.js, connect-src for its API, img-src for
+#   widget images); lh3.googleusercontent.com: Google avatars for
+#   commenters who sign in with Google.
 # - GTM / Disqus / Google Analytics are DISABLED in config, so their
 #   domains are deliberately NOT allow-listed; re-enabling either
 #   requires extending this policy first.
@@ -25,7 +29,7 @@
 # - No report-uri/report-to: no reporting endpoint is configured.
 # HSTS is included here because Cloudflare serves this over HTTPS.
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://media.csofts.tech https://i.ytimg.com; media-src 'self' https://media.csofts.tech https://www.w3schools.com; font-src 'self'; connect-src 'self'; frame-src https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'self' https://formspree.io https://getform.io; frame-ancestors 'self'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://openremark.bond; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://media.csofts.tech https://i.ytimg.com https://openremark.bond https://lh3.googleusercontent.com; media-src 'self' https://media.csofts.tech https://www.w3schools.com; font-src 'self'; connect-src 'self' https://openremark.bond; frame-src https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'self' https://formspree.io https://getform.io; frame-ancestors 'self'; upgrade-insecure-requests
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
