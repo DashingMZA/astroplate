@@ -1,0 +1,44 @@
+{
+  "hosts": {
+    "vercel": true,
+    "worker": true,
+    "netlify": true,
+    "nginx": true,
+    "apache": true
+  },
+  "content_security_policy": {
+    "default-src": ["'self'"],
+    "script-src": ["'self'", "'unsafe-inline'", "https://openremark.bond"],
+    "style-src": ["'self'", "'unsafe-inline'"],
+    "img-src": [
+      "'self'",
+      "data:",
+      "https://media.csofts.tech",
+      "https://i.ytimg.com",
+      "https://openremark.bond",
+      "https://lh3.googleusercontent.com"
+    ],
+    "media-src": [
+      "'self'",
+      "https://media.csofts.tech",
+      "https://www.w3schools.com"
+    ],
+    "font-src": ["'self'", "data:"],
+    "connect-src": ["'self'", "https://openremark.bond"],
+    "frame-src": ["https://www.youtube-nocookie.com"],
+    "object-src": ["'none'"],
+    "base-uri": ["'self'"],
+    "form-action": ["'self'", "https://formspree.io", "https://getform.io"],
+    "frame-ancestors": ["'self'"],
+    "upgrade-insecure-requests": []
+  },
+  "other_headers": {
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
+  },
+  "strict_transport_security": {
+    "value": "max-age=31536000; includeSubDomains",
+    "hosts": ["vercel", "worker", "netlify", "apache"]
+  }
+}

@@ -69,35 +69,46 @@ Out of scope:
 
 ## Security headers
 
-The theme ships header configuration for three deployment targets,
-all carrying the same policy. The headers are config served by the
-host — the static build cannot send them itself — so verify them
-against the live domain after deploying (`curl -I <domain>/`).
+The theme ships header configuration for five deployment targets,
+all carrying the same policy. The headers are generated from a
+single source — `src/config/csp.json` — by
+`scripts/generate-security-headers.mjs` (`pnpm headers`, also run
+automatically by `prebuild`); edit the config, never the host files
+by hand. The headers are config served by the host — the static
+build cannot send them itself — so verify them against the live
+domain after deploying (`curl -I <domain>/`).
 
 | Target | Config file | HSTS |
 | --- | --- | --- |
 | Cloudflare | `public/_headers` (copied to `dist/_headers`) | Yes |
+| Vercel | `vercel.json` (`headers`) | Yes |
 | Netlify | `netlify.toml` (`[[headers]]`) | Yes |
 | Docker/nginx | `config/nginx/nginx.conf` (`add_header … always;`) | No — see below |
-| Vercel | **Not configured** — Vercel does not read `_headers`, and there is no `vercel.json` in the repo | Add in the Vercel dashboard |
+| Apache | `public/.htaccess` (generated block at the end) | Yes |
 | GitHub Pages | **Not possible** — the platform serves no custom headers | — |
 
 Headers sent on every response (`/*`):
 
-- `Content-Security-Policy` (identical on all three targets):
-  `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://media.csofts.tech https://i.ytimg.com; media-src 'self' https://media.csofts.tech https://www.w3schools.com; font-src 'self'; connect-src 'self'; frame-src https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'self' https://formspree.io https://getform.io; frame-ancestors 'self'; upgrade-insecure-requests`
+- `Content-Security-Policy` (identical on all five targets):
+  `default-src 'self'; script-src 'self' 'unsafe-inline' https://openremark.bond; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://media.csofts.tech https://i.ytimg.com https://openremark.bond https://lh3.googleusercontent.com; media-src 'self' https://media.csofts.tech https://www.w3schools.com; font-src 'self' data:; connect-src 'self' https://openremark.bond; frame-src https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'self' https://formspree.io https://getform.io; frame-ancestors 'self'; upgrade-insecure-requests`
 - `X-Content-Type-Options: nosniff`
 - `Referrer-Policy: strict-origin-when-cross-origin`
 - `Permissions-Policy: camera=(), microphone=(), geolocation=()`
 - `Strict-Transport-Security: max-age=31536000; includeSubDomains`
-  (Cloudflare + Netlify only)
+  (all targets except Docker/nginx)
 
 ### What the CSP allows — and why
 
 - **`media.csofts.tech`** (R2 media host) is allow-listed for
   `img-src` and `media-src` because the theme's demo post loads
   images from it; fonts are self-hosted, so `font-src` is `'self'`
-  only.
+  plus `data:` — the OpenRemark widget inlines its icon font as a
+  `data:` URL, and without `data:` the browser blocks it.
+- **OpenRemark** (`https://openremark.bond`, plus Google avatars
+  at `https://lh3.googleusercontent.com`) is allow-listed for the
+  self-hosted comment widget on blog posts: `script-src` for
+  `embed.js`, `connect-src` for its API, `img-src` for widget
+  images and commenter avatars.
 - **YouTube**: `frame-src https://www.youtube-nocookie.com` and
   `img-src https://i.ytimg.com` exist only because the
   `/elements` demo page embeds a `lite-youtube` video. If you

@@ -1,7 +1,9 @@
 # Security headers for Cloudflare Pages / Workers Static Assets.
 # This file is copied to dist/ by the build (public/ -> dist/).
-# Keep in sync with netlify.toml [[headers]], vercel.json headers,
-# and config/nginx/nginx.conf.
+# The header lines under /* below are GENERATED from src/config/csp.json
+# by scripts/generate-security-headers.mjs (pnpm headers) — do not edit
+# them by hand. The comment inventory below documents what the policy
+# allows and why; keep it in step with csp.json when the policy changes.
 #
 # Content-Security-Policy — built from the domains the site actually uses:
 # - 'self': all local assets, self-hosted fonts, local images.

@@ -77,18 +77,13 @@ Notes:
 
 The live production site is **https://astroplate.jadoo.bond**,
 deployed from this repo through the Vercel dashboard (Git push
-auto-deploys production). There is **no `vercel.json` in the repo**
-— deployment is dashboard-managed on purpose, so the Vercel
-project settings (framework preset, Node version, custom domain)
-live in the dashboard, not in code.
-
-One consequence: the security headers configured in this repo
-(`public/_headers`, `netlify.toml`, nginx) are **not** served by
-Vercel — Vercel does not read `_headers` files. Until headers are
-added in the Vercel dashboard (or a `vercel.json` is introduced),
-the live Vercel site does not send the CSP / HSTS / `nosniff`
-headers documented in [SECURITY.md](SECURITY.md). See that file
-before claiming the live site is header-hardened.
+auto-deploys production). Vercel project settings (framework
+preset, Node version, custom domain) live in the dashboard, not in
+code — but the security headers and the trailing-slash redirect
+live in `vercel.json` in the repo, generated from
+`src/config/csp.json` (see [SECURITY.md](SECURITY.md)). Vercel does
+not read `_headers` files, so the `public/_headers` file is for
+the Cloudflare target only.
 
 ## Netlify
 
@@ -238,21 +233,21 @@ curl -s -I $DOMAIN/ | grep -i "content-security-policy\|strict-transport\|x-cont
 
 ## Security headers
 
-Security headers **are** configured in the repo — one CSP, kept
-identical across all three targets (see [SECURITY.md](SECURITY.md)
-for the domain inventory and the `unsafe-inline` trade-off):
+Security headers **are** configured in the repo — one policy,
+generated from `src/config/csp.json` into all five targets by
+`scripts/generate-security-headers.mjs` (`pnpm headers`, also run
+by `prebuild`; see [SECURITY.md](SECURITY.md) for the domain
+inventory and the `unsafe-inline` trade-off):
 
 - Cloudflare: `public/_headers` (copied to `dist/_headers` by the
   build; includes HSTS).
+- Vercel: `headers` in `vercel.json` (includes HSTS).
 - Netlify: `[[headers]]` in `netlify.toml` (includes HSTS).
 - Docker/nginx: `add_header` in `config/nginx/nginx.conf`
   (**no HSTS** — the container is HTTP-only; add it at the TLS
   terminator).
-- Vercel: **not covered** — Vercel ignores `_headers` files and
-  there is no `vercel.json` in the repo, so the live Vercel site
-  needs headers added in the dashboard. Do not claim the live site
-  ships hardened headers until that is done and verified with the
-  `curl -I` check above.
+- Apache: generated block at the end of `public/.htaccess`
+  (includes HSTS).
 - GitHub Pages: cannot serve custom headers at all — that target
   has no header configuration, by platform limitation.
 
