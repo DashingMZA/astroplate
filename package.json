@@ -34,21 +34,21 @@
     "preview:cf-workers": "pnpm build && wrangler dev"
   },
   "dependencies": {
-    "@astrojs/markdown-remark": "^7.3.8",
-    "@astrojs/mdx": "8.1.5",
-    "@astrojs/react": "7.1.8",
+    "@astrojs/markdown-remark": "^7.3.10",
+    "@astrojs/mdx": "8.1.6",
+    "@astrojs/react": "7.1.9",
     "@astrojs/rss": "^4.0.19",
     "@digi4care/astro-google-tagmanager": "^2.1.0",
     "@justinribeiro/lite-youtube": "^1.9.0",
     "@playform/compress": "^0.2.5",
-    "astro": "7.4.11",
+    "astro": "7.4.13",
     "astro-auto-import": "^0.6.0",
     "astro-swiper": "^2.11.0",
     "disqus-react": "^1.1.7",
     "github-slugger": "^2.0.0",
     "gray-matter": "^4.0.3",
     "katex": "^0.19.1",
-    "marked": "^18.2.0",
+    "marked": "^18.2.1",
     "mermaid": "^12.3.0",
     "prop-types": "^15.8.1",
     "react": "^19.3.1",
@@ -73,7 +73,7 @@
     "@types/react-dom": "19.3.0",
     "@types/sanitize-html": "^2.16.2",
     "concurrently": "^10.0.7",
-    "eslint": "^10.14.0",
+    "eslint": "^10.15.0",
     "eslint-plugin-astro": "^3.2.1",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "glob": "^14.0.6",
@@ -87,7 +87,7 @@
     "tailwindcss": "^4.3.5",
     "turndown": "^7.2.5",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.72.2",
-    "wrangler": "^4.161.0"
+    "typescript-eslint": "^8.73.0",
+    "wrangler": "^4.165.0"
   }
 }
